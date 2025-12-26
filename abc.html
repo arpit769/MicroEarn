@@ -1,0 +1,1806 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reddit Task Platform</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .task-card:hover { transform: translateY(-2px); }
+        .timer-warning { animation: pulse 1s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        .modal-backdrop { backdrop-filter: blur(4px); }
+        .google-btn {
+            background: linear-gradient(135deg, #4285F4, #34A853, #FBBC05, #EA4335);
+            background-size: 300% 300%;
+            animation: gradient-shift 3s ease infinite;
+        }
+        @keyframes gradient-shift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        .divider {
+            display: flex;
+            align-items: center;
+            text-align: center;
+        }
+        .divider::before,
+        .divider::after {
+            content: '';
+            flex: 1;
+            border-bottom: 1px solid #4B5563;
+        }
+        .divider span {
+            padding: 0 10px;
+            color: #9CA3AF;
+            font-size: 0.875rem;
+        }
+        .loading-spinner {
+            border: 3px solid #374151;
+            border-top: 3px solid #F97316;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-white min-h-screen">
+    <div id="app"></div>
+    
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="hidden fixed inset-0 bg-black/80 flex items-center justify-center z-[100]">
+        <div class="text-center">
+            <div class="loading-spinner mx-auto mb-4"></div>
+            <p class="text-gray-300">Authenticating...</p>
+        </div>
+    </div>
+
+    <!-- Firebase v10 Modular SDK -->
+    <script type="module">
+        // ============================================
+        // FIREBASE v10 MODULAR CONFIGURATION
+        // ============================================
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBRJEmHXbHysb0weZfsVNTzUL0TDtjyuVI",
+            authDomain: "earnwithsimpletasks.firebaseapp.com",
+            projectId: "earnwithsimpletasks",
+            storageBucket: "earnwithsimpletasks.firebasestorage.app",
+            messagingSenderId: "942400388770",
+            appId: "1:942400388770:web:47475e0a0b60c1fb1b21fb"
+        };
+
+        // Initialize Firebase v10
+        const firebaseApp = initializeApp(firebaseConfig);
+        const auth = getAuth(firebaseApp);
+        const googleProvider = new GoogleAuthProvider();
+        
+        // Make Firebase available globally
+        window.firebaseAuth = auth;
+        window.firebaseGoogleProvider = googleProvider;
+        window.firebaseSignInWithPopup = signInWithPopup;
+        window.firebaseSignOut = signOut;
+        
+        // ============================================
+        // SIMULATED MONGODB DATABASE WITH INDEXES
+        // ============================================
+        const DB = {
+            users: JSON.parse(localStorage.getItem('reddit_platform_users')) || [],
+            tasks: JSON.parse(localStorage.getItem('reddit_platform_tasks')) || [],
+            submissions: JSON.parse(localStorage.getItem('reddit_platform_submissions')) || [],
+            
+            // Indexes simulation
+            indexes: {
+                tasks: {
+                    taskId: new Map(),
+                    status: new Map(),
+                    reservedBy: new Map()
+                },
+                users: {
+                    username: new Map(),
+                    email: new Map()
+                }
+            },
+            
+            save() {
+                localStorage.setItem('reddit_platform_users', JSON.stringify(this.users));
+                localStorage.setItem('reddit_platform_tasks', JSON.stringify(this.tasks));
+                localStorage.setItem('reddit_platform_submissions', JSON.stringify(this.submissions));
+                this.rebuildIndexes();
+            },
+            
+            rebuildIndexes() {
+                this.indexes.tasks.taskId.clear();
+                this.indexes.tasks.status.clear();
+                this.indexes.tasks.reservedBy.clear();
+                this.indexes.users.username.clear();
+                this.indexes.users.email.clear();
+                
+                this.tasks.forEach((task, idx) => {
+                    this.indexes.tasks.taskId.set(task.taskId, idx);
+                    if (!this.indexes.tasks.status.has(task.status)) {
+                        this.indexes.tasks.status.set(task.status, []);
+                    }
+                    this.indexes.tasks.status.get(task.status).push(idx);
+                });
+                
+                this.users.forEach((user, idx) => {
+                    this.indexes.users.username.set(user.username, idx);
+                    if (user.email) {
+                        this.indexes.users.email.set(user.email, idx);
+                    }
+                });
+            },
+            
+            // FCFS-safe task acceptance with race condition protection
+            acceptTask(taskId, userId) {
+                const taskIdx = this.indexes.tasks.taskId.get(taskId);
+                if (taskIdx === undefined) return { success: false, error: 'Task not found' };
+                
+                const task = this.tasks[taskIdx];
+                
+                // Race condition safe check
+                if (task.status !== 'available') {
+                    return { success: false, error: 'Task is no longer available' };
+                }
+                
+                // Check if user already accepted/submitted this task
+                const existingSubmission = this.submissions.find(s => s.taskId === taskId && s.userId === userId);
+                if (existingSubmission) {
+                    return { success: false, error: 'You have already worked on this task' };
+                }
+                
+                // Atomic update simulation
+                task.status = 'reserved';
+                task.reservedBy = userId;
+                task.reservedAt = Date.now();
+                
+                this.save();
+                return { success: true };
+            },
+            
+            findOrCreateGoogleUser(googleUser) {
+                // Check if user exists by email
+                let user = this.users.find(u => u.email === googleUser.email);
+                
+                if (!user) {
+                    // Create new user from Google account
+                    user = {
+                        id: 'google_' + googleUser.uid,
+                        username: googleUser.displayName || googleUser.email.split('@')[0],
+                        email: googleUser.email,
+                        photoURL: googleUser.photoURL,
+                        password: null, // Google users don't have password
+                        authProvider: 'google',
+                        redditKarma: 0, // Will need to be updated
+                        accountAge: 0, // Will need to be updated
+                        walletBalance: 0,
+                        role: 'user',
+                        createdAt: Date.now(),
+                        needsRedditInfo: true
+                    };
+                    this.users.push(user);
+                    this.save();
+                }
+                
+                return user;
+            },
+            
+            updateRedditInfo(userId, karma, accountAge) {
+                const user = this.users.find(u => u.id === userId);
+                if (user) {
+                    user.redditKarma = parseInt(karma);
+                    user.accountAge = parseInt(accountAge);
+                    user.needsRedditInfo = false;
+                    this.save();
+                    return { success: true, user };
+                }
+                return { success: false };
+            },
+            
+            init() {
+                // Create admin if not exists or update existing admin
+                const existingAdmin = this.users.find(u => u.role === 'admin');
+                if (!existingAdmin) {
+                    this.users.push({
+                        id: 'admin_' + Date.now(),
+                        username: 'axel769',
+                        password: 'axel8129',
+                        email: 'admin@redditplatform.com',
+                        redditKarma: 10000,
+                        accountAge: 24,
+                        walletBalance: 0,
+                        role: 'admin',
+                        authProvider: 'local',
+                        createdAt: Date.now()
+                    });
+                    this.save();
+                } else {
+                    // Update admin credentials
+                    existingAdmin.username = 'axel769';
+                    existingAdmin.password = 'axel8129';
+                    this.save();
+                }
+                this.rebuildIndexes();
+            }
+        };
+        
+        DB.init();
+
+        // ============================================
+        // JWT SIMULATION & AUTH
+        // ============================================
+        const Auth = {
+            currentUser: JSON.parse(localStorage.getItem('reddit_platform_session')) || null,
+            
+            generateToken(user) {
+                return btoa(JSON.stringify({ userId: user.id, exp: Date.now() + 86400000 }));
+            },
+            
+            login(username, password) {
+                const user = DB.users.find(u => u.username === username && u.password === password);
+                if (!user) return { success: false, error: 'Invalid credentials' };
+                
+                const token = this.generateToken(user);
+                this.currentUser = { ...user, token };
+                localStorage.setItem('reddit_platform_session', JSON.stringify(this.currentUser));
+                return { success: true, user: this.currentUser };
+            },
+            
+            async loginWithGoogle() {
+                try {
+                    showLoading();
+                    
+                    console.log('Starting Google Sign-In...');
+                    console.log('Auth object:', window.firebaseAuth);
+                    console.log('Provider:', window.firebaseGoogleProvider);
+                    
+                    // Use Firebase v10 modular SDK
+                    const result = await window.firebaseSignInWithPopup(window.firebaseAuth, window.firebaseGoogleProvider);
+                    
+                    console.log('Sign-in successful:', result);
+                    const googleUser = result.user;
+                    
+                    // Find or create user in our database
+                    const user = DB.findOrCreateGoogleUser({
+                        uid: googleUser.uid,
+                        email: googleUser.email,
+                        displayName: googleUser.displayName,
+                        photoURL: googleUser.photoURL
+                    });
+                    
+                    const token = this.generateToken(user);
+                    this.currentUser = { ...user, token };
+                    localStorage.setItem('reddit_platform_session', JSON.stringify(this.currentUser));
+                    
+                    hideLoading();
+                    return { success: true, user: this.currentUser, needsRedditInfo: user.needsRedditInfo };
+                } catch (error) {
+                    hideLoading();
+                    console.error('Google sign-in error:', error);
+                    console.error('Error code:', error.code);
+                    console.error('Error message:', error.message);
+                    
+                    // Provide more helpful error messages
+                    let errorMessage = 'Google sign-in failed';
+                    
+                    if (error.code === 'auth/unauthorized-domain') {
+                        errorMessage = 'This domain is not authorized in Firebase. Please add "' + window.location.hostname + '" to your Firebase Console > Authentication > Settings > Authorized domains';
+                    } else if (error.code === 'auth/popup-blocked') {
+                        errorMessage = 'Popup was blocked by browser. Please allow popups for this site.';
+                    } else if (error.code === 'auth/popup-closed-by-user') {
+                        errorMessage = 'Sign-in popup was closed. Please try again.';
+                    } else if (error.code === 'auth/cancelled-popup-request') {
+                        errorMessage = 'Another popup is already open. Please close it and try again.';
+                    } else if (error.code === 'auth/network-request-failed') {
+                        errorMessage = 'Network error. Please check your internet connection.';
+                    } else if (error.message) {
+                        errorMessage = error.message;
+                    }
+                    
+                    return { success: false, error: errorMessage };
+                }
+            },
+            
+            register(username, password, redditKarma, accountAge) {
+                if (DB.users.find(u => u.username === username)) {
+                    return { success: false, error: 'Username already exists' };
+                }
+                
+                const user = {
+                    id: 'user_' + Date.now(),
+                    username,
+                    password,
+                    email: null,
+                    redditKarma: parseInt(redditKarma),
+                    accountAge: parseInt(accountAge),
+                    walletBalance: 0,
+                    role: 'user',
+                    authProvider: 'local',
+                    createdAt: Date.now()
+                };
+                
+                DB.users.push(user);
+                DB.save();
+                
+                return this.login(username, password);
+            },
+            
+            logout() {
+                // Sign out from Firebase v10 if signed in
+                if (window.firebaseAuth) {
+                    window.firebaseSignOut(window.firebaseAuth).catch(err => console.log('Firebase signout:', err));
+                }
+                this.currentUser = null;
+                localStorage.removeItem('reddit_platform_session');
+            },
+            
+            isEligible(user = this.currentUser) {
+                if (!user) return false;
+                return user.redditKarma >= 200 && user.accountAge >= 1;
+            },
+            
+            refreshUser() {
+                if (!this.currentUser) return;
+                const user = DB.users.find(u => u.id === this.currentUser.id);
+                if (user) {
+                    this.currentUser = { ...user, token: this.currentUser.token };
+                    localStorage.setItem('reddit_platform_session', JSON.stringify(this.currentUser));
+                }
+            }
+        };
+
+        // ============================================
+        // TASK MANAGEMENT
+        // ============================================
+        const TaskManager = {
+            generateTaskId() {
+                return 'TASK-' + Date.now().toString(36).toUpperCase() + '-' + Math.random().toString(36).substr(2, 4).toUpperCase();
+            },
+            
+            createTask(taskData) {
+                const task = {
+                    taskId: this.generateTaskId(),
+                    type: taskData.type,
+                    title: taskData.title || '',
+                    body: taskData.body || '',
+                    image: taskData.image || '',
+                    postLink: taskData.postLink || '',
+                    commentText: taskData.commentText || '',
+                    price: parseFloat(taskData.price),
+                    status: 'available',
+                    reservedBy: null,
+                    reservedAt: null,
+                    createdAt: Date.now()
+                };
+                
+                DB.tasks.push(task);
+                DB.save();
+                return task;
+            },
+            
+            updateTask(taskId, updates) {
+                const task = DB.tasks.find(t => t.taskId === taskId);
+                if (!task) return { success: false, error: 'Task not found' };
+                
+                if (task.status !== 'available') {
+                    return { success: false, error: 'Cannot edit task that is not available' };
+                }
+                
+                Object.assign(task, updates);
+                DB.save();
+                return { success: true };
+            },
+            
+            deleteTask(taskId) {
+                const idx = DB.tasks.findIndex(t => t.taskId === taskId);
+                if (idx === -1) return { success: false, error: 'Task not found' };
+                
+                if (DB.tasks[idx].status !== 'available') {
+                    return { success: false, error: 'Cannot delete task that is not available' };
+                }
+                
+                DB.tasks.splice(idx, 1);
+                DB.save();
+                return { success: true };
+            },
+            
+            getAvailableTasks() {
+                this.checkExpiredReservations();
+                return DB.tasks.filter(t => t.status === 'available');
+            },
+            
+            getMyReservedTasks(userId) {
+                this.checkExpiredReservations();
+                return DB.tasks.filter(t => t.reservedBy === userId && t.status === 'reserved');
+            },
+            
+            checkExpiredReservations() {
+                const thirtyMinutes = 30 * 60 * 1000;
+                const now = Date.now();
+                
+                DB.tasks.forEach(task => {
+                    if (task.status === 'reserved' && task.reservedAt) {
+                        if (now - task.reservedAt > thirtyMinutes) {
+                            task.status = 'available';
+                            task.reservedBy = null;
+                            task.reservedAt = null;
+                        }
+                    }
+                });
+                DB.save();
+            },
+            
+            getRemainingTime(task) {
+                if (!task.reservedAt) return 0;
+                const thirtyMinutes = 30 * 60 * 1000;
+                const elapsed = Date.now() - task.reservedAt;
+                return Math.max(0, thirtyMinutes - elapsed);
+            },
+            
+            submitTask(taskId, userId, redditLink) {
+                const task = DB.tasks.find(t => t.taskId === taskId);
+                if (!task) return { success: false, error: 'Task not found' };
+                
+                if (task.status !== 'reserved' || task.reservedBy !== userId) {
+                    return { success: false, error: 'You cannot submit this task' };
+                }
+                
+                // Validate Reddit link
+                const isValidRedditLink = redditLink.includes('reddit.com') || redditLink.includes('redd.it');
+                if (!isValidRedditLink) {
+                    return { success: false, error: 'Please provide a valid Reddit link' };
+                }
+                
+                const submission = {
+                    id: 'sub_' + Date.now(),
+                    taskId,
+                    userId,
+                    redditLink,
+                    status: 'pending',
+                    submittedAt: Date.now()
+                };
+                
+                DB.submissions.push(submission);
+                task.status = 'submitted';
+                DB.save();
+                
+                return { success: true, submission };
+            }
+        };
+
+        // ============================================
+        // ADMIN FUNCTIONS
+        // ============================================
+        const AdminManager = {
+            getAllSubmissions() {
+                return DB.submissions.map(sub => {
+                    const task = DB.tasks.find(t => t.taskId === sub.taskId);
+                    const user = DB.users.find(u => u.id === sub.userId);
+                    return { ...sub, task, user };
+                });
+            },
+            
+            approveSubmission(submissionId) {
+                const submission = DB.submissions.find(s => s.id === submissionId);
+                if (!submission) return { success: false, error: 'Submission not found' };
+                
+                if (submission.status !== 'pending') {
+                    return { success: false, error: 'Submission already processed' };
+                }
+                
+                const task = DB.tasks.find(t => t.taskId === submission.taskId);
+                const user = DB.users.find(u => u.id === submission.userId);
+                
+                if (!task || !user) {
+                    return { success: false, error: 'Task or user not found' };
+                }
+                
+                submission.status = 'approved';
+                task.status = 'approved';
+                user.walletBalance += task.price;
+                
+                DB.save();
+                return { success: true };
+            },
+            
+            rejectSubmission(submissionId) {
+                const submission = DB.submissions.find(s => s.id === submissionId);
+                if (!submission) return { success: false, error: 'Submission not found' };
+                
+                if (submission.status !== 'pending') {
+                    return { success: false, error: 'Submission already processed' };
+                }
+                
+                const task = DB.tasks.find(t => t.taskId === submission.taskId);
+                
+                submission.status = 'rejected';
+                if (task) task.status = 'rejected';
+                
+                DB.save();
+                return { success: true };
+            },
+            
+            getAllUsers() {
+                return DB.users.filter(u => u.role !== 'admin');
+            },
+            
+            getAllTasks() {
+                TaskManager.checkExpiredReservations();
+                return DB.tasks;
+            }
+        };
+
+        // ============================================
+        // LOADING HELPERS
+        // ============================================
+        function showLoading() {
+            document.getElementById('loadingOverlay').classList.remove('hidden');
+        }
+        
+        function hideLoading() {
+            document.getElementById('loadingOverlay').classList.add('hidden');
+        }
+
+        // ============================================
+        // UI RENDERING
+        // ============================================
+        let currentView = Auth.currentUser ? (Auth.currentUser.role === 'admin' ? 'admin-dashboard' : 'user-dashboard') : 'login';
+        let activeTab = 'available';
+        let adminTab = 'tasks';
+        let showRedditInfoModal = false;
+
+        function formatTime(ms) {
+            const minutes = Math.floor(ms / 60000);
+            const seconds = Math.floor((ms % 60000) / 1000);
+            return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+        }
+
+        function formatDate(timestamp) {
+            return new Date(timestamp).toLocaleString();
+        }
+
+        function render() {
+            const app = document.getElementById('app');
+            
+            if (!Auth.currentUser) {
+                app.innerHTML = renderAuthPage();
+            } else if (Auth.currentUser.needsRedditInfo) {
+                app.innerHTML = renderRedditInfoPage();
+            } else if (Auth.currentUser.role === 'admin') {
+                app.innerHTML = renderAdminPanel();
+            } else {
+                app.innerHTML = renderUserPanel();
+            }
+            
+            attachEventListeners();
+        }
+
+        function renderNavbar(isAdmin = false) {
+            const eligible = Auth.isEligible();
+            const photoURL = Auth.currentUser.photoURL;
+            
+            return `
+                <nav class="bg-gray-800 border-b border-gray-700 sticky top-0 z-50">
+                    <div class="max-w-7xl mx-auto px-4">
+                        <div class="flex items-center justify-between h-16">
+                            <div class="flex items-center space-x-4">
+                                <div class="flex items-center space-x-2">
+                                    <i class="fab fa-reddit text-orange-500 text-2xl"></i>
+                                    <span class="text-xl font-bold">Reddit Tasks</span>
+                                </div>
+                                ${isAdmin ? '<span class="bg-purple-600 text-xs px-2 py-1 rounded-full">ADMIN</span>' : ''}
+                            </div>
+                            
+                            <div class="flex items-center space-x-4">
+                                ${!isAdmin ? `
+                                    <div class="flex items-center space-x-2 bg-gray-700 px-3 py-1 rounded-lg">
+                                        <i class="fas fa-wallet text-green-400"></i>
+                                        <span class="font-semibold">$${Auth.currentUser.walletBalance.toFixed(2)}</span>
+                                    </div>
+                                ` : ''}
+                                
+                                <div class="flex items-center space-x-2">
+                                    ${photoURL ? `
+                                        <img src="${photoURL}" alt="Profile" class="w-8 h-8 rounded-full border-2 border-orange-500">
+                                    ` : `
+                                        <i class="fas fa-user text-gray-400"></i>
+                                    `}
+                                    <span>${Auth.currentUser.username}</span>
+                                    ${Auth.currentUser.authProvider === 'google' ? '<i class="fab fa-google text-xs text-blue-400"></i>' : ''}
+                                </div>
+                                
+                                <button onclick="handleLogout()" class="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg text-sm transition">
+                                    <i class="fas fa-sign-out-alt mr-2"></i>Logout
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    ${!isAdmin ? `
+                        <div class="bg-gradient-to-r ${eligible ? 'from-green-900 to-green-800' : 'from-red-900 to-red-800'} px-4 py-2">
+                            <div class="max-w-7xl mx-auto flex items-center justify-between">
+                                <div class="flex items-center space-x-2">
+                                    <i class="fas ${eligible ? 'fa-check-circle text-green-400' : 'fa-exclamation-triangle text-yellow-400'}"></i>
+                                    <span class="text-sm">
+                                        ${eligible 
+                                            ? 'You are eligible to accept tasks!' 
+                                            : 'Eligibility Required: Minimum 200 karma & 1 month old Reddit account'}
+                                    </span>
+                                </div>
+                                <div class="flex items-center space-x-4 text-sm">
+                                    <span class="${Auth.currentUser.redditKarma >= 200 ? 'text-green-400' : 'text-red-400'}">
+                                        <i class="fas fa-arrow-up mr-1"></i>${Auth.currentUser.redditKarma} karma
+                                    </span>
+                                    <span class="${Auth.currentUser.accountAge >= 1 ? 'text-green-400' : 'text-red-400'}">
+                                        <i class="fas fa-calendar mr-1"></i>${Auth.currentUser.accountAge} month(s) old
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    ` : ''}
+                </nav>
+            `;
+        }
+
+        function renderAuthPage() {
+            return `
+                <div class="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 px-4">
+                    <div class="max-w-md w-full">
+                        <div class="text-center mb-8">
+                            <i class="fab fa-reddit text-orange-500 text-6xl mb-4"></i>
+                            <h1 class="text-3xl font-bold">Reddit Task Platform</h1>
+                            <p class="text-gray-400 mt-2">Complete Reddit tasks and earn rewards</p>
+                        </div>
+                        
+                        <div class="bg-gray-800 rounded-xl p-6 shadow-2xl border border-gray-700">
+                            <!-- Google Sign In Button -->
+                            <button onclick="handleGoogleLogin()" 
+                                class="w-full google-btn text-white py-3 rounded-lg font-semibold transition flex items-center justify-center space-x-3 mb-6 hover:opacity-90">
+                                <svg class="w-5 h-5" viewBox="0 0 24 24">
+                                    <path fill="white" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                                    <path fill="white" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                                    <path fill="white" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                                    <path fill="white" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                                </svg>
+                                <span>Continue with Google</span>
+                            </button>
+                            
+                            <div class="divider mb-6">
+                                <span>or sign in with credentials</span>
+                            </div>
+                            
+                            <div class="flex mb-6">
+                                <button onclick="switchAuthTab('login')" id="loginTab" 
+                                    class="flex-1 py-2 text-center border-b-2 border-orange-500 text-orange-500 font-semibold">
+                                    Login
+                                </button>
+                                <button onclick="switchAuthTab('register')" id="registerTab"
+                                    class="flex-1 py-2 text-center border-b-2 border-gray-600 text-gray-400 hover:text-white">
+                                    Register
+                                </button>
+                            </div>
+                            
+                            <div id="loginForm">
+                                <div class="space-y-4">
+                                    <div>
+                                        <label class="block text-sm text-gray-400 mb-1">Username</label>
+                                        <input type="text" id="loginUsername" 
+                                            class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 focus:border-orange-500 focus:outline-none"
+                                            placeholder="Enter username">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm text-gray-400 mb-1">Password</label>
+                                        <input type="password" id="loginPassword"
+                                            class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 focus:border-orange-500 focus:outline-none"
+                                            placeholder="Enter password">
+                                    </div>
+                                    <button onclick="handleLogin()" 
+                                        class="w-full bg-orange-600 hover:bg-orange-700 py-3 rounded-lg font-semibold transition">
+                                        <i class="fas fa-sign-in-alt mr-2"></i>Login
+                                    </button>
+                                </div>
+                                
+                            </div>
+                            
+                            <div id="registerForm" class="hidden">
+                                <div class="space-y-4">
+                                    <div>
+                                        <label class="block text-sm text-gray-400 mb-1">Username</label>
+                                        <input type="text" id="regUsername"
+                                            class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 focus:border-orange-500 focus:outline-none"
+                                            placeholder="Choose username">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm text-gray-400 mb-1">Password</label>
+                                        <input type="password" id="regPassword"
+                                            class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 focus:border-orange-500 focus:outline-none"
+                                            placeholder="Choose password">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm text-gray-400 mb-1">Your Reddit Karma</label>
+                                        <input type="number" id="regKarma"
+                                            class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 focus:border-orange-500 focus:outline-none"
+                                            placeholder="e.g. 500">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm text-gray-400 mb-1">Account Age (months)</label>
+                                        <input type="number" id="regAge"
+                                            class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 focus:border-orange-500 focus:outline-none"
+                                            placeholder="e.g. 6">
+                                    </div>
+                                    <button onclick="handleRegister()"
+                                        class="w-full bg-orange-600 hover:bg-orange-700 py-3 rounded-lg font-semibold transition">
+                                        <i class="fas fa-user-plus mr-2"></i>Register
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div id="authError" class="hidden mt-4 bg-red-900/50 border border-red-700 text-red-300 px-4 py-2 rounded-lg text-sm"></div>
+                        </div>
+                        
+                        <div class="mt-6 bg-gray-800/50 rounded-xl p-4 border border-gray-700">
+                            <h3 class="font-semibold text-orange-400 mb-2"><i class="fas fa-info-circle mr-2"></i>Eligibility Requirements</h3>
+                            <ul class="text-sm text-gray-400 space-y-1">
+                                <li>• Minimum 200 Reddit karma</li>
+                                <li>• Account age at least 1 month</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderRedditInfoPage() {
+            return `
+                <div class="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 px-4">
+                    <div class="max-w-md w-full">
+                        <div class="text-center mb-8">
+                            <div class="w-20 h-20 mx-auto mb-4 rounded-full border-4 border-orange-500 overflow-hidden">
+                                ${Auth.currentUser.photoURL 
+                                    ? `<img src="${Auth.currentUser.photoURL}" alt="Profile" class="w-full h-full object-cover">`
+                                    : `<div class="w-full h-full bg-gray-700 flex items-center justify-center"><i class="fas fa-user text-3xl text-gray-400"></i></div>`
+                                }
+                            </div>
+                            <h1 class="text-2xl font-bold">Welcome, ${Auth.currentUser.username}!</h1>
+                            <p class="text-gray-400 mt-2">Almost there! We need your Reddit account details</p>
+                        </div>
+                        
+                        <div class="bg-gray-800 rounded-xl p-6 shadow-2xl border border-gray-700">
+                            <div class="flex items-center space-x-3 mb-6 p-3 bg-blue-900/30 rounded-lg border border-blue-700">
+                                <i class="fab fa-google text-blue-400"></i>
+                                <span class="text-sm text-blue-300">Signed in with ${Auth.currentUser.email}</span>
+                            </div>
+                            
+                            <h2 class="text-lg font-semibold mb-4">
+                                <i class="fab fa-reddit text-orange-500 mr-2"></i>
+                                Reddit Account Details
+                            </h2>
+                            
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-sm text-gray-400 mb-1">Your Reddit Karma</label>
+                                    <input type="number" id="redditKarma"
+                                        class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 focus:border-orange-500 focus:outline-none"
+                                        placeholder="Enter your Reddit karma (e.g. 500)">
+                                    <p class="text-xs text-gray-500 mt-1">You can find this on your Reddit profile</p>
+                                </div>
+                                <div>
+                                    <label class="block text-sm text-gray-400 mb-1">Account Age (months)</label>
+                                    <input type="number" id="redditAge"
+                                        class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 focus:border-orange-500 focus:outline-none"
+                                        placeholder="How many months old is your Reddit account?">
+                                </div>
+                                
+                                <div id="redditInfoError" class="hidden bg-red-900/50 border border-red-700 text-red-300 px-4 py-2 rounded-lg text-sm"></div>
+                                
+                                <button onclick="saveRedditInfo()"
+                                    class="w-full bg-orange-600 hover:bg-orange-700 py-3 rounded-lg font-semibold transition">
+                                    <i class="fas fa-check mr-2"></i>Complete Setup
+                                </button>
+                                
+                                <button onclick="handleLogout()"
+                                    class="w-full bg-gray-700 hover:bg-gray-600 py-2 rounded-lg text-sm transition">
+                                    <i class="fas fa-arrow-left mr-2"></i>Sign out and use different account
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-6 bg-yellow-900/30 rounded-xl p-4 border border-yellow-700">
+                            <h3 class="font-semibold text-yellow-400 mb-2"><i class="fas fa-exclamation-circle mr-2"></i>Why we need this?</h3>
+                            <p class="text-sm text-gray-400">To ensure quality, only Reddit accounts with minimum 200 karma and 1 month age can accept tasks.</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderUserPanel() {
+            Auth.refreshUser();
+            const eligible = Auth.isEligible();
+            const availableTasks = TaskManager.getAvailableTasks();
+            const myReservedTasks = TaskManager.getMyReservedTasks(Auth.currentUser.id);
+            const mySubmissions = DB.submissions.filter(s => s.userId === Auth.currentUser.id);
+            
+            return `
+                ${renderNavbar(false)}
+                
+                <div class="max-w-7xl mx-auto px-4 py-6">
+                    <!-- Stats Cards -->
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                        <div class="bg-gray-800 rounded-xl p-4 border border-gray-700">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-gray-400 text-sm">Available Tasks</p>
+                                    <p class="text-2xl font-bold">${availableTasks.length}</p>
+                                </div>
+                                <i class="fas fa-tasks text-3xl text-blue-400"></i>
+                            </div>
+                        </div>
+                        <div class="bg-gray-800 rounded-xl p-4 border border-gray-700">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-gray-400 text-sm">My Active Tasks</p>
+                                    <p class="text-2xl font-bold">${myReservedTasks.length}</p>
+                                </div>
+                                <i class="fas fa-clock text-3xl text-yellow-400"></i>
+                            </div>
+                        </div>
+                        <div class="bg-gray-800 rounded-xl p-4 border border-gray-700">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-gray-400 text-sm">Completed</p>
+                                    <p class="text-2xl font-bold">${mySubmissions.filter(s => s.status === 'approved').length}</p>
+                                </div>
+                                <i class="fas fa-check-circle text-3xl text-green-400"></i>
+                            </div>
+                        </div>
+                        <div class="bg-gray-800 rounded-xl p-4 border border-gray-700">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-gray-400 text-sm">Wallet Balance</p>
+                                    <p class="text-2xl font-bold text-green-400">$${Auth.currentUser.walletBalance.toFixed(2)}</p>
+                                </div>
+                                <i class="fas fa-wallet text-3xl text-green-400"></i>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Tabs -->
+                    <div class="flex space-x-2 mb-6 border-b border-gray-700 pb-2">
+                        <button onclick="switchUserTab('available')" 
+                            class="px-4 py-2 rounded-t-lg ${activeTab === 'available' ? 'bg-orange-600' : 'bg-gray-700 hover:bg-gray-600'}">
+                            <i class="fas fa-list mr-2"></i>Available Tasks
+                        </button>
+                        <button onclick="switchUserTab('active')"
+                            class="px-4 py-2 rounded-t-lg ${activeTab === 'active' ? 'bg-orange-600' : 'bg-gray-700 hover:bg-gray-600'}">
+                            <i class="fas fa-hourglass-half mr-2"></i>My Active Tasks
+                            ${myReservedTasks.length > 0 ? `<span class="ml-2 bg-red-500 text-xs px-2 py-0.5 rounded-full">${myReservedTasks.length}</span>` : ''}
+                        </button>
+                        <button onclick="switchUserTab('history')"
+                            class="px-4 py-2 rounded-t-lg ${activeTab === 'history' ? 'bg-orange-600' : 'bg-gray-700 hover:bg-gray-600'}">
+                            <i class="fas fa-history mr-2"></i>Submission History
+                        </button>
+                    </div>
+                    
+                    <!-- Tab Content -->
+                    <div id="tabContent">
+                        ${activeTab === 'available' ? renderAvailableTasks(availableTasks, eligible) : ''}
+                        ${activeTab === 'active' ? renderActiveTasks(myReservedTasks) : ''}
+                        ${activeTab === 'history' ? renderSubmissionHistory(mySubmissions) : ''}
+                    </div>
+                </div>
+                
+                ${renderSubmitModal()}
+            `;
+        }
+
+        function renderAvailableTasks(tasks, eligible) {
+            if (tasks.length === 0) {
+                return `
+                    <div class="text-center py-16 bg-gray-800 rounded-xl border border-gray-700">
+                        <i class="fas fa-inbox text-6xl text-gray-600 mb-4"></i>
+                        <p class="text-gray-400 text-xl">No tasks available right now</p>
+                        <p class="text-gray-500 mt-2">Check back later for new tasks!</p>
+                    </div>
+                `;
+            }
+            
+            return `
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    ${tasks.map(task => `
+                        <div class="bg-gray-800 rounded-xl p-5 border border-gray-700 task-card transition hover:border-orange-500">
+                            <div class="flex items-start justify-between mb-3">
+                                <span class="px-3 py-1 ${task.type === 'post' ? 'bg-blue-600' : 'bg-purple-600'} rounded-full text-xs font-semibold">
+                                    ${task.type === 'post' ? '<i class="fas fa-file-alt mr-1"></i>Post Task' : '<i class="fas fa-comment mr-1"></i>Comment Task'}
+                                </span>
+                                <span class="text-green-400 font-bold text-lg">$${task.price.toFixed(2)}</span>
+                            </div>
+                            
+                            <div class="mb-4">
+                                <p class="text-xs text-gray-500 mb-1">Task ID: ${task.taskId}</p>
+                                ${task.type === 'post' ? `
+                                    <h3 class="font-semibold text-lg mb-2">${task.title}</h3>
+                                    <p class="text-gray-400 text-sm line-clamp-2">${task.body}</p>
+                                    ${task.image ? `<p class="text-xs text-gray-500 mt-2"><i class="fas fa-image mr-1"></i>Has image attachment</p>` : ''}
+                                ` : `
+                                    <p class="text-gray-400 text-sm mb-2"><i class="fas fa-link mr-1"></i>${task.postLink}</p>
+                                    <div class="bg-gray-700 rounded-lg p-3 mt-2">
+                                        <p class="text-sm italic">"${task.commentText}"</p>
+                                    </div>
+                                `}
+                            </div>
+                            
+                            <button onclick="acceptTask('${task.taskId}')" 
+                                ${!eligible ? 'disabled' : ''}
+                                class="w-full py-2 rounded-lg font-semibold transition ${eligible 
+                                    ? 'bg-orange-600 hover:bg-orange-700' 
+                                    : 'bg-gray-600 cursor-not-allowed text-gray-400'}">
+                                ${eligible ? '<i class="fas fa-hand-pointer mr-2"></i>Accept Task' : '<i class="fas fa-lock mr-2"></i>Not Eligible'}
+                            </button>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
+
+        function renderActiveTasks(tasks) {
+            if (tasks.length === 0) {
+                return `
+                    <div class="text-center py-16 bg-gray-800 rounded-xl border border-gray-700">
+                        <i class="fas fa-clipboard-list text-6xl text-gray-600 mb-4"></i>
+                        <p class="text-gray-400 text-xl">No active tasks</p>
+                        <p class="text-gray-500 mt-2">Accept a task to get started!</p>
+                    </div>
+                `;
+            }
+            
+            return `
+                <div class="space-y-4">
+                    ${tasks.map(task => {
+                        const remaining = TaskManager.getRemainingTime(task);
+                        const isUrgent = remaining < 5 * 60 * 1000; // Less than 5 minutes
+                        
+                        return `
+                            <div class="bg-gray-800 rounded-xl p-5 border ${isUrgent ? 'border-red-500' : 'border-gray-700'}">
+                                <div class="flex items-center justify-between mb-4">
+                                    <div class="flex items-center space-x-3">
+                                        <span class="px-3 py-1 ${task.type === 'post' ? 'bg-blue-600' : 'bg-purple-600'} rounded-full text-xs font-semibold">
+                                            ${task.type === 'post' ? 'Post Task' : 'Comment Task'}
+                                        </span>
+                                        <span class="text-xs text-gray-500">${task.taskId}</span>
+                                    </div>
+                                    <div class="flex items-center space-x-4">
+                                        <span class="text-green-400 font-bold text-lg">$${task.price.toFixed(2)}</span>
+                                        <div class="flex items-center space-x-2 ${isUrgent ? 'text-red-400 timer-warning' : 'text-yellow-400'}">
+                                            <i class="fas fa-clock"></i>
+                                            <span class="font-mono font-bold" id="timer-${task.taskId}">${formatTime(remaining)}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="bg-gray-700 rounded-lg p-4 mb-4">
+                                    ${task.type === 'post' ? `
+                                        <h3 class="font-semibold mb-2">${task.title}</h3>
+                                        <p class="text-gray-400 text-sm">${task.body}</p>
+                                        ${task.image ? `<img src="${task.image}" alt="Task image" class="mt-2 rounded-lg max-h-40 object-cover">` : ''}
+                                    ` : `
+                                        <p class="text-sm mb-2"><strong>Post Link:</strong> <a href="${task.postLink}" target="_blank" class="text-blue-400 hover:underline">${task.postLink}</a></p>
+                                        <p class="text-sm"><strong>Comment to post:</strong></p>
+                                        <div class="bg-gray-600 rounded p-2 mt-1 italic">"${task.commentText}"</div>
+                                    `}
+                                </div>
+                                
+                                <button onclick="openSubmitModal('${task.taskId}')"
+                                    class="w-full bg-green-600 hover:bg-green-700 py-3 rounded-lg font-semibold transition">
+                                    <i class="fas fa-paper-plane mr-2"></i>Submit Reddit Link
+                                </button>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            `;
+        }
+
+        function renderSubmissionHistory(submissions) {
+            if (submissions.length === 0) {
+                return `
+                    <div class="text-center py-16 bg-gray-800 rounded-xl border border-gray-700">
+                        <i class="fas fa-history text-6xl text-gray-600 mb-4"></i>
+                        <p class="text-gray-400 text-xl">No submission history</p>
+                        <p class="text-gray-500 mt-2">Your completed tasks will appear here</p>
+                    </div>
+                `;
+            }
+            
+            return `
+                <div class="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden">
+                    <table class="w-full">
+                        <thead class="bg-gray-700">
+                            <tr>
+                                <th class="px-4 py-3 text-left text-sm">Task ID</th>
+                                <th class="px-4 py-3 text-left text-sm">Reddit Link</th>
+                                <th class="px-4 py-3 text-left text-sm">Submitted</th>
+                                <th class="px-4 py-3 text-left text-sm">Status</th>
+                                <th class="px-4 py-3 text-right text-sm">Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${submissions.map(sub => {
+                                const task = DB.tasks.find(t => t.taskId === sub.taskId);
+                                const statusColors = {
+                                    pending: 'bg-yellow-600',
+                                    approved: 'bg-green-600',
+                                    rejected: 'bg-red-600'
+                                };
+                                return `
+                                    <tr class="border-t border-gray-700 hover:bg-gray-700/50">
+                                        <td class="px-4 py-3 text-sm font-mono">${sub.taskId}</td>
+                                        <td class="px-4 py-3 text-sm">
+                                            <a href="${sub.redditLink}" target="_blank" class="text-blue-400 hover:underline">
+                                                ${sub.redditLink.substring(0, 40)}...
+                                            </a>
+                                        </td>
+                                        <td class="px-4 py-3 text-sm text-gray-400">${formatDate(sub.submittedAt)}</td>
+                                        <td class="px-4 py-3">
+                                            <span class="px-2 py-1 ${statusColors[sub.status]} rounded-full text-xs capitalize">
+                                                ${sub.status}
+                                            </span>
+                                        </td>
+                                        <td class="px-4 py-3 text-right font-semibold ${sub.status === 'approved' ? 'text-green-400' : 'text-gray-400'}">
+                                            ${sub.status === 'approved' ? '+' : ''}$${task ? task.price.toFixed(2) : '0.00'}
+                                        </td>
+                                    </tr>
+                                `;
+                            }).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        }
+
+        function renderSubmitModal() {
+            return `
+                <div id="submitModal" class="hidden fixed inset-0 bg-black/70 modal-backdrop flex items-center justify-center z-50 px-4">
+                    <div class="bg-gray-800 rounded-xl p-6 max-w-md w-full border border-gray-700">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-xl font-bold">Submit Task</h3>
+                            <button onclick="closeSubmitModal()" class="text-gray-400 hover:text-white">
+                                <i class="fas fa-times text-xl"></i>
+                            </button>
+                        </div>
+                        <input type="hidden" id="submitTaskId">
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm text-gray-400 mb-1">Reddit Link</label>
+                                <input type="url" id="redditLink"
+                                    class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 focus:border-orange-500 focus:outline-none"
+                                    placeholder="https://reddit.com/r/...">
+                                <p class="text-xs text-gray-500 mt-1">Paste the Reddit post or comment permalink</p>
+                            </div>
+                            <div id="submitError" class="hidden bg-red-900/50 border border-red-700 text-red-300 px-4 py-2 rounded-lg text-sm"></div>
+                            <button onclick="submitTask()"
+                                class="w-full bg-green-600 hover:bg-green-700 py-3 rounded-lg font-semibold transition">
+                                <i class="fas fa-check mr-2"></i>Submit for Review
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // ============================================
+        // ADMIN PANEL
+        // ============================================
+        function renderAdminPanel() {
+            const allTasks = AdminManager.getAllTasks();
+            const allSubmissions = AdminManager.getAllSubmissions();
+            const allUsers = AdminManager.getAllUsers();
+            
+            return `
+                ${renderNavbar(true)}
+                
+                <div class="max-w-7xl mx-auto px-4 py-6">
+                    <!-- Admin Stats -->
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                        <div class="bg-gray-800 rounded-xl p-4 border border-gray-700">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-gray-400 text-sm">Total Tasks</p>
+                                    <p class="text-2xl font-bold">${allTasks.length}</p>
+                                </div>
+                                <i class="fas fa-tasks text-3xl text-blue-400"></i>
+                            </div>
+                        </div>
+                        <div class="bg-gray-800 rounded-xl p-4 border border-gray-700">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-gray-400 text-sm">Pending Reviews</p>
+                                    <p class="text-2xl font-bold">${allSubmissions.filter(s => s.status === 'pending').length}</p>
+                                </div>
+                                <i class="fas fa-hourglass-half text-3xl text-yellow-400"></i>
+                            </div>
+                        </div>
+                        <div class="bg-gray-800 rounded-xl p-4 border border-gray-700">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-gray-400 text-sm">Total Users</p>
+                                    <p class="text-2xl font-bold">${allUsers.length}</p>
+                                </div>
+                                <i class="fas fa-users text-3xl text-green-400"></i>
+                            </div>
+                        </div>
+                        <div class="bg-gray-800 rounded-xl p-4 border border-gray-700">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-gray-400 text-sm">Approved Tasks</p>
+                                    <p class="text-2xl font-bold">${allSubmissions.filter(s => s.status === 'approved').length}</p>
+                                </div>
+                                <i class="fas fa-check-circle text-3xl text-green-400"></i>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Admin Tabs -->
+                    <div class="flex space-x-2 mb-6 border-b border-gray-700 pb-2">
+                        <button onclick="switchAdminTab('tasks')"
+                            class="px-4 py-2 rounded-t-lg ${adminTab === 'tasks' ? 'bg-purple-600' : 'bg-gray-700 hover:bg-gray-600'}">
+                            <i class="fas fa-tasks mr-2"></i>Manage Tasks
+                        </button>
+                        <button onclick="switchAdminTab('submissions')"
+                            class="px-4 py-2 rounded-t-lg ${adminTab === 'submissions' ? 'bg-purple-600' : 'bg-gray-700 hover:bg-gray-600'}">
+                            <i class="fas fa-file-alt mr-2"></i>Submissions
+                            ${allSubmissions.filter(s => s.status === 'pending').length > 0 ? 
+                                `<span class="ml-2 bg-red-500 text-xs px-2 py-0.5 rounded-full">${allSubmissions.filter(s => s.status === 'pending').length}</span>` : ''}
+                        </button>
+                        <button onclick="switchAdminTab('users')"
+                            class="px-4 py-2 rounded-t-lg ${adminTab === 'users' ? 'bg-purple-600' : 'bg-gray-700 hover:bg-gray-600'}">
+                            <i class="fas fa-users mr-2"></i>Users
+                        </button>
+                    </div>
+                    
+                    <!-- Admin Tab Content -->
+                    <div id="adminTabContent">
+                        ${adminTab === 'tasks' ? renderAdminTasks(allTasks) : ''}
+                        ${adminTab === 'submissions' ? renderAdminSubmissions(allSubmissions) : ''}
+                        ${adminTab === 'users' ? renderAdminUsers(allUsers) : ''}
+                    </div>
+                </div>
+                
+                ${renderTaskModal()}
+            `;
+        }
+
+        function renderAdminTasks(tasks) {
+            return `
+                <div class="mb-4">
+                    <button onclick="openTaskModal()"
+                        class="bg-green-600 hover:bg-green-700 px-4 py-2 rounded-lg font-semibold transition">
+                        <i class="fas fa-plus mr-2"></i>Create New Task
+                    </button>
+                </div>
+                
+                ${tasks.length === 0 ? `
+                    <div class="text-center py-16 bg-gray-800 rounded-xl border border-gray-700">
+                        <i class="fas fa-tasks text-6xl text-gray-600 mb-4"></i>
+                        <p class="text-gray-400 text-xl">No tasks created yet</p>
+                    </div>
+                ` : `
+                    <div class="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden">
+                        <table class="w-full">
+                            <thead class="bg-gray-700">
+                                <tr>
+                                    <th class="px-4 py-3 text-left text-sm">Task ID</th>
+                                    <th class="px-4 py-3 text-left text-sm">Type</th>
+                                    <th class="px-4 py-3 text-left text-sm">Details</th>
+                                    <th class="px-4 py-3 text-left text-sm">Price</th>
+                                    <th class="px-4 py-3 text-left text-sm">Status</th>
+                                    <th class="px-4 py-3 text-right text-sm">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${tasks.map(task => {
+                                    const statusColors = {
+                                        available: 'bg-green-600',
+                                        reserved: 'bg-yellow-600',
+                                        submitted: 'bg-blue-600',
+                                        approved: 'bg-purple-600',
+                                        rejected: 'bg-red-600'
+                                    };
+                                    return `
+                                        <tr class="border-t border-gray-700 hover:bg-gray-700/50">
+                                            <td class="px-4 py-3 text-sm font-mono">${task.taskId}</td>
+                                            <td class="px-4 py-3">
+                                                <span class="px-2 py-1 ${task.type === 'post' ? 'bg-blue-600' : 'bg-purple-600'} rounded text-xs capitalize">
+                                                    ${task.type}
+                                                </span>
+                                            </td>
+                                            <td class="px-4 py-3 text-sm text-gray-400 max-w-xs truncate">
+                                                ${task.type === 'post' ? task.title : task.commentText.substring(0, 50) + '...'}
+                                            </td>
+                                            <td class="px-4 py-3 font-semibold text-green-400">$${task.price.toFixed(2)}</td>
+                                            <td class="px-4 py-3">
+                                                <span class="px-2 py-1 ${statusColors[task.status]} rounded-full text-xs capitalize">
+                                                    ${task.status}
+                                                </span>
+                                            </td>
+                                            <td class="px-4 py-3 text-right">
+                                                ${task.status === 'available' ? `
+                                                    <button onclick="editTask('${task.taskId}')" class="text-blue-400 hover:text-blue-300 mr-3">
+                                                        <i class="fas fa-edit"></i>
+                                                    </button>
+                                                    <button onclick="deleteTask('${task.taskId}')" class="text-red-400 hover:text-red-300">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                ` : '<span class="text-gray-500 text-sm">Locked</span>'}
+                                            </td>
+                                        </tr>
+                                    `;
+                                }).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                `}
+            `;
+        }
+
+        function renderAdminSubmissions(submissions) {
+            const pendingSubmissions = submissions.filter(s => s.status === 'pending');
+            const processedSubmissions = submissions.filter(s => s.status !== 'pending');
+            
+            return `
+                <div class="space-y-6">
+                    ${pendingSubmissions.length > 0 ? `
+                        <div>
+                            <h3 class="text-lg font-semibold mb-4 flex items-center">
+                                <i class="fas fa-hourglass-half text-yellow-400 mr-2"></i>
+                                Pending Reviews (${pendingSubmissions.length})
+                            </h3>
+                            <div class="grid gap-4">
+                                ${pendingSubmissions.map(sub => `
+                                    <div class="bg-gray-800 rounded-xl p-5 border border-yellow-600">
+                                        <div class="flex items-start justify-between mb-4">
+                                            <div>
+                                                <p class="font-mono text-sm text-gray-400">${sub.taskId}</p>
+                                                <p class="font-semibold flex items-center">
+                                                    By: ${sub.user?.username || 'Unknown'}
+                                                    ${sub.user?.authProvider === 'google' ? '<i class="fab fa-google text-xs text-blue-400 ml-2"></i>' : ''}
+                                                </p>
+                                            </div>
+                                            <span class="text-green-400 font-bold">$${sub.task?.price?.toFixed(2) || '0.00'}</span>
+                                        </div>
+                                        
+                                        <div class="bg-gray-700 rounded-lg p-3 mb-4">
+                                            <p class="text-sm text-gray-400 mb-1">Task: ${sub.task?.type === 'post' ? sub.task.title : 'Comment Task'}</p>
+                                            <p class="text-sm"><strong>Submitted Link:</strong></p>
+                                            <a href="${sub.redditLink}" target="_blank" class="text-blue-400 hover:underline break-all">
+                                                ${sub.redditLink}
+                                            </a>
+                                        </div>
+                                        
+                                        <div class="flex space-x-3">
+                                            <button onclick="approveSubmission('${sub.id}')"
+                                                class="flex-1 bg-green-600 hover:bg-green-700 py-2 rounded-lg font-semibold transition">
+                                                <i class="fas fa-check mr-2"></i>Approve (+$${sub.task?.price?.toFixed(2) || '0'})
+                                            </button>
+                                            <button onclick="rejectSubmission('${sub.id}')"
+                                                class="flex-1 bg-red-600 hover:bg-red-700 py-2 rounded-lg font-semibold transition">
+                                                <i class="fas fa-times mr-2"></i>Reject
+                                            </button>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    ` : `
+                        <div class="text-center py-8 bg-gray-800 rounded-xl border border-gray-700">
+                            <i class="fas fa-check-circle text-4xl text-green-400 mb-2"></i>
+                            <p class="text-gray-400">No pending submissions to review</p>
+                        </div>
+                    `}
+                    
+                    ${processedSubmissions.length > 0 ? `
+                        <div>
+                            <h3 class="text-lg font-semibold mb-4">Processed Submissions</h3>
+                            <div class="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden">
+                                <table class="w-full">
+                                    <thead class="bg-gray-700">
+                                        <tr>
+                                            <th class="px-4 py-3 text-left text-sm">Task ID</th>
+                                            <th class="px-4 py-3 text-left text-sm">User</th>
+                                            <th class="px-4 py-3 text-left text-sm">Status</th>
+                                            <th class="px-4 py-3 text-left text-sm">Processed</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        ${processedSubmissions.map(sub => `
+                                            <tr class="border-t border-gray-700">
+                                                <td class="px-4 py-3 font-mono text-sm">${sub.taskId}</td>
+                                                <td class="px-4 py-3">
+                                                    ${sub.user?.username || 'Unknown'}
+                                                    ${sub.user?.authProvider === 'google' ? '<i class="fab fa-google text-xs text-blue-400 ml-1"></i>' : ''}
+                                                </td>
+                                                <td class="px-4 py-3">
+                                                    <span class="px-2 py-1 ${sub.status === 'approved' ? 'bg-green-600' : 'bg-red-600'} rounded-full text-xs capitalize">
+                                                        ${sub.status}
+                                                    </span>
+                                                </td>
+                                                <td class="px-4 py-3 text-sm text-gray-400">${formatDate(sub.submittedAt)}</td>
+                                            </tr>
+                                        `).join('')}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+        }
+
+        function renderAdminUsers(users) {
+            return `
+                <div class="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden">
+                    <table class="w-full">
+                        <thead class="bg-gray-700">
+                            <tr>
+                                <th class="px-4 py-3 text-left text-sm">Username</th>
+                                <th class="px-4 py-3 text-left text-sm">Auth</th>
+                                <th class="px-4 py-3 text-left text-sm">Karma</th>
+                                <th class="px-4 py-3 text-left text-sm">Account Age</th>
+                                <th class="px-4 py-3 text-left text-sm">Eligible</th>
+                                <th class="px-4 py-3 text-right text-sm">Wallet Balance</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${users.length === 0 ? `
+                                <tr>
+                                    <td colspan="6" class="px-4 py-8 text-center text-gray-400">No users registered yet</td>
+                                </tr>
+                            ` : users.map(user => {
+                                const eligible = user.redditKarma >= 200 && user.accountAge >= 1;
+                                return `
+                                    <tr class="border-t border-gray-700 hover:bg-gray-700/50">
+                                        <td class="px-4 py-3">
+                                            <div class="flex items-center space-x-2">
+                                                ${user.photoURL 
+                                                    ? `<img src="${user.photoURL}" class="w-6 h-6 rounded-full">`
+                                                    : `<i class="fas fa-user text-gray-400"></i>`
+                                                }
+                                                <span class="font-semibold">${user.username}</span>
+                                            </div>
+                                        </td>
+                                        <td class="px-4 py-3">
+                                            ${user.authProvider === 'google' 
+                                                ? '<span class="flex items-center text-sm"><i class="fab fa-google text-blue-400 mr-1"></i>Google</span>'
+                                                : '<span class="text-sm text-gray-400"><i class="fas fa-key mr-1"></i>Local</span>'
+                                            }
+                                        </td>
+                                        <td class="px-4 py-3 ${user.redditKarma >= 200 ? 'text-green-400' : 'text-red-400'}">
+                                            ${user.redditKarma}
+                                        </td>
+                                        <td class="px-4 py-3 ${user.accountAge >= 1 ? 'text-green-400' : 'text-red-400'}">
+                                            ${user.accountAge} month(s)
+                                        </td>
+                                        <td class="px-4 py-3">
+                                            ${eligible 
+                                                ? '<span class="text-green-400"><i class="fas fa-check-circle"></i> Yes</span>'
+                                                : '<span class="text-red-400"><i class="fas fa-times-circle"></i> No</span>'}
+                                        </td>
+                                        <td class="px-4 py-3 text-right font-semibold text-green-400">$${user.walletBalance.toFixed(2)}</td>
+                                    </tr>
+                                `;
+                            }).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        }
+
+        function renderTaskModal() {
+            return `
+                <div id="taskModal" class="hidden fixed inset-0 bg-black/70 modal-backdrop flex items-center justify-center z-50 px-4">
+                    <div class="bg-gray-800 rounded-xl p-6 max-w-lg w-full border border-gray-700 max-h-[90vh] overflow-y-auto">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-xl font-bold" id="taskModalTitle">Create New Task</h3>
+                            <button onclick="closeTaskModal()" class="text-gray-400 hover:text-white">
+                                <i class="fas fa-times text-xl"></i>
+                            </button>
+                        </div>
+                        
+                        <input type="hidden" id="editingTaskId">
+                        
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm text-gray-400 mb-1">Task Type</label>
+                                <select id="taskType" onchange="toggleTaskFields()"
+                                    class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 focus:border-purple-500 focus:outline-none">
+                                    <option value="post">Post Task</option>
+                                    <option value="comment">Comment Task</option>
+                                </select>
+                            </div>
+                            
+                            <div id="postFields">
+                                <div class="space-y-4">
+                                    <div>
+                                        <label class="block text-sm text-gray-400 mb-1">Post Title</label>
+                                        <input type="text" id="taskTitle"
+                                            class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 focus:border-purple-500 focus:outline-none"
+                                            placeholder="Enter post title">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm text-gray-400 mb-1">Post Body</label>
+                                        <textarea id="taskBody" rows="3"
+                                            class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 focus:border-purple-500 focus:outline-none"
+                                            placeholder="Enter post body content"></textarea>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm text-gray-400 mb-1">Image URL (optional)</label>
+                                        <input type="url" id="taskImage"
+                                            class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 focus:border-purple-500 focus:outline-none"
+                                            placeholder="https://example.com/image.jpg">
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div id="commentFields" class="hidden">
+                                <div class="space-y-4">
+                                    <div>
+                                        <label class="block text-sm text-gray-400 mb-1">Reddit Post Link</label>
+                                        <input type="url" id="taskPostLink"
+                                            class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 focus:border-purple-500 focus:outline-none"
+                                            placeholder="https://reddit.com/r/...">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm text-gray-400 mb-1">Exact Comment Text</label>
+                                        <textarea id="taskCommentText" rows="3"
+                                            class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 focus:border-purple-500 focus:outline-none"
+                                            placeholder="Enter the exact comment to post"></textarea>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm text-gray-400 mb-1">Price ($)</label>
+                                <input type="number" id="taskPrice" step="0.01" min="0.01"
+                                    class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 focus:border-purple-500 focus:outline-none"
+                                    placeholder="e.g. 5.00">
+                            </div>
+                            
+                            <div id="taskError" class="hidden bg-red-900/50 border border-red-700 text-red-300 px-4 py-2 rounded-lg text-sm"></div>
+                            
+                            <button onclick="saveTask()"
+                                class="w-full bg-purple-600 hover:bg-purple-700 py-3 rounded-lg font-semibold transition">
+                                <i class="fas fa-save mr-2"></i><span id="taskModalBtn">Create Task</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // ============================================
+        // EVENT HANDLERS
+        // ============================================
+        function attachEventListeners() {
+            // Timer updates for active tasks
+            setInterval(() => {
+                const myReservedTasks = TaskManager.getMyReservedTasks(Auth.currentUser?.id);
+                myReservedTasks.forEach(task => {
+                    const timerEl = document.getElementById(`timer-${task.taskId}`);
+                    if (timerEl) {
+                        const remaining = TaskManager.getRemainingTime(task);
+                        timerEl.textContent = formatTime(remaining);
+                        if (remaining === 0) {
+                            render();
+                        }
+                    }
+                });
+            }, 1000);
+        }
+
+        // Auth handlers
+        window.switchAuthTab = function(tab) {
+            const loginForm = document.getElementById('loginForm');
+            const registerForm = document.getElementById('registerForm');
+            const loginTab = document.getElementById('loginTab');
+            const registerTab = document.getElementById('registerTab');
+            
+            if (tab === 'login') {
+                loginForm.classList.remove('hidden');
+                registerForm.classList.add('hidden');
+                loginTab.className = 'flex-1 py-2 text-center border-b-2 border-orange-500 text-orange-500 font-semibold';
+                registerTab.className = 'flex-1 py-2 text-center border-b-2 border-gray-600 text-gray-400 hover:text-white';
+            } else {
+                loginForm.classList.add('hidden');
+                registerForm.classList.remove('hidden');
+                registerTab.className = 'flex-1 py-2 text-center border-b-2 border-orange-500 text-orange-500 font-semibold';
+                loginTab.className = 'flex-1 py-2 text-center border-b-2 border-gray-600 text-gray-400 hover:text-white';
+            }
+        };
+
+        window.handleLogin = function() {
+            const username = document.getElementById('loginUsername').value;
+            const password = document.getElementById('loginPassword').value;
+            const errorEl = document.getElementById('authError');
+            
+            const result = Auth.login(username, password);
+            if (result.success) {
+                render();
+            } else {
+                errorEl.textContent = result.error;
+                errorEl.classList.remove('hidden');
+            }
+        };
+
+        window.handleGoogleLogin = async function() {
+            const errorEl = document.getElementById('authError');
+            errorEl.classList.add('hidden');
+            
+            const result = await Auth.loginWithGoogle();
+            
+            if (result.success) {
+                render();
+            } else {
+                errorEl.innerHTML = '<strong>Error:</strong> ' + result.error;
+                errorEl.classList.remove('hidden');
+                
+                // Also show alert for unauthorized domain error
+                if (result.error.includes('not authorized')) {
+                    alert('⚠️ Firebase Domain Error:\n\n' + result.error + '\n\nCurrent domain: ' + window.location.hostname);
+                }
+            }
+        };
+
+        window.handleRegister = function() {
+            const username = document.getElementById('regUsername').value;
+            const password = document.getElementById('regPassword').value;
+            const karma = document.getElementById('regKarma').value;
+            const age = document.getElementById('regAge').value;
+            const errorEl = document.getElementById('authError');
+            
+            if (!username || !password || !karma || !age) {
+                errorEl.textContent = 'Please fill in all fields';
+                errorEl.classList.remove('hidden');
+                return;
+            }
+            
+            const result = Auth.register(username, password, karma, age);
+            if (result.success) {
+                render();
+            } else {
+                errorEl.textContent = result.error;
+                errorEl.classList.remove('hidden');
+            }
+        };
+
+        window.saveRedditInfo = function() {
+            const karma = document.getElementById('redditKarma').value;
+            const age = document.getElementById('redditAge').value;
+            const errorEl = document.getElementById('redditInfoError');
+            
+            if (!karma || !age) {
+                errorEl.textContent = 'Please fill in all fields';
+                errorEl.classList.remove('hidden');
+                return;
+            }
+            
+            const result = DB.updateRedditInfo(Auth.currentUser.id, karma, age);
+            if (result.success) {
+                Auth.currentUser = { ...result.user, token: Auth.currentUser.token };
+                localStorage.setItem('reddit_platform_session', JSON.stringify(Auth.currentUser));
+                render();
+            } else {
+                errorEl.textContent = 'Failed to update Reddit info';
+                errorEl.classList.remove('hidden');
+            }
+        };
+
+        window.handleLogout = function() {
+            Auth.logout();
+            render();
+        };
+
+        // Tab handlers
+        window.switchUserTab = function(tab) {
+            activeTab = tab;
+            render();
+        };
+
+        window.switchAdminTab = function(tab) {
+            adminTab = tab;
+            render();
+        };
+
+        // Task handlers
+        window.acceptTask = function(taskId) {
+            const result = DB.acceptTask(taskId, Auth.currentUser.id);
+            if (result.success) {
+                activeTab = 'active';
+                render();
+            } else {
+                alert(result.error);
+            }
+        };
+
+        window.openSubmitModal = function(taskId) {
+            document.getElementById('submitTaskId').value = taskId;
+            document.getElementById('redditLink').value = '';
+            document.getElementById('submitError').classList.add('hidden');
+            document.getElementById('submitModal').classList.remove('hidden');
+        };
+
+        window.closeSubmitModal = function() {
+            document.getElementById('submitModal').classList.add('hidden');
+        };
+
+        window.submitTask = function() {
+            const taskId = document.getElementById('submitTaskId').value;
+            const redditLink = document.getElementById('redditLink').value;
+            const errorEl = document.getElementById('submitError');
+            
+            if (!redditLink) {
+                errorEl.textContent = 'Please enter a Reddit link';
+                errorEl.classList.remove('hidden');
+                return;
+            }
+            
+            const result = TaskManager.submitTask(taskId, Auth.currentUser.id, redditLink);
+            if (result.success) {
+                closeSubmitModal();
+                activeTab = 'history';
+                render();
+            } else {
+                errorEl.textContent = result.error;
+                errorEl.classList.remove('hidden');
+            }
+        };
+
+        // Admin handlers
+        window.openTaskModal = function(task = null) {
+            document.getElementById('editingTaskId').value = task?.taskId || '';
+            document.getElementById('taskModalTitle').textContent = task ? 'Edit Task' : 'Create New Task';
+            document.getElementById('taskModalBtn').textContent = task ? 'Update Task' : 'Create Task';
+            
+            if (task) {
+                document.getElementById('taskType').value = task.type;
+                document.getElementById('taskTitle').value = task.title || '';
+                document.getElementById('taskBody').value = task.body || '';
+                document.getElementById('taskImage').value = task.image || '';
+                document.getElementById('taskPostLink').value = task.postLink || '';
+                document.getElementById('taskCommentText').value = task.commentText || '';
+                document.getElementById('taskPrice').value = task.price;
+            } else {
+                document.getElementById('taskType').value = 'post';
+                document.getElementById('taskTitle').value = '';
+                document.getElementById('taskBody').value = '';
+                document.getElementById('taskImage').value = '';
+                document.getElementById('taskPostLink').value = '';
+                document.getElementById('taskCommentText').value = '';
+                document.getElementById('taskPrice').value = '';
+            }
+            
+            toggleTaskFields();
+            document.getElementById('taskError').classList.add('hidden');
+            document.getElementById('taskModal').classList.remove('hidden');
+        };
+
+        window.closeTaskModal = function() {
+            document.getElementById('taskModal').classList.add('hidden');
+        };
+
+        window.toggleTaskFields = function() {
+            const type = document.getElementById('taskType').value;
+            document.getElementById('postFields').classList.toggle('hidden', type !== 'post');
+            document.getElementById('commentFields').classList.toggle('hidden', type !== 'comment');
+        };
+
+        window.saveTask = function() {
+            const editingId = document.getElementById('editingTaskId').value;
+            const type = document.getElementById('taskType').value;
+            const price = document.getElementById('taskPrice').value;
+            const errorEl = document.getElementById('taskError');
+            
+            let taskData = { type, price };
+            
+            if (type === 'post') {
+                taskData.title = document.getElementById('taskTitle').value;
+                taskData.body = document.getElementById('taskBody').value;
+                taskData.image = document.getElementById('taskImage').value;
+                
+                if (!taskData.title || !taskData.body) {
+                    errorEl.textContent = 'Please fill in title and body';
+                    errorEl.classList.remove('hidden');
+                    return;
+                }
+            } else {
+                taskData.postLink = document.getElementById('taskPostLink').value;
+                taskData.commentText = document.getElementById('taskCommentText').value;
+                
+                if (!taskData.postLink || !taskData.commentText) {
+                    errorEl.textContent = 'Please fill in post link and comment text';
+                    errorEl.classList.remove('hidden');
+                    return;
+                }
+            }
+            
+            if (!price || parseFloat(price) <= 0) {
+                errorEl.textContent = 'Please enter a valid price';
+                errorEl.classList.remove('hidden');
+                return;
+            }
+            
+            if (editingId) {
+                const result = TaskManager.updateTask(editingId, taskData);
+                if (!result.success) {
+                    errorEl.textContent = result.error;
+                    errorEl.classList.remove('hidden');
+                    return;
+                }
+            } else {
+                TaskManager.createTask(taskData);
+            }
+            
+            closeTaskModal();
+            render();
+        };
+
+        window.editTask = function(taskId) {
+            const task = DB.tasks.find(t => t.taskId === taskId);
+            if (task) {
+                openTaskModal(task);
+            }
+        };
+
+        window.deleteTask = function(taskId) {
+            if (confirm('Are you sure you want to delete this task?')) {
+                const result = TaskManager.deleteTask(taskId);
+                if (result.success) {
+                    render();
+                } else {
+                    alert(result.error);
+                }
+            }
+        };
+
+        window.approveSubmission = function(submissionId) {
+            const result = AdminManager.approveSubmission(submissionId);
+            if (result.success) {
+                render();
+            } else {
+                alert(result.error);
+            }
+        };
+
+        window.rejectSubmission = function(submissionId) {
+            if (confirm('Are you sure you want to reject this submission?')) {
+                const result = AdminManager.rejectSubmission(submissionId);
+                if (result.success) {
+                    render();
+                } else {
+                    alert(result.error);
+                }
+            }
+        };
+
+        // Initial render
+        render();
+
+        // Auto-refresh for expired reservations
+        setInterval(() => {
+            TaskManager.checkExpiredReservations();
+        }, 10000);
+        
+        // Log Firebase v10 status
+        console.log('Reddit Task Platform initialized with Firebase v10 Modular SDK');
+    </script>
+</body>
+</html>
