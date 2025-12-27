@@ -85,6 +85,53 @@
         .animate-fade-in {
             animation: fade-in 0.3s ease forwards;
         }
+        
+        /* Mobile Responsive Styles */
+        @media (max-width: 768px) {
+            .mobile-menu-btn { display: block; }
+            .desktop-nav { display: none; }
+            .nav-items-mobile { 
+                display: flex;
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            .mobile-stack {
+                flex-direction: column !important;
+                align-items: stretch !important;
+            }
+            .mobile-full {
+                width: 100% !important;
+            }
+            .mobile-text-sm {
+                font-size: 0.75rem !important;
+            }
+            .mobile-p-2 {
+                padding: 0.5rem !important;
+            }
+            .mobile-hidden {
+                display: none !important;
+            }
+            .mobile-scroll-x {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+        }
+        
+        /* Scrollbar styling */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #1f2937;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #4b5563;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #6b7280;
+        }
     </style>
 </head>
 <body class="bg-gray-900 text-white min-h-screen flex flex-col">
@@ -1202,21 +1249,24 @@
             return `
                 <nav class="bg-gray-800 border-b border-gray-700 sticky top-0 z-50">
                     <div class="max-w-7xl mx-auto px-4">
-                        <div class="flex items-center justify-between h-16">
-                            <div class="flex items-center space-x-4">
+                        <div class="flex items-center justify-between h-14 md:h-16">
+                            <!-- Logo -->
+                            <div class="flex items-center space-x-2 md:space-x-4">
                                 <div class="flex items-center space-x-2">
-                                    <i class="fab fa-reddit text-orange-500 text-2xl"></i>
-                                    <span class="text-xl font-bold">Reddit Tasks</span>
+                                    <i class="fab fa-reddit text-orange-500 text-xl md:text-2xl"></i>
+                                    <span class="text-lg md:text-xl font-bold hidden sm:inline">Reddit Tasks</span>
+                                    <span class="text-lg font-bold sm:hidden">Tasks</span>
                                 </div>
-                                <span class="bg-green-600 text-xs px-2 py-1 rounded-full">
+                                <span class="bg-green-600 text-xs px-2 py-0.5 rounded-full hidden md:inline-flex items-center">
                                     <i class="fas fa-database mr-1"></i>Firebase
                                 </span>
-                                ${isAdmin ? '<span class="bg-purple-600 text-xs px-2 py-1 rounded-full">ADMIN</span>' : ''}
+                                ${isAdmin ? '<span class="bg-purple-600 text-xs px-2 py-0.5 rounded-full">ADMIN</span>' : ''}
                             </div>
                             
-                            <div class="flex items-center space-x-4">
+                            <!-- Desktop Nav -->
+                            <div class="hidden md:flex items-center space-x-4">
                                 ${!isAdmin ? `
-                                    <button onclick="openWalletModal()" class="flex items-center space-x-2 bg-gray-700 hover:bg-gray-600 px-3 py-1 rounded-lg transition cursor-pointer">
+                                    <button onclick="openWalletModal()" class="flex items-center space-x-2 bg-gray-700 hover:bg-gray-600 px-3 py-1.5 rounded-lg transition cursor-pointer">
                                         <i class="fas fa-wallet text-green-400"></i>
                                         <span class="font-semibold">$${(Auth.currentUser.walletBalance || 0).toFixed(2)}</span>
                                         <i class="fas fa-chevron-down text-xs text-gray-400"></i>
@@ -1237,26 +1287,48 @@
                                     <i class="fas fa-sign-out-alt mr-2"></i>Logout
                                 </button>
                             </div>
+                            
+                            <!-- Mobile Nav -->
+                            <div class="flex md:hidden items-center space-x-2">
+                                ${!isAdmin ? `
+                                    <button onclick="openWalletModal()" class="flex items-center space-x-1 bg-gray-700 px-2 py-1 rounded-lg">
+                                        <i class="fas fa-wallet text-green-400 text-sm"></i>
+                                        <span class="font-semibold text-sm">$${(Auth.currentUser.walletBalance || 0).toFixed(2)}</span>
+                                    </button>
+                                ` : ''}
+                                ${photoURL ? `
+                                    <img src="${photoURL}" alt="Profile" class="w-7 h-7 rounded-full border-2 border-orange-500">
+                                ` : `
+                                    <i class="fas fa-user text-gray-400"></i>
+                                `}
+                                <button onclick="handleLogout()" class="bg-red-600 hover:bg-red-700 p-2 rounded-lg text-sm transition">
+                                    <i class="fas fa-sign-out-alt"></i>
+                                </button>
+                            </div>
                         </div>
                     </div>
                     
                     ${!isAdmin ? `
                         <div class="bg-gradient-to-r ${eligible ? 'from-green-900 to-green-800' : 'from-red-900 to-red-800'} px-4 py-2">
-                            <div class="max-w-7xl mx-auto flex items-center justify-between">
+                            <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-start md:items-center justify-between gap-2 md:gap-0">
                                 <div class="flex items-center space-x-2">
                                     <i class="fas ${eligible ? 'fa-check-circle text-green-400' : 'fa-exclamation-triangle text-yellow-400'}"></i>
-                                    <span class="text-sm">
+                                    <span class="text-xs md:text-sm">
                                         ${eligible 
-                                            ? 'You are eligible to accept tasks! Your Comment or Post Must be live for 5 day for payout Qualification' 
-                                            : 'Eligibility Required: Minimum 200 karma & 1 month old Reddit account'}
+                                            ? 'You are eligible to accept tasks!   Your Post or Comment Must be live Minimum 5day for Payout Qualification' 
+                                            : 'Need: 200+ karma & 1+ month account'}
                                     </span>
                                 </div>
-                                <div class="flex items-center space-x-4 text-sm">
+                                <div class="flex items-center space-x-3 md:space-x-4 text-xs md:text-sm">
+                                    <button onclick="openUpdateProfileModal()" class="flex items-center space-x-1 bg-gray-700/50 hover:bg-gray-600/50 px-2 py-1 rounded transition" title="Update Reddit Info">
+                                        <i class="fas fa-edit text-xs"></i>
+                                        <span class="hidden sm:inline">Update</span>
+                                    </button>
                                     <span class="${Auth.currentUser.redditKarma >= 200 ? 'text-green-400' : 'text-red-400'}">
-                                        <i class="fas fa-arrow-up mr-1"></i>${Auth.currentUser.redditKarma || 0} karma
+                                        <i class="fas fa-arrow-up mr-1"></i>${Auth.currentUser.redditKarma || 0}
                                     </span>
                                     <span class="${Auth.currentUser.accountAge >= 1 ? 'text-green-400' : 'text-red-400'}">
-                                        <i class="fas fa-calendar mr-1"></i>${Auth.currentUser.accountAge || 0} month(s) old
+                                        <i class="fas fa-calendar mr-1"></i>${Auth.currentUser.accountAge || 0}m
                                     </span>
                                 </div>
                             </div>
@@ -1325,7 +1397,7 @@
                                         <i class="fas fa-sign-in-alt mr-2"></i>Login
                                     </button>
                                 </div>
-                              
+                            
                             </div>
                             
                             <div id="registerForm" class="hidden">
@@ -1351,18 +1423,11 @@
                                             placeholder="https://reddit.com/user/yourname">
                                         <p class="text-xs text-gray-500 mt-1">Required to verify your Reddit account</p>
                                     </div>
-                                    <div>
-                                        <label class="block text-sm text-gray-400 mb-1">Your Reddit Karma</label>
-                                        <input type="number" id="regKarma"
-                                            class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 focus:border-orange-500 focus:outline-none"
-                                            placeholder="e.g. 500">
+                                    
+                                    <div class="bg-blue-900/30 border border-blue-700 rounded-lg p-3">
+                                        <p class="text-xs text-blue-300"><i class="fas fa-info-circle mr-1"></i>You can update your karma & account age after login from the dashboard.</p>
                                     </div>
-                                    <div>
-                                        <label class="block text-sm text-gray-400 mb-1">Account Age (months)</label>
-                                        <input type="number" id="regAge"
-                                            class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 focus:border-orange-500 focus:outline-none"
-                                            placeholder="e.g. 6">
-                                    </div>
+                                    
                                     <button onclick="handleRegister()"
                                         class="w-full bg-orange-600 hover:bg-orange-700 py-3 rounded-lg font-semibold transition">
                                         <i class="fas fa-user-plus mr-2"></i>Register
@@ -1468,67 +1533,71 @@
                 
                 <div class="max-w-7xl mx-auto px-4 py-6">
                     <!-- Reddit Profile Link -->
-                    <div class="bg-gradient-to-r from-orange-900/50 to-orange-800/50 rounded-xl p-4 border border-orange-700 mb-6">
-                        <div class="flex items-center justify-between flex-wrap gap-4">
+                    <div class="bg-gradient-to-r from-orange-900/50 to-orange-800/50 rounded-xl p-3 md:p-4 border border-orange-700 mb-4 md:mb-6">
+                        <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 md:gap-4">
                             <div class="flex items-center space-x-3">
-                                <i class="fab fa-reddit text-orange-500 text-2xl"></i>
-                                <div>
-                                    <p class="text-sm text-gray-400">Your Reddit Profile</p>
+                                <i class="fab fa-reddit text-orange-500 text-xl md:text-2xl"></i>
+                                <div class="min-w-0 flex-1">
+                                    <p class="text-xs md:text-sm text-gray-400">Your Reddit Profile</p>
                                     <a href="${Auth.currentUser.redditProfileLink || '#'}" target="_blank" 
-                                        class="text-orange-400 hover:text-orange-300 hover:underline font-medium">
-                                        ${Auth.currentUser.redditProfileLink || 'Not provided'}
+                                        class="text-orange-400 hover:text-orange-300 hover:underline font-medium text-sm md:text-base truncate block max-w-xs">
+                                        ${Auth.currentUser.redditProfileLink ? Auth.currentUser.redditProfileLink.replace('https://', '').substring(0, 30) + '...' : 'Not provided'}
                                     </a>
                                 </div>
                             </div>
-                            <div class="flex items-center space-x-6">
+                            <div class="flex items-center justify-between md:justify-end space-x-4 md:space-x-6">
                                 <div class="text-center">
-                                    <p class="text-xs text-gray-500">Daily Post Tasks</p>
-                                    <p class="font-bold ${dailyCounts.postCount >= 3 ? 'text-red-400' : 'text-green-400'}">${dailyCounts.postCount}/3</p>
+                                    <p class="text-xs text-gray-500">Post Tasks</p>
+                                    <p class="font-bold text-sm md:text-base ${dailyCounts.postCount >= 3 ? 'text-red-400' : 'text-green-400'}">${dailyCounts.postCount}/3</p>
                                 </div>
                                 <div class="text-center">
-                                    <p class="text-xs text-gray-500">Daily Comment Tasks</p>
-                                    <p class="font-bold ${dailyCounts.commentCount >= 10 ? 'text-red-400' : 'text-green-400'}">${dailyCounts.commentCount}/10</p>
+                                    <p class="text-xs text-gray-500">Comment Tasks</p>
+                                    <p class="font-bold text-sm md:text-base ${dailyCounts.commentCount >= 10 ? 'text-red-400' : 'text-green-400'}">${dailyCounts.commentCount}/10</p>
                                 </div>
+                                <button onclick="openUpdateProfileModal()" 
+                                    class="bg-orange-600 hover:bg-orange-700 px-3 py-1.5 rounded-lg text-sm transition md:hidden">
+                                    <i class="fas fa-edit"></i>
+                                </button>
                             </div>
                         </div>
                     </div>
                     
                     <!-- Stats Cards -->
-                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                        <div class="bg-gray-800 rounded-xl p-4 border border-gray-700">
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-4 mb-4 md:mb-6">
+                        <div class="bg-gray-800 rounded-xl p-3 md:p-4 border border-gray-700">
                             <div class="flex items-center justify-between">
                                 <div>
-                                    <p class="text-gray-400 text-sm">Available Tasks</p>
-                                    <p class="text-2xl font-bold">${availableTasks.length}</p>
+                                    <p class="text-gray-400 text-xs md:text-sm">Available</p>
+                                    <p class="text-xl md:text-2xl font-bold">${availableTasks.length}</p>
                                 </div>
-                                <i class="fas fa-tasks text-3xl text-blue-400"></i>
+                                <i class="fas fa-tasks text-2xl md:text-3xl text-blue-400"></i>
                             </div>
                         </div>
-                        <div class="bg-gray-800 rounded-xl p-4 border border-gray-700">
+                        <div class="bg-gray-800 rounded-xl p-3 md:p-4 border border-gray-700">
                             <div class="flex items-center justify-between">
                                 <div>
-                                    <p class="text-gray-400 text-sm">My Active Tasks</p>
-                                    <p class="text-2xl font-bold">${myReservedTasks.length}</p>
+                                    <p class="text-gray-400 text-xs md:text-sm">Active</p>
+                                    <p class="text-xl md:text-2xl font-bold">${myReservedTasks.length}</p>
                                 </div>
-                                <i class="fas fa-clock text-3xl text-yellow-400"></i>
+                                <i class="fas fa-clock text-2xl md:text-3xl text-yellow-400"></i>
                             </div>
                         </div>
-                        <div class="bg-gray-800 rounded-xl p-4 border border-gray-700">
+                        <div class="bg-gray-800 rounded-xl p-3 md:p-4 border border-gray-700">
                             <div class="flex items-center justify-between">
                                 <div>
-                                    <p class="text-gray-400 text-sm">Completed</p>
-                                    <p class="text-2xl font-bold">${mySubmissions.filter(s => s.status === 'approved').length}</p>
+                                    <p class="text-gray-400 text-xs md:text-sm">Completed</p>
+                                    <p class="text-xl md:text-2xl font-bold">${mySubmissions.filter(s => s.status === 'approved').length}</p>
                                 </div>
-                                <i class="fas fa-check-circle text-3xl text-green-400"></i>
+                                <i class="fas fa-check-circle text-2xl md:text-3xl text-green-400"></i>
                             </div>
                         </div>
-                        <div class="bg-gray-800 rounded-xl p-4 border border-gray-700 cursor-pointer hover:border-green-500 transition" onclick="openWalletModal()">
+                        <div class="bg-gray-800 rounded-xl p-3 md:p-4 border border-gray-700 cursor-pointer hover:border-green-500 transition" onclick="openWalletModal()">
                             <div class="flex items-center justify-between">
                                 <div>
-                                    <p class="text-gray-400 text-sm">Wallet Balance</p>
-                                    <p class="text-2xl font-bold text-green-400">$${(Auth.currentUser.walletBalance || 0).toFixed(2)}</p>
+                                    <p class="text-gray-400 text-xs md:text-sm">Wallet</p>
+                                    <p class="text-xl md:text-2xl font-bold text-green-400">$${(Auth.currentUser.walletBalance || 0).toFixed(2)}</p>
                                 </div>
-                                <i class="fas fa-wallet text-3xl text-green-400"></i>
+                                <i class="fas fa-wallet text-2xl md:text-3xl text-green-400"></i>
                             </div>
                         </div>
                     </div>
@@ -1552,23 +1621,23 @@
                     </div>
                     
                     <!-- Tabs -->
-                    <div class="flex space-x-2 mb-6 border-b border-gray-700 pb-2 overflow-x-auto">
+                    <div class="flex space-x-1 md:space-x-2 mb-4 md:mb-6 border-b border-gray-700 pb-2 overflow-x-auto scrollbar-hide">
                         <button onclick="switchUserTab('available')" 
-                            class="px-4 py-2 rounded-t-lg whitespace-nowrap ${activeTab === 'available' ? 'bg-orange-600' : 'bg-gray-700 hover:bg-gray-600'}">
-                            <i class="fas fa-list mr-2"></i>Available Tasks
+                            class="px-2 md:px-4 py-2 rounded-t-lg whitespace-nowrap text-xs md:text-sm ${activeTab === 'available' ? 'bg-orange-600' : 'bg-gray-700 hover:bg-gray-600'}">
+                            <i class="fas fa-list md:mr-2"></i><span class="hidden md:inline">Available</span><span class="md:hidden">Tasks</span>
                         </button>
                         <button onclick="switchUserTab('active')"
-                            class="px-4 py-2 rounded-t-lg whitespace-nowrap ${activeTab === 'active' ? 'bg-orange-600' : 'bg-gray-700 hover:bg-gray-600'}">
-                            <i class="fas fa-hourglass-half mr-2"></i>My Active Tasks
-                            ${myReservedTasks.length > 0 ? `<span class="ml-2 bg-red-500 text-xs px-2 py-0.5 rounded-full">${myReservedTasks.length}</span>` : ''}
+                            class="px-2 md:px-4 py-2 rounded-t-lg whitespace-nowrap text-xs md:text-sm ${activeTab === 'active' ? 'bg-orange-600' : 'bg-gray-700 hover:bg-gray-600'}">
+                            <i class="fas fa-hourglass-half md:mr-2"></i><span class="hidden md:inline">Active</span>
+                            ${myReservedTasks.length > 0 ? `<span class="ml-1 bg-red-500 text-xs px-1.5 py-0.5 rounded-full">${myReservedTasks.length}</span>` : ''}
                         </button>
                         <button onclick="switchUserTab('history')"
-                            class="px-4 py-2 rounded-t-lg whitespace-nowrap ${activeTab === 'history' ? 'bg-orange-600' : 'bg-gray-700 hover:bg-gray-600'}">
-                            <i class="fas fa-history mr-2"></i>Submission History
+                            class="px-2 md:px-4 py-2 rounded-t-lg whitespace-nowrap text-xs md:text-sm ${activeTab === 'history' ? 'bg-orange-600' : 'bg-gray-700 hover:bg-gray-600'}">
+                            <i class="fas fa-history md:mr-2"></i><span class="hidden md:inline">History</span>
                         </button>
                         <button onclick="switchUserTab('withdrawals')"
-                            class="px-4 py-2 rounded-t-lg whitespace-nowrap ${activeTab === 'withdrawals' ? 'bg-orange-600' : 'bg-gray-700 hover:bg-gray-600'}">
-                            <i class="fas fa-money-bill-wave mr-2"></i>Withdrawals
+                            class="px-2 md:px-4 py-2 rounded-t-lg whitespace-nowrap text-xs md:text-sm ${activeTab === 'withdrawals' ? 'bg-orange-600' : 'bg-gray-700 hover:bg-gray-600'}">
+                            <i class="fas fa-money-bill-wave md:mr-2"></i><span class="hidden md:inline">Withdrawals</span>
                         </button>
                     </div>
                     
@@ -1583,6 +1652,66 @@
                 
                 ${renderSubmitModal()}
                 ${renderWalletModal()}
+                ${renderUpdateProfileModal()}
+            `;
+        }
+        
+        function renderUpdateProfileModal() {
+            return `
+                <div id="updateProfileModal" class="hidden fixed inset-0 bg-black/70 modal-backdrop flex items-center justify-center z-50 px-4">
+                    <div class="bg-gray-800 rounded-xl p-6 max-w-md w-full border border-gray-700">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-xl font-bold"><i class="fab fa-reddit text-orange-500 mr-2"></i>Update Reddit Info</h3>
+                            <button onclick="closeUpdateProfileModal()" class="text-gray-400 hover:text-white">
+                                <i class="fas fa-times text-xl"></i>
+                            </button>
+                        </div>
+                        
+                        <p class="text-gray-400 text-sm mb-4">Update your Reddit karma and account age to maintain eligibility for tasks.</p>
+                        
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm text-gray-400 mb-1">
+                                    <i class="fab fa-reddit text-orange-500 mr-1"></i>Reddit Profile Link
+                                </label>
+                                <input type="url" id="updateRedditProfileLink"
+                                    value="${Auth.currentUser.redditProfileLink || ''}"
+                                    class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 focus:border-orange-500 focus:outline-none"
+                                    placeholder="https://reddit.com/user/yourname">
+                            </div>
+                            <div>
+                                <label class="block text-sm text-gray-400 mb-1">Current Reddit Karma</label>
+                                <input type="number" id="updateKarma"
+                                    value="${Auth.currentUser.redditKarma || 0}"
+                                    class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 focus:border-orange-500 focus:outline-none"
+                                    placeholder="Enter your current karma">
+                                <p class="text-xs text-gray-500 mt-1">Check your Reddit profile for current karma</p>
+                            </div>
+                            <div>
+                                <label class="block text-sm text-gray-400 mb-1">Account Age (months)</label>
+                                <input type="number" id="updateAccountAge"
+                                    value="${Auth.currentUser.accountAge || 0}"
+                                    class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 focus:border-orange-500 focus:outline-none"
+                                    placeholder="How many months old is your account?">
+                            </div>
+                            
+                            <div class="bg-blue-900/30 border border-blue-700 rounded-lg p-3">
+                                <p class="text-sm text-blue-300"><i class="fas fa-info-circle mr-1"></i>Eligibility Requirements:</p>
+                                <ul class="text-xs text-blue-200 mt-1 space-y-1">
+                                    <li>• Minimum 200 Reddit karma</li>
+                                    <li>• Account age at least 1 month</li>
+                                </ul>
+                            </div>
+                            
+                            <div id="updateProfileError" class="hidden bg-red-900/50 border border-red-700 text-red-300 px-4 py-2 rounded-lg text-sm"></div>
+                            
+                            <button onclick="saveUpdatedProfile()"
+                                class="w-full bg-orange-600 hover:bg-orange-700 py-3 rounded-lg font-semibold transition">
+                                <i class="fas fa-save mr-2"></i>Save Changes
+                            </button>
+                        </div>
+                    </div>
+                </div>
             `;
         }
 
@@ -1598,7 +1727,7 @@
             }
             
             return `
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
                     ${tasks.map(task => {
                         const canAccept = eligible && TaskManager.canAcceptTask(task.type, dailyCounts);
                         const limitReached = eligible && !TaskManager.canAcceptTask(task.type, dailyCounts);
@@ -2715,17 +2844,16 @@
             const username = document.getElementById('regUsername').value;
             const password = document.getElementById('regPassword').value;
             const redditProfile = document.getElementById('regRedditProfile').value;
-            const karma = document.getElementById('regKarma').value;
-            const age = document.getElementById('regAge').value;
             const errorEl = document.getElementById('authError');
             
-            if (!username || !password || !redditProfile || !karma || !age) {
+            if (!username || !password || !redditProfile) {
                 errorEl.textContent = 'Please fill in all fields';
                 errorEl.classList.remove('hidden');
                 return;
             }
             
-            const result = await Auth.register(username, password, redditProfile, karma, age);
+            // Register with 0 karma and age - user will update after login
+            const result = await Auth.register(username, password, redditProfile, 0, 0);
             if (result.success) {
                 render();
             } else {
@@ -2831,6 +2959,66 @@
 
         window.closeWalletModal = function() {
             document.getElementById('walletModal').classList.add('hidden');
+        };
+        
+        // Update Profile Modal handlers
+        window.openUpdateProfileModal = function() {
+            render().then(() => {
+                document.getElementById('updateProfileModal').classList.remove('hidden');
+            });
+        };
+        
+        window.closeUpdateProfileModal = function() {
+            document.getElementById('updateProfileModal').classList.add('hidden');
+        };
+        
+        window.saveUpdatedProfile = async function() {
+            const redditProfileLink = document.getElementById('updateRedditProfileLink').value;
+            const karma = document.getElementById('updateKarma').value;
+            const accountAge = document.getElementById('updateAccountAge').value;
+            const errorEl = document.getElementById('updateProfileError');
+            
+            if (!karma || !accountAge) {
+                errorEl.textContent = 'Please fill in all fields';
+                errorEl.classList.remove('hidden');
+                return;
+            }
+            
+            // Validate Reddit profile link if provided
+            if (redditProfileLink && !redditProfileLink.includes('reddit.com/user/')) {
+                errorEl.textContent = 'Please enter a valid Reddit profile link';
+                errorEl.classList.remove('hidden');
+                return;
+            }
+            
+            showLoading('Updating profile...');
+            
+            const updates = {
+                redditKarma: parseInt(karma),
+                accountAge: parseInt(accountAge)
+            };
+            
+            if (redditProfileLink) {
+                updates.redditProfileLink = redditProfileLink;
+            }
+            
+            const result = await FirestoreDB.updateUser(Auth.currentUser.id, updates);
+            
+            if (result.success) {
+                Auth.currentUser.redditKarma = parseInt(karma);
+                Auth.currentUser.accountAge = parseInt(accountAge);
+                if (redditProfileLink) {
+                    Auth.currentUser.redditProfileLink = redditProfileLink;
+                }
+                localStorage.setItem('reddit_platform_session', JSON.stringify(Auth.currentUser));
+                hideLoading();
+                closeUpdateProfileModal();
+                render();
+            } else {
+                hideLoading();
+                errorEl.textContent = result.error || 'Failed to update profile';
+                errorEl.classList.remove('hidden');
+            }
         };
 
         window.selectWithdrawMethod = function(method) {
