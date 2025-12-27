@@ -2927,6 +2927,16 @@
                                     placeholder="e.g. 5.00">
                             </div>
                             
+                            <div>
+                                <label class="block text-sm text-gray-400 mb-1">
+                                    <i class="fas fa-arrow-up text-orange-500 mr-1"></i>Minimum Karma Required
+                                </label>
+                                <input type="number" id="taskKarmaRequired" min="0"
+                                    class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 focus:border-purple-500 focus:outline-none"
+                                    placeholder="e.g. 200">
+                                <p class="text-xs text-gray-500 mt-1">Users with this karma or higher can accept this task (default: 200)</p>
+                            </div>
+                            
                             <div id="taskError" class="hidden bg-red-900/50 border border-red-700 text-red-300 px-4 py-2 rounded-lg text-sm"></div>
                             
                             <button onclick="saveTask()"
@@ -3335,6 +3345,7 @@
                 document.getElementById('taskPostLink').value = task.postLink || '';
                 document.getElementById('taskCommentText').value = task.commentText || '';
                 document.getElementById('taskPrice').value = task.price;
+                document.getElementById('taskKarmaRequired').value = task.requiredKarma || 200;
             } else {
                 document.getElementById('taskType').value = 'post';
                 document.getElementById('taskSubreddit').value = '';
@@ -3344,6 +3355,7 @@
                 document.getElementById('taskPostLink').value = '';
                 document.getElementById('taskCommentText').value = '';
                 document.getElementById('taskPrice').value = '';
+                document.getElementById('taskKarmaRequired').value = '200';
             }
             
             toggleTaskFields();
@@ -3365,9 +3377,10 @@
             const editingId = document.getElementById('editingTaskId').value;
             const type = document.getElementById('taskType').value;
             const price = document.getElementById('taskPrice').value;
+            const karmaRequired = document.getElementById('taskKarmaRequired').value || 200;
             const errorEl = document.getElementById('taskError');
             
-            let taskData = { type, price: parseFloat(price) };
+            let taskData = { type, price: parseFloat(price), requiredKarma: parseInt(karmaRequired) };
             
             if (type === 'post') {
                 taskData.subreddit = document.getElementById('taskSubreddit').value;
@@ -3393,6 +3406,12 @@
             
             if (!price || parseFloat(price) <= 0) {
                 errorEl.textContent = 'Please enter a valid price';
+                errorEl.classList.remove('hidden');
+                return;
+            }
+            
+            if (parseInt(karmaRequired) < 0) {
+                errorEl.textContent = 'Karma requirement cannot be negative';
                 errorEl.classList.remove('hidden');
                 return;
             }
