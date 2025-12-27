@@ -69,6 +69,22 @@
         .upi-gradient {
             background: linear-gradient(135deg, #5F259F, #8B5CF6);
         }
+        .copy-btn {
+            transition: all 0.2s ease;
+        }
+        .copy-btn:hover {
+            transform: scale(1.05);
+        }
+        .copy-btn:active {
+            transform: scale(0.95);
+        }
+        @keyframes fade-in {
+            from { opacity: 0; transform: translate(-50%, 20px); }
+            to { opacity: 1; transform: translate(-50%, 0); }
+        }
+        .animate-fade-in {
+            animation: fade-in 0.3s ease forwards;
+        }
     </style>
 </head>
 <body class="bg-gray-900 text-white min-h-screen flex flex-col">
@@ -1231,7 +1247,7 @@
                                     <i class="fas ${eligible ? 'fa-check-circle text-green-400' : 'fa-exclamation-triangle text-yellow-400'}"></i>
                                     <span class="text-sm">
                                         ${eligible 
-                                            ? 'You are eligible to accept tasks!  Your post or comment Must be live minimum 5 day for Payout Qualification' 
+                                            ? 'You are eligible to accept tasks! Your Comment or Post Must be live for 5 day for payout Qualification' 
                                             : 'Eligibility Required: Minimum 200 karma & 1 month old Reddit account'}
                                     </span>
                                 </div>
@@ -1309,7 +1325,7 @@
                                         <i class="fas fa-sign-in-alt mr-2"></i>Login
                                     </button>
                                 </div>
-                               
+                              
                             </div>
                             
                             <div id="registerForm" class="hidden">
@@ -1651,6 +1667,11 @@
                         const remaining = TaskManager.getRemainingTime(task);
                         const isUrgent = remaining < 5 * 60 * 1000;
                         
+                        // Escape quotes for onclick handlers
+                        const escapedTitle = (task.title || '').replace(/'/g, "\\'").replace(/"/g, '\\"');
+                        const escapedBody = (task.body || '').replace(/'/g, "\\'").replace(/"/g, '\\"');
+                        const escapedComment = (task.commentText || '').replace(/'/g, "\\'").replace(/"/g, '\\"');
+                        
                         return `
                             <div class="bg-gray-800 rounded-xl p-5 border ${isUrgent ? 'border-red-500' : 'border-gray-700'}">
                                 <div class="flex items-center justify-between mb-4">
@@ -1658,7 +1679,7 @@
                                         <span class="px-3 py-1 ${task.type === 'post' ? 'bg-blue-600' : 'bg-purple-600'} rounded-full text-xs font-semibold">
                                             ${task.type === 'post' ? 'Post Task' : 'Comment Task'}
                                         </span>
-                                        <span class="text-xs text-gray-500">${task.taskId}</span>
+                                        <span class="text-xs text-gray-500">#${task.taskId}</span>
                                     </div>
                                     <div class="flex items-center space-x-4">
                                         <span class="text-green-400 font-bold text-lg">$${task.price.toFixed(2)}</span>
@@ -1671,13 +1692,66 @@
                                 
                                 <div class="bg-gray-700 rounded-lg p-4 mb-4">
                                     ${task.type === 'post' ? `
-                                        <h3 class="font-semibold mb-2">${task.title}</h3>
-                                        <p class="text-gray-400 text-sm">${task.body}</p>
-                                        ${task.image ? `<img src="${task.image}" alt="Task image" class="mt-2 rounded-lg max-h-40 object-cover">` : ''}
+                                        <!-- Post Title with Copy -->
+                                        <div class="flex items-start justify-between mb-3">
+                                            <div class="flex-1">
+                                                <label class="text-xs text-gray-400 uppercase tracking-wide mb-1 block">Title</label>
+                                                <h3 class="font-semibold text-lg" id="title-${task.taskId}">${task.title}</h3>
+                                            </div>
+                                            <button onclick="copyToClipboard('${escapedTitle}', this)" 
+                                                class="ml-3 bg-gray-600 hover:bg-gray-500 p-2 rounded-lg transition group" title="Copy Title">
+                                                <i class="fas fa-copy text-gray-300 group-hover:text-white"></i>
+                                            </button>
+                                        </div>
+                                        
+                                        <!-- Post Body with Copy -->
+                                        <div class="flex items-start justify-between">
+                                            <div class="flex-1">
+                                                <label class="text-xs text-gray-400 uppercase tracking-wide mb-1 block">Body</label>
+                                                <p class="text-gray-300 text-sm whitespace-pre-wrap" id="body-${task.taskId}">${task.body}</p>
+                                            </div>
+                                            <button onclick="copyToClipboard(\`${escapedBody}\`, this)" 
+                                                class="ml-3 bg-gray-600 hover:bg-gray-500 p-2 rounded-lg transition group" title="Copy Body">
+                                                <i class="fas fa-copy text-gray-300 group-hover:text-white"></i>
+                                            </button>
+                                        </div>
+                                        
+                                        ${task.image ? `
+                                            <div class="mt-3 pt-3 border-t border-gray-600">
+                                                <label class="text-xs text-gray-400 uppercase tracking-wide mb-2 block">Image</label>
+                                                <div class="flex items-start justify-between">
+                                                    <img src="${task.image}" alt="Task image" class="rounded-lg max-h-48 object-cover">
+                                                    <button onclick="copyToClipboard('${task.image}', this)" 
+                                                        class="ml-3 bg-gray-600 hover:bg-gray-500 p-2 rounded-lg transition group" title="Copy Image URL">
+                                                        <i class="fas fa-link text-gray-300 group-hover:text-white"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        ` : ''}
                                     ` : `
-                                        <p class="text-sm mb-2"><strong>Post Link:</strong> <a href="${task.postLink}" target="_blank" class="text-blue-400 hover:underline">${task.postLink}</a></p>
-                                        <p class="text-sm"><strong>Comment to post:</strong></p>
-                                        <div class="bg-gray-600 rounded p-2 mt-1 italic">"${task.commentText}"</div>
+                                        <!-- Post Link with Copy -->
+                                        <div class="flex items-start justify-between mb-3">
+                                            <div class="flex-1">
+                                                <label class="text-xs text-gray-400 uppercase tracking-wide mb-1 block">Post Link</label>
+                                                <a href="${task.postLink}" target="_blank" class="text-blue-400 hover:underline break-all">${task.postLink}</a>
+                                            </div>
+                                            <button onclick="copyToClipboard('${task.postLink}', this)" 
+                                                class="ml-3 bg-gray-600 hover:bg-gray-500 p-2 rounded-lg transition group" title="Copy Link">
+                                                <i class="fas fa-copy text-gray-300 group-hover:text-white"></i>
+                                            </button>
+                                        </div>
+                                        
+                                        <!-- Comment Text with Copy -->
+                                        <div class="flex items-start justify-between">
+                                            <div class="flex-1">
+                                                <label class="text-xs text-gray-400 uppercase tracking-wide mb-1 block">Comment to Post</label>
+                                                <div class="bg-gray-600 rounded p-3 text-gray-200" id="comment-${task.taskId}">${task.commentText}</div>
+                                            </div>
+                                            <button onclick="copyToClipboard(\`${escapedComment}\`, this)" 
+                                                class="ml-3 bg-gray-600 hover:bg-gray-500 p-2 rounded-lg transition group" title="Copy Comment">
+                                                <i class="fas fa-copy text-gray-300 group-hover:text-white"></i>
+                                            </button>
+                                        </div>
                                     `}
                                 </div>
                                 
@@ -2510,6 +2584,64 @@
         // ============================================
         let timerInterval = null;
         let selectedWithdrawMethod = null;
+        
+        // Copy to clipboard function
+        window.copyToClipboard = async function(text, buttonEl) {
+            try {
+                await navigator.clipboard.writeText(text);
+                
+                // Show success feedback
+                const icon = buttonEl.querySelector('i');
+                const originalClass = icon.className;
+                icon.className = 'fas fa-check text-green-400';
+                buttonEl.classList.add('bg-green-600');
+                buttonEl.classList.remove('bg-gray-600');
+                
+                // Show toast notification
+                showCopyToast('Copied to clipboard!');
+                
+                // Reset after 2 seconds
+                setTimeout(() => {
+                    icon.className = originalClass;
+                    buttonEl.classList.remove('bg-green-600');
+                    buttonEl.classList.add('bg-gray-600');
+                }, 2000);
+            } catch (err) {
+                console.error('Failed to copy:', err);
+                
+                // Fallback for older browsers
+                const textarea = document.createElement('textarea');
+                textarea.value = text;
+                textarea.style.position = 'fixed';
+                textarea.style.opacity = '0';
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textarea);
+                
+                showCopyToast('Copied to clipboard!');
+            }
+        };
+        
+        function showCopyToast(message) {
+            // Remove existing toast
+            const existingToast = document.getElementById('copyToast');
+            if (existingToast) existingToast.remove();
+            
+            // Create toast
+            const toast = document.createElement('div');
+            toast.id = 'copyToast';
+            toast.className = 'fixed bottom-24 left-1/2 -translate-x-1/2 bg-green-600 text-white px-4 py-2 rounded-lg shadow-lg z-[200] flex items-center space-x-2 animate-fade-in';
+            toast.innerHTML = `<i class="fas fa-check-circle"></i><span>${message}</span>`;
+            document.body.appendChild(toast);
+            
+            // Remove after 2 seconds
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transition = 'opacity 0.3s';
+                setTimeout(() => toast.remove(), 300);
+            }, 2000);
+        }
         
         function attachEventListeners() {
             if (timerInterval) clearInterval(timerInterval);
