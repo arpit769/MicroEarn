@@ -1202,7 +1202,7 @@
                                     <i class="fas ${eligible ? 'fa-check-circle text-green-400' : 'fa-exclamation-triangle text-yellow-400'}"></i>
                                     <span class="text-sm">
                                         ${eligible 
-                                            ? 'You are eligible to accept tasks!    Your tasks Must be live minimum 5 day for payout qualification' 
+                                            ? 'You are eligible to accept tasks!' 
                                             : 'Eligibility Required: Minimum 200 karma & 1 month old Reddit account'}
                                     </span>
                                 </div>
@@ -1280,7 +1280,7 @@
                                         <i class="fas fa-sign-in-alt mr-2"></i>Login
                                     </button>
                                 </div>
-                               
+                           
                             </div>
                             
                             <div id="registerForm" class="hidden">
@@ -1486,6 +1486,24 @@
                                 <i class="fas fa-wallet text-3xl text-green-400"></i>
                             </div>
                         </div>
+                    </div>
+                    
+                    <!-- User Search Bar -->
+                    <div class="bg-gray-800 rounded-xl p-4 mb-6 border border-gray-700">
+                        <div class="flex flex-wrap gap-4 items-center">
+                            <div class="flex-1 min-w-[200px]">
+                                <div class="relative">
+                                    <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                                    <input type="text" id="userSearchInput" placeholder="Search by Task ID..."
+                                        class="w-full bg-gray-700 border border-gray-600 rounded-lg pl-10 pr-4 py-2 focus:border-orange-500 focus:outline-none"
+                                        onkeyup="handleUserSearch()">
+                                </div>
+                            </div>
+                            <button onclick="clearUserSearch()" class="bg-gray-600 hover:bg-gray-500 px-4 py-2 rounded-lg transition">
+                                <i class="fas fa-times mr-2"></i>Clear
+                            </button>
+                        </div>
+                        <div id="userSearchResults" class="hidden mt-4"></div>
                     </div>
                     
                     <!-- Tabs -->
@@ -1945,6 +1963,35 @@
                         </div>
                     </div>
                     
+                    <!-- Admin Search Bar -->
+                    <div class="bg-gray-800 rounded-xl p-4 mb-6 border border-gray-700">
+                        <div class="flex flex-wrap gap-4 items-center">
+                            <div class="flex-1 min-w-[200px]">
+                                <div class="relative">
+                                    <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                                    <input type="text" id="adminSearchInput" placeholder="Search by Task ID, Username, or User ID..."
+                                        class="w-full bg-gray-700 border border-gray-600 rounded-lg pl-10 pr-4 py-2 focus:border-purple-500 focus:outline-none"
+                                        onkeyup="handleAdminSearch()">
+                                </div>
+                            </div>
+                            <div class="flex gap-2">
+                                <select id="adminStatusFilter" onchange="handleAdminSearch()"
+                                    class="bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 focus:border-purple-500 focus:outline-none">
+                                    <option value="all">All Status</option>
+                                    <option value="available">Available</option>
+                                    <option value="reserved">Reserved</option>
+                                    <option value="pending">Pending</option>
+                                    <option value="approved">Approved</option>
+                                    <option value="rejected">Rejected</option>
+                                </select>
+                                <button onclick="clearAdminSearch()" class="bg-gray-600 hover:bg-gray-500 px-4 py-2 rounded-lg transition">
+                                    <i class="fas fa-times mr-2"></i>Clear
+                                </button>
+                            </div>
+                        </div>
+                        <div id="adminSearchResults" class="hidden mt-4"></div>
+                    </div>
+                    
                     <!-- Admin Tabs -->
                     <div class="flex space-x-2 mb-6 border-b border-gray-700 pb-2 overflow-x-auto">
                         <button onclick="switchAdminTab('tasks')"
@@ -1979,6 +2026,28 @@
                 </div>
                 
                 ${renderTaskModal()}
+                ${renderUserProfileModal()}
+            `;
+        }
+        
+        function renderUserProfileModal() {
+            return `
+                <div id="userProfileModal" class="hidden fixed inset-0 bg-black/70 modal-backdrop flex items-center justify-center z-50 px-4 overflow-y-auto py-8">
+                    <div class="bg-gray-800 rounded-xl p-6 max-w-4xl w-full border border-gray-700 max-h-[90vh] overflow-y-auto">
+                        <div class="flex items-center justify-between mb-6">
+                            <h3 class="text-xl font-bold"><i class="fas fa-user-circle text-purple-400 mr-2"></i>User Profile</h3>
+                            <button onclick="closeUserProfileModal()" class="text-gray-400 hover:text-white">
+                                <i class="fas fa-times text-xl"></i>
+                            </button>
+                        </div>
+                        <div id="userProfileContent">
+                            <div class="text-center py-8">
+                                <div class="loading-spinner mx-auto"></div>
+                                <p class="text-gray-400 mt-2">Loading user profile...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             `;
         }
 
@@ -2260,19 +2329,21 @@
                                 <th class="px-4 py-3 text-left text-sm">Auth</th>
                                 <th class="px-4 py-3 text-left text-sm">Karma</th>
                                 <th class="px-4 py-3 text-left text-sm">Age</th>
-                                <th class="px-4 py-3 text-left text-sm">Eligible</th>
+                                <th class="px-4 py-3 text-left text-sm">Status</th>
                                 <th class="px-4 py-3 text-right text-sm">Balance</th>
+                                <th class="px-4 py-3 text-center text-sm">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
                             ${users.length === 0 ? `
                                 <tr>
-                                    <td colspan="7" class="px-4 py-8 text-center text-gray-400">No users registered yet</td>
+                                    <td colspan="8" class="px-4 py-8 text-center text-gray-400">No users registered yet</td>
                                 </tr>
                             ` : users.map(user => {
                                 const eligible = (user.redditKarma || 0) >= 200 && (user.accountAge || 0) >= 1;
+                                const isBanned = user.banned || false;
                                 return `
-                                    <tr class="border-t border-gray-700 hover:bg-gray-700/50">
+                                    <tr class="border-t border-gray-700 hover:bg-gray-700/50 ${isBanned ? 'bg-red-900/20' : ''}">
                                         <td class="px-4 py-3">
                                             <div class="flex items-center space-x-2">
                                                 ${user.photoURL 
@@ -2280,20 +2351,21 @@
                                                     : `<i class="fas fa-user text-gray-400"></i>`
                                                 }
                                                 <span class="font-semibold">${user.username}</span>
+                                                ${isBanned ? '<span class="bg-red-600 text-xs px-1 rounded">BANNED</span>' : ''}
                                             </div>
                                         </td>
                                         <td class="px-4 py-3">
                                             ${user.redditProfileLink 
                                                 ? `<a href="${user.redditProfileLink}" target="_blank" class="text-orange-400 hover:underline text-sm">
-                                                    <i class="fab fa-reddit mr-1"></i>View Profile
+                                                    <i class="fab fa-reddit mr-1"></i>View
                                                    </a>`
-                                                : '<span class="text-gray-500 text-sm">Not provided</span>'
+                                                : '<span class="text-gray-500 text-sm">-</span>'
                                             }
                                         </td>
                                         <td class="px-4 py-3">
                                             ${user.authProvider === 'google' 
-                                                ? '<span class="flex items-center text-sm"><i class="fab fa-google text-blue-400 mr-1"></i>Google</span>'
-                                                : '<span class="text-sm text-gray-400"><i class="fas fa-key mr-1"></i>Local</span>'
+                                                ? '<i class="fab fa-google text-blue-400"></i>'
+                                                : '<i class="fas fa-key text-gray-400"></i>'
                                             }
                                         </td>
                                         <td class="px-4 py-3 ${(user.redditKarma || 0) >= 200 ? 'text-green-400' : 'text-red-400'}">
@@ -2308,6 +2380,11 @@
                                                 : '<span class="text-red-400"><i class="fas fa-times-circle"></i></span>'}
                                         </td>
                                         <td class="px-4 py-3 text-right font-semibold text-green-400">$${(user.walletBalance || 0).toFixed(2)}</td>
+                                        <td class="px-4 py-3 text-center">
+                                            <button onclick="viewUserProfile('${user.id}')" class="bg-purple-600 hover:bg-purple-700 px-3 py-1 rounded text-sm transition">
+                                                <i class="fas fa-eye mr-1"></i>Profile
+                                            </button>
+                                        </td>
                                     </tr>
                                 `;
                             }).join('')}
@@ -2828,6 +2905,425 @@
                 } else {
                     alert(result.error);
                 }
+            }
+        };
+
+        // ============================================
+        // ADMIN SEARCH FUNCTIONALITY
+        // ============================================
+        window.handleAdminSearch = async function() {
+            const searchInput = document.getElementById('adminSearchInput').value.trim().toLowerCase();
+            const statusFilter = document.getElementById('adminStatusFilter').value;
+            const resultsDiv = document.getElementById('adminSearchResults');
+            
+            if (!searchInput && statusFilter === 'all') {
+                resultsDiv.classList.add('hidden');
+                return;
+            }
+            
+            resultsDiv.classList.remove('hidden');
+            resultsDiv.innerHTML = '<div class="text-center py-4"><div class="loading-spinner mx-auto"></div></div>';
+            
+            const allTasks = await FirestoreDB.getAllTasks();
+            const allSubmissions = await FirestoreDB.getAllSubmissions();
+            const allUsers = await FirestoreDB.getAllUsers();
+            
+            let filteredTasks = allTasks;
+            let filteredUsers = allUsers;
+            
+            // Filter by search term
+            if (searchInput) {
+                filteredTasks = allTasks.filter(t => 
+                    t.taskId.toLowerCase().includes(searchInput) ||
+                    (t.title && t.title.toLowerCase().includes(searchInput))
+                );
+                filteredUsers = allUsers.filter(u => 
+                    u.username.toLowerCase().includes(searchInput) ||
+                    u.id.toLowerCase().includes(searchInput) ||
+                    (u.email && u.email.toLowerCase().includes(searchInput))
+                );
+            }
+            
+            // Filter by status
+            if (statusFilter !== 'all') {
+                filteredTasks = filteredTasks.filter(t => t.status === statusFilter);
+            }
+            
+            let html = '<div class="space-y-4">';
+            
+            // Show matching users
+            if (filteredUsers.length > 0 && searchInput) {
+                html += '<div class="mb-4"><h4 class="text-sm font-semibold text-purple-400 mb-2"><i class="fas fa-users mr-2"></i>Users Found (${filteredUsers.length})</h4>';
+                html += '<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">';
+                filteredUsers.slice(0, 6).forEach(user => {
+                    html += `
+                        <div class="bg-gray-700 rounded-lg p-3 flex items-center justify-between">
+                            <div class="flex items-center space-x-2">
+                                ${user.photoURL ? `<img src="${user.photoURL}" class="w-8 h-8 rounded-full">` : '<i class="fas fa-user-circle text-2xl text-gray-400"></i>'}
+                                <div>
+                                    <p class="font-semibold">${user.username}</p>
+                                    <p class="text-xs text-gray-400">${user.id}</p>
+                                </div>
+                            </div>
+                            <button onclick="viewUserProfile('${user.id}')" class="bg-purple-600 hover:bg-purple-700 px-3 py-1 rounded text-sm">
+                                <i class="fas fa-eye"></i> View
+                            </button>
+                        </div>
+                    `;
+                });
+                html += '</div></div>';
+            }
+            
+            // Show matching tasks
+            if (filteredTasks.length > 0) {
+                html += '<div><h4 class="text-sm font-semibold text-blue-400 mb-2"><i class="fas fa-tasks mr-2"></i>Tasks Found (' + filteredTasks.length + ')</h4>';
+                html += '<div class="bg-gray-700 rounded-lg overflow-hidden"><table class="w-full"><thead class="bg-gray-600"><tr>';
+                html += '<th class="px-4 py-2 text-left text-xs">Task ID</th>';
+                html += '<th class="px-4 py-2 text-left text-xs">Type</th>';
+                html += '<th class="px-4 py-2 text-left text-xs">Price</th>';
+                html += '<th class="px-4 py-2 text-left text-xs">Status</th>';
+                html += '<th class="px-4 py-2 text-left text-xs">Reserved By</th>';
+                html += '</tr></thead><tbody>';
+                
+                filteredTasks.slice(0, 10).forEach(task => {
+                    const statusColors = {
+                        available: 'bg-green-600',
+                        reserved: 'bg-yellow-600',
+                        submitted: 'bg-blue-600',
+                        approved: 'bg-purple-600',
+                        rejected: 'bg-red-600'
+                    };
+                    const reservedUser = task.reservedBy ? allUsers.find(u => u.id === task.reservedBy) : null;
+                    html += `<tr class="border-t border-gray-600">
+                        <td class="px-4 py-2 font-mono text-sm">${task.taskId}</td>
+                        <td class="px-4 py-2"><span class="px-2 py-1 ${task.type === 'post' ? 'bg-blue-600' : 'bg-purple-600'} rounded text-xs">${task.type}</span></td>
+                        <td class="px-4 py-2 text-green-400">$${task.price.toFixed(2)}</td>
+                        <td class="px-4 py-2"><span class="px-2 py-1 ${statusColors[task.status]} rounded-full text-xs capitalize">${task.status}</span></td>
+                        <td class="px-4 py-2 text-sm">${reservedUser ? `<a href="#" onclick="viewUserProfile('${reservedUser.id}')" class="text-blue-400 hover:underline">${reservedUser.username}</a>` : '-'}</td>
+                    </tr>`;
+                });
+                
+                html += '</tbody></table></div></div>';
+            }
+            
+            if (filteredTasks.length === 0 && filteredUsers.length === 0) {
+                html = '<div class="text-center py-8 text-gray-400"><i class="fas fa-search text-4xl mb-2"></i><p>No results found</p></div>';
+            }
+            
+            html += '</div>';
+            resultsDiv.innerHTML = html;
+        };
+
+        window.clearAdminSearch = function() {
+            document.getElementById('adminSearchInput').value = '';
+            document.getElementById('adminStatusFilter').value = 'all';
+            document.getElementById('adminSearchResults').classList.add('hidden');
+        };
+
+        // ============================================
+        // USER SEARCH FUNCTIONALITY
+        // ============================================
+        window.handleUserSearch = async function() {
+            const searchInput = document.getElementById('userSearchInput').value.trim().toLowerCase();
+            const resultsDiv = document.getElementById('userSearchResults');
+            
+            if (!searchInput) {
+                resultsDiv.classList.add('hidden');
+                return;
+            }
+            
+            resultsDiv.classList.remove('hidden');
+            resultsDiv.innerHTML = '<div class="text-center py-4"><div class="loading-spinner mx-auto"></div></div>';
+            
+            const availableTasks = await TaskManager.getAvailableTasks();
+            const mySubmissions = await FirestoreDB.getUserSubmissions(Auth.currentUser.id);
+            const allTasks = await FirestoreDB.getAllTasks();
+            
+            // Search in available tasks
+            const matchingAvailable = availableTasks.filter(t => 
+                t.taskId.toLowerCase().includes(searchInput)
+            );
+            
+            // Search in my submissions
+            const matchingSubmissions = mySubmissions.filter(s => 
+                s.taskId.toLowerCase().includes(searchInput)
+            );
+            
+            let html = '<div class="space-y-4">';
+            
+            if (matchingAvailable.length > 0) {
+                html += '<div><h4 class="text-sm font-semibold text-green-400 mb-2"><i class="fas fa-check-circle mr-2"></i>Available Tasks (' + matchingAvailable.length + ')</h4>';
+                html += '<div class="grid grid-cols-1 md:grid-cols-2 gap-2">';
+                matchingAvailable.forEach(task => {
+                    html += `
+                        <div class="bg-gray-700 rounded-lg p-3">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="font-mono text-sm">#${task.taskId}</span>
+                                <span class="text-green-400 font-bold">$${task.price.toFixed(2)}</span>
+                            </div>
+                            <p class="text-sm text-gray-300 mb-2">${task.type === 'post' ? task.title : 'Comment Task'}</p>
+                            <span class="px-2 py-1 ${task.type === 'post' ? 'bg-blue-600' : 'bg-purple-600'} rounded text-xs">${task.type}</span>
+                        </div>
+                    `;
+                });
+                html += '</div></div>';
+            }
+            
+            if (matchingSubmissions.length > 0) {
+                html += '<div><h4 class="text-sm font-semibold text-yellow-400 mb-2"><i class="fas fa-file-alt mr-2"></i>My Submissions (' + matchingSubmissions.length + ')</h4>';
+                html += '<div class="bg-gray-700 rounded-lg overflow-hidden"><table class="w-full text-sm"><thead class="bg-gray-600"><tr>';
+                html += '<th class="px-3 py-2 text-left">Task ID</th>';
+                html += '<th class="px-3 py-2 text-left">Link</th>';
+                html += '<th class="px-3 py-2 text-left">Status</th>';
+                html += '</tr></thead><tbody>';
+                
+                matchingSubmissions.forEach(sub => {
+                    const statusColors = { pending: 'bg-yellow-600', approved: 'bg-green-600', rejected: 'bg-red-600' };
+                    html += `<tr class="border-t border-gray-600">
+                        <td class="px-3 py-2 font-mono">${sub.taskId}</td>
+                        <td class="px-3 py-2"><a href="${sub.redditLink}" target="_blank" class="text-blue-400 hover:underline">${sub.redditLink.substring(0, 30)}...</a></td>
+                        <td class="px-3 py-2"><span class="px-2 py-1 ${statusColors[sub.status]} rounded-full text-xs capitalize">${sub.status}</span></td>
+                    </tr>`;
+                });
+                
+                html += '</tbody></table></div></div>';
+            }
+            
+            if (matchingAvailable.length === 0 && matchingSubmissions.length === 0) {
+                html = '<div class="text-center py-8 text-gray-400"><i class="fas fa-search text-4xl mb-2"></i><p>No tasks found matching "' + searchInput + '"</p></div>';
+            }
+            
+            html += '</div>';
+            resultsDiv.innerHTML = html;
+        };
+
+        window.clearUserSearch = function() {
+            document.getElementById('userSearchInput').value = '';
+            document.getElementById('userSearchResults').classList.add('hidden');
+        };
+
+        // ============================================
+        // USER PROFILE MODAL (ADMIN VIEW)
+        // ============================================
+        window.viewUserProfile = async function(userId) {
+            document.getElementById('userProfileModal').classList.remove('hidden');
+            const contentDiv = document.getElementById('userProfileContent');
+            contentDiv.innerHTML = '<div class="text-center py-8"><div class="loading-spinner mx-auto"></div><p class="text-gray-400 mt-2">Loading user profile...</p></div>';
+            
+            const user = await FirestoreDB.getUser(userId);
+            if (!user) {
+                contentDiv.innerHTML = '<div class="text-center py-8 text-red-400"><i class="fas fa-exclamation-circle text-4xl mb-2"></i><p>User not found</p></div>';
+                return;
+            }
+            
+            const allTasks = await FirestoreDB.getAllTasks();
+            const userSubmissions = await FirestoreDB.getUserSubmissions(userId);
+            const userWithdrawals = await WithdrawalManager.getUserWithdrawals(userId);
+            
+            const userReservedTasks = allTasks.filter(t => t.reservedBy === userId);
+            const approvedSubmissions = userSubmissions.filter(s => s.status === 'approved');
+            const rejectedSubmissions = userSubmissions.filter(s => s.status === 'rejected');
+            const pendingSubmissions = userSubmissions.filter(s => s.status === 'pending');
+            
+            const eligible = (user.redditKarma || 0) >= 200 && (user.accountAge || 0) >= 1;
+            const isBanned = user.banned || false;
+            
+            contentDiv.innerHTML = `
+                <div class="space-y-6">
+                    <!-- User Header -->
+                    <div class="bg-gradient-to-r ${isBanned ? 'from-red-900 to-red-800' : 'from-gray-700 to-gray-600'} rounded-xl p-6">
+                        <div class="flex items-start justify-between flex-wrap gap-4">
+                            <div class="flex items-center space-x-4">
+                                ${user.photoURL 
+                                    ? `<img src="${user.photoURL}" alt="Profile" class="w-16 h-16 rounded-full border-4 ${isBanned ? 'border-red-500' : 'border-purple-500'}">`
+                                    : `<div class="w-16 h-16 rounded-full ${isBanned ? 'bg-red-700' : 'bg-gray-600'} flex items-center justify-center"><i class="fas fa-user text-3xl text-gray-400"></i></div>`
+                                }
+                                <div>
+                                    <h3 class="text-2xl font-bold flex items-center">
+                                        ${user.username}
+                                        ${user.authProvider === 'google' ? '<i class="fab fa-google text-blue-400 ml-2 text-sm"></i>' : ''}
+                                        ${isBanned ? '<span class="ml-2 bg-red-600 text-xs px-2 py-1 rounded-full">BANNED</span>' : ''}
+                                    </h3>
+                                    <p class="text-gray-300 text-sm">${user.email || 'No email'}</p>
+                                    <p class="text-gray-400 text-xs mt-1">ID: ${user.id}</p>
+                                </div>
+                            </div>
+                            <div class="flex space-x-2">
+                                ${isBanned 
+                                    ? `<button onclick="unbanUser('${user.id}')" class="bg-green-600 hover:bg-green-700 px-4 py-2 rounded-lg font-semibold transition"><i class="fas fa-unlock mr-2"></i>Unban User</button>`
+                                    : `<button onclick="banUser('${user.id}')" class="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg font-semibold transition"><i class="fas fa-ban mr-2"></i>Ban User</button>`
+                                }
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Stats Grid -->
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div class="bg-gray-700 rounded-xl p-4 text-center">
+                            <i class="fas fa-wallet text-green-400 text-2xl mb-2"></i>
+                            <p class="text-2xl font-bold text-green-400">$${(user.walletBalance || 0).toFixed(2)}</p>
+                            <p class="text-xs text-gray-400">Wallet Balance</p>
+                        </div>
+                        <div class="bg-gray-700 rounded-xl p-4 text-center">
+                            <i class="fas fa-check-circle text-purple-400 text-2xl mb-2"></i>
+                            <p class="text-2xl font-bold">${approvedSubmissions.length}</p>
+                            <p class="text-xs text-gray-400">Approved Tasks</p>
+                        </div>
+                        <div class="bg-gray-700 rounded-xl p-4 text-center">
+                            <i class="fas fa-times-circle text-red-400 text-2xl mb-2"></i>
+                            <p class="text-2xl font-bold">${rejectedSubmissions.length}</p>
+                            <p class="text-xs text-gray-400">Rejected Tasks</p>
+                        </div>
+                        <div class="bg-gray-700 rounded-xl p-4 text-center">
+                            <i class="fas fa-clock text-yellow-400 text-2xl mb-2"></i>
+                            <p class="text-2xl font-bold">${pendingSubmissions.length}</p>
+                            <p class="text-xs text-gray-400">Pending Tasks</p>
+                        </div>
+                    </div>
+                    
+                    <!-- User Details -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Reddit Info -->
+                        <div class="bg-gray-700 rounded-xl p-4">
+                            <h4 class="font-semibold mb-3 flex items-center"><i class="fab fa-reddit text-orange-500 mr-2"></i>Reddit Info</h4>
+                            <div class="space-y-2 text-sm">
+                                <div class="flex justify-between">
+                                    <span class="text-gray-400">Profile Link:</span>
+                                    <a href="${user.redditProfileLink || '#'}" target="_blank" class="text-orange-400 hover:underline">
+                                        ${user.redditProfileLink ? 'View Profile' : 'Not provided'}
+                                    </a>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-400">Karma:</span>
+                                    <span class="${(user.redditKarma || 0) >= 200 ? 'text-green-400' : 'text-red-400'}">${user.redditKarma || 0}</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-400">Account Age:</span>
+                                    <span class="${(user.accountAge || 0) >= 1 ? 'text-green-400' : 'text-red-400'}">${user.accountAge || 0} months</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-400">Eligible:</span>
+                                    <span class="${eligible ? 'text-green-400' : 'text-red-400'}">${eligible ? 'Yes' : 'No'}</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Account Info -->
+                        <div class="bg-gray-700 rounded-xl p-4">
+                            <h4 class="font-semibold mb-3 flex items-center"><i class="fas fa-info-circle text-blue-400 mr-2"></i>Account Info</h4>
+                            <div class="space-y-2 text-sm">
+                                <div class="flex justify-between">
+                                    <span class="text-gray-400">Auth Provider:</span>
+                                    <span>${user.authProvider === 'google' ? '<i class="fab fa-google text-blue-400 mr-1"></i>Google' : '<i class="fas fa-key text-gray-400 mr-1"></i>Local'}</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-400">Total Submissions:</span>
+                                    <span>${userSubmissions.length}</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-400">Withdrawals:</span>
+                                    <span>${userWithdrawals.length}</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-400">Status:</span>
+                                    <span class="${isBanned ? 'text-red-400' : 'text-green-400'}">${isBanned ? 'Banned' : 'Active'}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- User Submissions -->
+                    <div class="bg-gray-700 rounded-xl p-4">
+                        <h4 class="font-semibold mb-3 flex items-center"><i class="fas fa-file-alt text-yellow-400 mr-2"></i>Submissions (${userSubmissions.length})</h4>
+                        ${userSubmissions.length === 0 ? `
+                            <p class="text-center text-gray-400 py-4">No submissions yet</p>
+                        ` : `
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-sm">
+                                    <thead class="bg-gray-600">
+                                        <tr>
+                                            <th class="px-3 py-2 text-left">Task ID</th>
+                                            <th class="px-3 py-2 text-left">Reddit Link</th>
+                                            <th class="px-3 py-2 text-left">Status</th>
+                                            <th class="px-3 py-2 text-left">Date</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        ${userSubmissions.slice(0, 10).map(sub => {
+                                            const statusColors = { pending: 'bg-yellow-600', approved: 'bg-green-600', rejected: 'bg-red-600' };
+                                            return `
+                                                <tr class="border-t border-gray-600">
+                                                    <td class="px-3 py-2 font-mono">${sub.taskId}</td>
+                                                    <td class="px-3 py-2"><a href="${sub.redditLink}" target="_blank" class="text-blue-400 hover:underline">${sub.redditLink.substring(0, 30)}...</a></td>
+                                                    <td class="px-3 py-2"><span class="px-2 py-1 ${statusColors[sub.status]} rounded-full text-xs capitalize">${sub.status}</span></td>
+                                                    <td class="px-3 py-2 text-gray-400">${formatDate(sub.submittedAt)}</td>
+                                                </tr>
+                                            `;
+                                        }).join('')}
+                                    </tbody>
+                                </table>
+                            </div>
+                        `}
+                    </div>
+                    
+                    <!-- User Withdrawals -->
+                    <div class="bg-gray-700 rounded-xl p-4">
+                        <h4 class="font-semibold mb-3 flex items-center"><i class="fas fa-money-bill-wave text-green-400 mr-2"></i>Withdrawals (${userWithdrawals.length})</h4>
+                        ${userWithdrawals.length === 0 ? `
+                            <p class="text-center text-gray-400 py-4">No withdrawals yet</p>
+                        ` : `
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-sm">
+                                    <thead class="bg-gray-600">
+                                        <tr>
+                                            <th class="px-3 py-2 text-left">ID</th>
+                                            <th class="px-3 py-2 text-left">Amount</th>
+                                            <th class="px-3 py-2 text-left">Method</th>
+                                            <th class="px-3 py-2 text-left">Details</th>
+                                            <th class="px-3 py-2 text-left">Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        ${userWithdrawals.slice(0, 10).map(wd => {
+                                            const statusColors = { pending: 'bg-yellow-600', approved: 'bg-green-600', rejected: 'bg-red-600' };
+                                            return `
+                                                <tr class="border-t border-gray-600">
+                                                    <td class="px-3 py-2 font-mono text-xs">${wd.id}</td>
+                                                    <td class="px-3 py-2 text-green-400 font-semibold">$${wd.amount.toFixed(2)}</td>
+                                                    <td class="px-3 py-2">${wd.method === 'binance' ? '<i class="fab fa-bitcoin text-yellow-400"></i> Binance' : '<i class="fas fa-mobile-alt text-purple-400"></i> UPI'}</td>
+                                                    <td class="px-3 py-2 text-gray-400">${wd.details}</td>
+                                                    <td class="px-3 py-2"><span class="px-2 py-1 ${statusColors[wd.status]} rounded-full text-xs capitalize">${wd.status === 'approved' ? 'Paid' : wd.status}</span></td>
+                                                </tr>
+                                            `;
+                                        }).join('')}
+                                    </tbody>
+                                </table>
+                            </div>
+                        `}
+                    </div>
+                </div>
+            `;
+        };
+
+        window.closeUserProfileModal = function() {
+            document.getElementById('userProfileModal').classList.add('hidden');
+        };
+
+        window.banUser = async function(userId) {
+            if (confirm('Are you sure you want to ban this user? They will not be able to submit tasks or withdraw funds.')) {
+                showLoading('Banning user...');
+                await FirestoreDB.updateUser(userId, { banned: true });
+                hideLoading();
+                viewUserProfile(userId);
+            }
+        };
+
+        window.unbanUser = async function(userId) {
+            if (confirm('Are you sure you want to unban this user?')) {
+                showLoading('Unbanning user...');
+                await FirestoreDB.updateUser(userId, { banned: false });
+                hideLoading();
+                viewUserProfile(userId);
             }
         };
 
