@@ -1554,7 +1554,7 @@
                                         <i class="fas fa-sign-in-alt mr-2"></i>Login
                                     </button>
                                 </div>
-                              
+                               
                             </div>
                             
                             <div id="registerForm" class="hidden">
@@ -1810,10 +1810,10 @@
                 <div id="chatWidget" class="chat-widget bg-gray-800 rounded-xl border border-gray-700 hidden">
                     <div class="bg-gradient-to-r from-orange-600 to-orange-700 p-4 rounded-t-xl flex items-center justify-between">
                         <div class="flex items-center space-x-2">
-                            <i class="fas fa-headset text-white text-xl"></i>
+                            <i class="fas fa-users text-white text-xl"></i>
                             <div>
-                                <h4 class="font-bold text-white">Support Chat</h4>
-                                <p class="text-xs text-orange-100">Chat with Task Provider</p>
+                                <h4 class="font-bold text-white">Community Chat</h4>
+                                <p class="text-xs text-orange-100">Public discussion for all members</p>
                             </div>
                         </div>
                         <button onclick="toggleChat()" class="text-white hover:text-gray-200 transition">
@@ -1830,7 +1830,7 @@
                     
                     <div class="p-4 bg-gray-800 border-t border-gray-700">
                         <div class="flex space-x-2">
-                            <input type="text" id="chatInput" placeholder="Type your message..." 
+                            <input type="text" id="chatInput" placeholder="Message everyone..." 
                                 class="flex-1 bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-sm focus:outline-none chat-input"
                                 onkeypress="if(event.key==='Enter') sendChatMessage()">
                             <button onclick="sendChatMessage()" 
@@ -3901,7 +3901,7 @@
                     <div class="text-center py-8">
                         <i class="fas fa-comments text-4xl text-gray-600 mb-2"></i>
                         <p class="text-gray-400 text-sm">No messages yet</p>
-                        <p class="text-gray-500 text-xs mt-1">Start a conversation with Task Provider</p>
+                        <p class="text-gray-500 text-xs mt-1">Be the first to say hello!</p>
                     </div>
                 `;
                 return;
@@ -3921,10 +3921,13 @@
                     <div class="flex ${isCurrentUser ? 'justify-end' : 'justify-start'}">
                         <div class="max-w-[75%]">
                             ${!isCurrentUser ? `
-                                <p class="text-xs text-gray-500 mb-1 ml-1">
-                                    ${msg.isAdmin ? '<i class="fas fa-crown text-yellow-400 mr-1"></i>Task Provider' : msg.username}
+                                <p class="text-xs text-gray-400 mb-1 ml-1 flex items-center">
+                                    ${msg.isAdmin ? '<i class="fas fa-shield-alt text-purple-400 mr-1"></i><span class="text-purple-300 font-semibold">Admin</span><span class="mx-1">•</span>' : ''}
+                                    <span>${msg.username}</span>
                                 </p>
-                            ` : ''}
+                            ` : `
+                                <p class="text-xs text-gray-400 mb-1 mr-1 text-right">You</p>
+                            `}
                             <div class="relative ${isCurrentUser ? 'chat-bubble-user' : 'chat-bubble-admin'} rounded-lg px-4 py-2 text-white">
                                 <p class="text-sm break-words">${msg.message}</p>
                                 <p class="text-xs opacity-75 mt-1">${time}</p>
