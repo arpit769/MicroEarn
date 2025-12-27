@@ -1385,7 +1385,7 @@
                                         <i class="fas fa-sign-in-alt mr-2"></i>Login
                                     </button>
                                 </div>
-                             
+                               
                             </div>
                             
                             <div id="registerForm" class="hidden">
@@ -1721,6 +1721,12 @@
                             <div class="mb-4">
                                 <p class="text-xs text-gray-500 mb-1">Task ID: #${task.taskId}</p>
                                 ${task.type === 'post' ? `
+                                    ${task.subreddit ? `
+                                        <p class="text-xs text-orange-400 mb-2">
+                                            <i class="fab fa-reddit mr-1"></i>
+                                            <a href="${task.subreddit}" target="_blank" class="hover:underline">${task.subreddit.replace('https://reddit.com/', '').replace('https://www.reddit.com/', '')}</a>
+                                        </p>
+                                    ` : ''}
                                     <h3 class="font-semibold text-lg mb-2">${task.title}</h3>
                                     <p class="text-gray-400 text-sm line-clamp-2">${task.body}</p>
                                     ${task.image ? `<p class="text-xs text-gray-500 mt-2"><i class="fas fa-image mr-1"></i>Has image attachment</p>` : ''}
@@ -1785,6 +1791,22 @@
                                 
                                 <div class="bg-gray-700 rounded-lg p-4 mb-4">
                                     ${task.type === 'post' ? `
+                                        <!-- Subreddit Link -->
+                                        <div class="flex items-start justify-between mb-3 pb-3 border-b border-gray-600">
+                                            <div class="flex-1">
+                                                <label class="text-xs text-gray-400 uppercase tracking-wide mb-1 block">
+                                                    <i class="fab fa-reddit text-orange-500 mr-1"></i>Post To Subreddit
+                                                </label>
+                                                <a href="${task.subreddit || '#'}" target="_blank" class="text-orange-400 hover:text-orange-300 hover:underline font-medium">
+                                                    ${task.subreddit || 'Not specified'}
+                                                </a>
+                                            </div>
+                                            <a href="${task.subreddit || '#'}" target="_blank" 
+                                                class="ml-3 bg-orange-600 hover:bg-orange-500 p-2 rounded-lg transition group" title="Open Subreddit">
+                                                <i class="fas fa-external-link-alt text-white"></i>
+                                            </a>
+                                        </div>
+                                        
                                         <!-- Post Title with Copy -->
                                         <div class="flex items-start justify-between mb-3">
                                             <div class="flex-1">
@@ -2616,6 +2638,15 @@
                             <div id="postFields">
                                 <div class="space-y-4">
                                     <div>
+                                        <label class="block text-sm text-gray-400 mb-1">
+                                            <i class="fab fa-reddit text-orange-500 mr-1"></i>Subreddit Link
+                                        </label>
+                                        <input type="url" id="taskSubreddit"
+                                            class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 focus:border-purple-500 focus:outline-none"
+                                            placeholder="https://reddit.com/r/subreddit">
+                                        <p class="text-xs text-gray-500 mt-1">The subreddit where user should post</p>
+                                    </div>
+                                    <div>
                                         <label class="block text-sm text-gray-400 mb-1">Post Title</label>
                                         <input type="text" id="taskTitle"
                                             class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 focus:border-purple-500 focus:outline-none"
@@ -3061,6 +3092,7 @@
             
             if (task) {
                 document.getElementById('taskType').value = task.type;
+                document.getElementById('taskSubreddit').value = task.subreddit || '';
                 document.getElementById('taskTitle').value = task.title || '';
                 document.getElementById('taskBody').value = task.body || '';
                 document.getElementById('taskImage').value = task.image || '';
@@ -3069,6 +3101,7 @@
                 document.getElementById('taskPrice').value = task.price;
             } else {
                 document.getElementById('taskType').value = 'post';
+                document.getElementById('taskSubreddit').value = '';
                 document.getElementById('taskTitle').value = '';
                 document.getElementById('taskBody').value = '';
                 document.getElementById('taskImage').value = '';
@@ -3101,12 +3134,13 @@
             let taskData = { type, price: parseFloat(price) };
             
             if (type === 'post') {
+                taskData.subreddit = document.getElementById('taskSubreddit').value;
                 taskData.title = document.getElementById('taskTitle').value;
                 taskData.body = document.getElementById('taskBody').value;
                 taskData.image = document.getElementById('taskImage').value;
                 
-                if (!taskData.title || !taskData.body) {
-                    errorEl.textContent = 'Please fill in title and body';
+                if (!taskData.subreddit || !taskData.title || !taskData.body) {
+                    errorEl.textContent = 'Please fill in subreddit link, title and body';
                     errorEl.classList.remove('hidden');
                     return;
                 }
