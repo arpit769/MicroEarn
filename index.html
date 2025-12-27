@@ -63,6 +63,46 @@
             font-size: 12px;
             z-index: 1000;
         }
+        .chat-container {
+            position: fixed;
+            bottom: 80px;
+            right: 20px;
+            width: 350px;
+            max-height: 500px;
+            z-index: 90;
+        }
+        .chat-messages {
+            height: 300px;
+            overflow-y: auto;
+        }
+        .chat-bubble-user {
+            background: linear-gradient(135deg, #F97316, #EA580C);
+        }
+        .chat-bubble-admin {
+            background: linear-gradient(135deg, #8B5CF6, #7C3AED);
+        }
+        .chat-toggle {
+            position: fixed;
+            bottom: 80px;
+            right: 20px;
+            z-index: 89;
+        }
+        .cooldown-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(0,0,0,0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 0.75rem;
+        }
+        .pulse-dot {
+            animation: pulse-dot 2s infinite;
+        }
+        @keyframes pulse-dot {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.2); }
+        }
         .binance-gradient {
             background: linear-gradient(135deg, #F0B90B, #F8D12F);
         }
@@ -396,6 +436,88 @@
                 } catch (error) {
                     console.error('Error deleting task:', error);
                     return { success: false, error: error.message };
+                }
+            },
+
+            // CHAT OPERATIONS
+            async sendMessage(messageData) {
+                try {
+                    const msgRef = doc(db, 'chat_messages', messageData.id);
+                    await setDoc(msgRef, {
+                        ...messageData,
+                        createdAt: Date.now()
+                    });
+                    return { success: true };
+                } catch (error) {
+                    console.error('Error sending message:', error);
+                    return { success: false, error: error.message };
+                }
+            },
+
+            async getAllMessages() {
+                try {
+                    const msgsRef = collection(db, 'chat_messages');
+                    const snapshot = await getDocs(msgsRef);
+                    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+                        .sort((a, b) => a.createdAt - b.createdAt);
+                } catch (error) {
+                    console.error('Error getting messages:', error);
+                    return [];
+                }
+            },
+
+            // ACTIVE USERS TRACKING
+            async updateUserActivity(userId) {
+                try {
+                    const activityRef = doc(db, 'active_users', userId);
+                    await setDoc(activityRef, {
+                        oderId: userId,
+                        lastActive: Date.now()
+                    });
+                } catch (error) {
+                    console.error('Error updating activity:', error);
+                }
+            },
+
+            async getActiveUsersCount() {
+                try {
+                    const fiveMinutesAgo = Date.now() - (5 * 60 * 1000);
+                    const activityRef = collection(db, 'active_users');
+                    const snapshot = await getDocs(activityRef);
+                    let count = 0;
+                    snapshot.docs.forEach(doc => {
+                        if (doc.data().lastActive > fiveMinutesAgo) {
+                            count++;
+                        }
+                    });
+                    return count;
+                } catch (error) {
+                    console.error('Error getting active users:', error);
+                    return 0;
+                }
+            },
+
+            // USER COOLDOWN TRACKING
+            async getLastTaskAcceptTime(userId) {
+                try {
+                    const userRef = doc(db, 'users', userId);
+                    const userDoc = await getDoc(userRef);
+                    if (userDoc.exists()) {
+                        return userDoc.data().lastTaskAcceptTime || 0;
+                    }
+                    return 0;
+                } catch (error) {
+                    console.error('Error getting last accept time:', error);
+                    return 0;
+                }
+            },
+
+            async setLastTaskAcceptTime(userId) {
+                try {
+                    const userRef = doc(db, 'users', userId);
+                    await updateDoc(userRef, { lastTaskAcceptTime: Date.now() });
+                } catch (error) {
+                    console.error('Error setting last accept time:', error);
                 }
             },
 
@@ -1011,12 +1133,8 @@
                 return await FirestoreDB.updateTask(taskId, updates);
             },
             
-            async deleteTask(taskId) {
-                const task = await FirestoreDB.getTask(taskId);
-                if (!task) return { success: false, error: 'Task not found' };
-                if (task.status !== 'available') {
-                    return { success: false, error: 'Cannot delete task that is not available' };
-                }
+            async deleteTask(taskId, forceDelete = true) {
+                // Admin can always delete any task
                 return await FirestoreDB.deleteTask(taskId);
             },
             
@@ -1028,8 +1146,24 @@
                 return await FirestoreDB.getReservedTasks(userId);
             },
             
+            async getUserCooldownRemaining(userId) {
+                const lastAcceptTime = await FirestoreDB.getLastTaskAcceptTime(userId);
+                if (!lastAcceptTime) return 0;
+                const tenMinutes = 10 * 60 * 1000;
+                const elapsed = Date.now() - lastAcceptTime;
+                return Math.max(0, tenMinutes - elapsed);
+            },
+
             async acceptTask(taskId, userId) {
-                // Check daily limits first
+                // Check cooldown first
+                const cooldownRemaining = await this.getUserCooldownRemaining(userId);
+                if (cooldownRemaining > 0) {
+                    const minutes = Math.floor(cooldownRemaining / 60000);
+                    const seconds = Math.floor((cooldownRemaining % 60000) / 1000);
+                    return { success: false, error: `Please wait ${minutes}m ${seconds}s before accepting another task.` };
+                }
+                
+                // Check daily limits
                 const task = await FirestoreDB.getTask(taskId);
                 if (!task) return { success: false, error: 'Task not found' };
                 
@@ -1043,7 +1177,14 @@
                     }
                 }
                 
-                return await FirestoreDB.acceptTask(taskId, userId);
+                const result = await FirestoreDB.acceptTask(taskId, userId);
+                
+                // Set cooldown on successful accept
+                if (result.success) {
+                    await FirestoreDB.setLastTaskAcceptTime(userId);
+                }
+                
+                return result;
             },
             
             getRemainingTime(task) {
@@ -1498,6 +1639,9 @@
 
         async function renderUserPanel() {
             await Auth.refreshUser();
+            // Update user activity
+            await FirestoreDB.updateUserActivity(Auth.currentUser.id);
+            
             const eligible = Auth.isEligible();
             const availableTasks = await TaskManager.getAvailableTasks();
             const myReservedTasks = await TaskManager.getMyReservedTasks(Auth.currentUser.id);
@@ -1505,6 +1649,7 @@
             const mySubmissions = await FirestoreDB.getUserSubmissions(Auth.currentUser.id);
             const myWithdrawals = await WithdrawalManager.getUserWithdrawals(Auth.currentUser.id);
             const dailyCounts = await TaskManager.getUserDailyTaskCounts(Auth.currentUser.id);
+            const cooldownRemaining = await TaskManager.getUserCooldownRemaining(Auth.currentUser.id);
             
             return `
                 ${renderNavbar(false)}
@@ -2127,13 +2272,14 @@
             const allSubmissions = await AdminManager.getAllSubmissions();
             const allUsers = await AdminManager.getAllUsers();
             const allWithdrawals = await WithdrawalManager.getAllWithdrawals();
+            const activeUsersCount = await FirestoreDB.getActiveUsersCount();
             
             return `
                 ${renderNavbar(true)}
                 
                 <div class="max-w-7xl mx-auto px-4 py-6">
                     <!-- Admin Stats -->
-                    <div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
+                    <div class="grid grid-cols-2 md:grid-cols-6 gap-4 mb-6">
                         <div class="bg-gray-800 rounded-xl p-4 border border-gray-700">
                             <div class="flex items-center justify-between">
                                 <div>
@@ -2177,6 +2323,18 @@
                                     <p class="text-2xl font-bold text-yellow-400">${allWithdrawals.filter(w => w.status === 'pending').length}</p>
                                 </div>
                                 <i class="fas fa-money-bill-wave text-3xl text-yellow-400"></i>
+                            </div>
+                        </div>
+                        <div class="bg-gray-800 rounded-xl p-4 border border-cyan-600">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-gray-400 text-sm">Active Now</p>
+                                    <p class="text-2xl font-bold text-cyan-400 flex items-center">
+                                        <span class="w-3 h-3 bg-green-500 rounded-full mr-2 pulse-dot"></span>
+                                        ${activeUsersCount}
+                                    </p>
+                                </div>
+                                <i class="fas fa-users text-3xl text-cyan-400"></i>
                             </div>
                         </div>
                     </div>
@@ -2324,13 +2482,13 @@
                                             </td>
                                             <td class="px-4 py-3 text-right">
                                                 ${task.status === 'available' ? `
-                                                    <button onclick="editTask('${task.taskId}')" class="text-blue-400 hover:text-blue-300 mr-3">
+                                                    <button onclick="editTask('${task.taskId}')" class="text-blue-400 hover:text-blue-300 mr-3" title="Edit">
                                                         <i class="fas fa-edit"></i>
                                                     </button>
-                                                    <button onclick="deleteTask('${task.taskId}')" class="text-red-400 hover:text-red-300">
-                                                        <i class="fas fa-trash"></i>
-                                                    </button>
-                                                ` : '<span class="text-gray-500 text-sm">Locked</span>'}
+                                                ` : ''}
+                                                <button onclick="deleteTask('${task.taskId}')" class="text-red-400 hover:text-red-300" title="Delete Task">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
                                             </td>
                                         </tr>
                                     `;
