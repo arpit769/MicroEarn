@@ -166,7 +166,7 @@
                     <span>Need help or have questions?</span>
                 </div>
                 
-                <a href="https://discord.gg/PUBdGxrKGg" target="_blank" 
+                <a href="https://discord.gg/y6Z63BAzAE" target="_blank" 
                     class="flex items-center space-x-2 bg-indigo-600 hover:bg-indigo-700 px-4 py-2 rounded-lg transition group">
                     <svg class="w-5 h-5 text-white group-hover:scale-110 transition-transform" viewBox="0 0 24 24" fill="currentColor">
                         <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/>
@@ -853,12 +853,6 @@
                     return { success: false, error: 'Username already exists' };
                 }
                 
-                // Validate Reddit profile link
-                if (!redditProfileLink || !redditProfileLink.includes('reddit.com/user/')) {
-                    hideLoading();
-                    return { success: false, error: 'Please enter a valid Reddit profile link (e.g., https://reddit.com/user/yourname)' };
-                }
-                
                 const newUser = {
                     id: 'user_' + Date.now(),
                     username,
@@ -932,7 +926,7 @@
             
             isEligible(user = this.currentUser) {
                 if (!user) return false;
-                return user.redditKarma >= 200 && user.accountAge >= 1;
+                return user.redditProfileLink && user.redditKarma >= 200 && user.accountAge >= 1;
             }
         };
 
@@ -1315,8 +1309,10 @@
                                     <i class="fas ${eligible ? 'fa-check-circle text-green-400' : 'fa-exclamation-triangle text-yellow-400'}"></i>
                                     <span class="text-xs md:text-sm">
                                         ${eligible 
-                                            ? 'You are eligible to accept tasks!   Your Post or Comment Must be live Minimum 5day for Payout Qualification' 
-                                            : 'Need: 200+ karma & 1+ month account'}
+                                            ? 'You are eligible to accept tasks!  Your Post and Comment Must be live minimum 5 Day for Payout Qualification' 
+                                            : !Auth.currentUser.redditProfileLink 
+                                                ? 'Please add your Reddit profile to get started!'
+                                                : 'Need: 200+ karma & 1+ month account'}
                                     </span>
                                 </div>
                                 <div class="flex items-center space-x-3 md:space-x-4 text-xs md:text-sm">
@@ -1397,7 +1393,7 @@
                                         <i class="fas fa-sign-in-alt mr-2"></i>Login
                                     </button>
                                 </div>
-                            
+                              
                             </div>
                             
                             <div id="registerForm" class="hidden">
@@ -1414,18 +1410,8 @@
                                             class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 focus:border-orange-500 focus:outline-none"
                                             placeholder="Choose password">
                                     </div>
-                                    <div>
-                                        <label class="block text-sm text-gray-400 mb-1">
-                                            <i class="fab fa-reddit text-orange-500 mr-1"></i>Reddit Profile Link
-                                        </label>
-                                        <input type="url" id="regRedditProfile"
-                                            class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 focus:border-orange-500 focus:outline-none"
-                                            placeholder="https://reddit.com/user/yourname">
-                                        <p class="text-xs text-gray-500 mt-1">Required to verify your Reddit account</p>
-                                    </div>
-                                    
                                     <div class="bg-blue-900/30 border border-blue-700 rounded-lg p-3">
-                                        <p class="text-xs text-blue-300"><i class="fas fa-info-circle mr-1"></i>You can update your karma & account age after login from the dashboard.</p>
+                                        <p class="text-xs text-blue-300"><i class="fas fa-info-circle mr-1"></i>You can add your Reddit profile details after login from the dashboard.</p>
                                     </div>
                                     
                                     <button onclick="handleRegister()"
@@ -1533,16 +1519,20 @@
                 
                 <div class="max-w-7xl mx-auto px-4 py-6">
                     <!-- Reddit Profile Link -->
-                    <div class="bg-gradient-to-r from-orange-900/50 to-orange-800/50 rounded-xl p-3 md:p-4 border border-orange-700 mb-4 md:mb-6">
+                    <div class="bg-gradient-to-r ${Auth.currentUser.redditProfileLink ? 'from-orange-900/50 to-orange-800/50 border-orange-700' : 'from-red-900/50 to-red-800/50 border-red-700'} rounded-xl p-3 md:p-4 border mb-4 md:mb-6">
                         <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 md:gap-4">
                             <div class="flex items-center space-x-3">
                                 <i class="fab fa-reddit text-orange-500 text-xl md:text-2xl"></i>
                                 <div class="min-w-0 flex-1">
                                     <p class="text-xs md:text-sm text-gray-400">Your Reddit Profile</p>
-                                    <a href="${Auth.currentUser.redditProfileLink || '#'}" target="_blank" 
-                                        class="text-orange-400 hover:text-orange-300 hover:underline font-medium text-sm md:text-base truncate block max-w-xs">
-                                        ${Auth.currentUser.redditProfileLink ? Auth.currentUser.redditProfileLink.replace('https://', '').substring(0, 30) + '...' : 'Not provided'}
-                                    </a>
+                                    ${Auth.currentUser.redditProfileLink ? `
+                                        <a href="${Auth.currentUser.redditProfileLink}" target="_blank" 
+                                            class="text-orange-400 hover:text-orange-300 hover:underline font-medium text-sm md:text-base truncate block max-w-xs">
+                                            ${Auth.currentUser.redditProfileLink.replace('https://', '').substring(0, 30)}...
+                                        </a>
+                                    ` : `
+                                        <p class="text-red-400 font-medium text-sm">⚠️ Please add your Reddit profile to start accepting tasks</p>
+                                    `}
                                 </div>
                             </div>
                             <div class="flex items-center justify-between md:justify-end space-x-4 md:space-x-6">
@@ -1600,24 +1590,6 @@
                                 <i class="fas fa-wallet text-2xl md:text-3xl text-green-400"></i>
                             </div>
                         </div>
-                    </div>
-                    
-                    <!-- User Search Bar -->
-                    <div class="bg-gray-800 rounded-xl p-4 mb-6 border border-gray-700">
-                        <div class="flex flex-wrap gap-4 items-center">
-                            <div class="flex-1 min-w-[200px]">
-                                <div class="relative">
-                                    <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
-                                    <input type="text" id="userSearchInput" placeholder="Search by Task ID..."
-                                        class="w-full bg-gray-700 border border-gray-600 rounded-lg pl-10 pr-4 py-2 focus:border-orange-500 focus:outline-none"
-                                        onkeyup="handleUserSearch()">
-                                </div>
-                            </div>
-                            <button onclick="clearUserSearch()" class="bg-gray-600 hover:bg-gray-500 px-4 py-2 rounded-lg transition">
-                                <i class="fas fa-times mr-2"></i>Clear
-                            </button>
-                        </div>
-                        <div id="userSearchResults" class="hidden mt-4"></div>
                     </div>
                     
                     <!-- Tabs -->
@@ -2201,7 +2173,7 @@
                             <div class="flex-1 min-w-[200px]">
                                 <div class="relative">
                                     <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
-                                    <input type="text" id="adminSearchInput" placeholder="Search by Task ID, Username, or User ID..."
+                                    <input type="text" id="adminSearchInput" placeholder="Search by Task ID, Username, or Email..."
                                         class="w-full bg-gray-700 border border-gray-600 rounded-lg pl-10 pr-4 py-2 focus:border-purple-500 focus:outline-none"
                                         onkeyup="handleAdminSearch()">
                                 </div>
@@ -2843,17 +2815,16 @@
         window.handleRegister = async function() {
             const username = document.getElementById('regUsername').value;
             const password = document.getElementById('regPassword').value;
-            const redditProfile = document.getElementById('regRedditProfile').value;
             const errorEl = document.getElementById('authError');
             
-            if (!username || !password || !redditProfile) {
+            if (!username || !password) {
                 errorEl.textContent = 'Please fill in all fields';
                 errorEl.classList.remove('hidden');
                 return;
             }
             
-            // Register with 0 karma and age - user will update after login
-            const result = await Auth.register(username, password, redditProfile, 0, 0);
+            // Register with 0 karma and age - user will add Reddit profile after login
+            const result = await Auth.register(username, password, '', 0, 0);
             if (result.success) {
                 render();
             } else {
@@ -3367,88 +3338,6 @@
             document.getElementById('adminSearchInput').value = '';
             document.getElementById('adminStatusFilter').value = 'all';
             document.getElementById('adminSearchResults').classList.add('hidden');
-        };
-
-        // ============================================
-        // USER SEARCH FUNCTIONALITY
-        // ============================================
-        window.handleUserSearch = async function() {
-            const searchInput = document.getElementById('userSearchInput').value.trim().toLowerCase();
-            const resultsDiv = document.getElementById('userSearchResults');
-            
-            if (!searchInput) {
-                resultsDiv.classList.add('hidden');
-                return;
-            }
-            
-            resultsDiv.classList.remove('hidden');
-            resultsDiv.innerHTML = '<div class="text-center py-4"><div class="loading-spinner mx-auto"></div></div>';
-            
-            const availableTasks = await TaskManager.getAvailableTasks();
-            const mySubmissions = await FirestoreDB.getUserSubmissions(Auth.currentUser.id);
-            const allTasks = await FirestoreDB.getAllTasks();
-            
-            // Search in available tasks
-            const matchingAvailable = availableTasks.filter(t => 
-                t.taskId.toLowerCase().includes(searchInput)
-            );
-            
-            // Search in my submissions
-            const matchingSubmissions = mySubmissions.filter(s => 
-                s.taskId.toLowerCase().includes(searchInput)
-            );
-            
-            let html = '<div class="space-y-4">';
-            
-            if (matchingAvailable.length > 0) {
-                html += '<div><h4 class="text-sm font-semibold text-green-400 mb-2"><i class="fas fa-check-circle mr-2"></i>Available Tasks (' + matchingAvailable.length + ')</h4>';
-                html += '<div class="grid grid-cols-1 md:grid-cols-2 gap-2">';
-                matchingAvailable.forEach(task => {
-                    html += `
-                        <div class="bg-gray-700 rounded-lg p-3">
-                            <div class="flex items-center justify-between mb-2">
-                                <span class="font-mono text-sm">#${task.taskId}</span>
-                                <span class="text-green-400 font-bold">$${task.price.toFixed(2)}</span>
-                            </div>
-                            <p class="text-sm text-gray-300 mb-2">${task.type === 'post' ? task.title : 'Comment Task'}</p>
-                            <span class="px-2 py-1 ${task.type === 'post' ? 'bg-blue-600' : 'bg-purple-600'} rounded text-xs">${task.type}</span>
-                        </div>
-                    `;
-                });
-                html += '</div></div>';
-            }
-            
-            if (matchingSubmissions.length > 0) {
-                html += '<div><h4 class="text-sm font-semibold text-yellow-400 mb-2"><i class="fas fa-file-alt mr-2"></i>My Submissions (' + matchingSubmissions.length + ')</h4>';
-                html += '<div class="bg-gray-700 rounded-lg overflow-hidden"><table class="w-full text-sm"><thead class="bg-gray-600"><tr>';
-                html += '<th class="px-3 py-2 text-left">Task ID</th>';
-                html += '<th class="px-3 py-2 text-left">Link</th>';
-                html += '<th class="px-3 py-2 text-left">Status</th>';
-                html += '</tr></thead><tbody>';
-                
-                matchingSubmissions.forEach(sub => {
-                    const statusColors = { pending: 'bg-yellow-600', approved: 'bg-green-600', rejected: 'bg-red-600' };
-                    html += `<tr class="border-t border-gray-600">
-                        <td class="px-3 py-2 font-mono">${sub.taskId}</td>
-                        <td class="px-3 py-2"><a href="${sub.redditLink}" target="_blank" class="text-blue-400 hover:underline">${sub.redditLink.substring(0, 30)}...</a></td>
-                        <td class="px-3 py-2"><span class="px-2 py-1 ${statusColors[sub.status]} rounded-full text-xs capitalize">${sub.status}</span></td>
-                    </tr>`;
-                });
-                
-                html += '</tbody></table></div></div>';
-            }
-            
-            if (matchingAvailable.length === 0 && matchingSubmissions.length === 0) {
-                html = '<div class="text-center py-8 text-gray-400"><i class="fas fa-search text-4xl mb-2"></i><p>No tasks found matching "' + searchInput + '"</p></div>';
-            }
-            
-            html += '</div>';
-            resultsDiv.innerHTML = html;
-        };
-
-        window.clearUserSearch = function() {
-            document.getElementById('userSearchInput').value = '';
-            document.getElementById('userSearchResults').classList.add('hidden');
         };
 
         // ============================================
