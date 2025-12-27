@@ -109,6 +109,34 @@
         .upi-gradient {
             background: linear-gradient(135deg, #5F259F, #8B5CF6);
         }
+        .chat-widget {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 360px;
+            max-height: 500px;
+            z-index: 100;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        }
+        .chat-messages-list {
+            height: 350px;
+            overflow-y: auto;
+        }
+        .chat-bubble-user {
+            background: linear-gradient(135deg, #F97316, #EA580C);
+        }
+        .chat-bubble-admin {
+            background: linear-gradient(135deg, #8B5CF6, #7C3AED);
+        }
+        .chat-input:focus {
+            box-shadow: 0 0 0 2px #F97316;
+        }
+        @media (max-width: 768px) {
+            .chat-widget {
+                width: calc(100% - 40px);
+                max-width: 360px;
+            }
+        }
         .copy-btn {
             transition: all 0.2s ease;
         }
@@ -1526,7 +1554,7 @@
                                         <i class="fas fa-sign-in-alt mr-2"></i>Login
                                     </button>
                                 </div>
-                               
+                              
                             </div>
                             
                             <div id="registerForm" class="hidden">
@@ -1762,6 +1790,56 @@
                 ${renderSubmitModal()}
                 ${renderWalletModal()}
                 ${renderUpdateProfileModal()}
+                ${renderChatWidget()}
+            `;
+        }
+        
+        // ============================================
+        // CHAT WIDGET
+        // ============================================
+        function renderChatWidget() {
+            return `
+                <!-- Chat Toggle Button -->
+                <button id="chatToggle" onclick="toggleChat()" 
+                    class="fixed bottom-20 right-6 bg-orange-600 hover:bg-orange-700 w-14 h-14 rounded-full shadow-lg flex items-center justify-center z-[99] transition-all hover:scale-110">
+                    <i class="fas fa-comments text-2xl"></i>
+                    <span id="chatUnreadBadge" class="hidden absolute -top-1 -right-1 bg-red-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center font-bold"></span>
+                </button>
+                
+                <!-- Chat Widget -->
+                <div id="chatWidget" class="chat-widget bg-gray-800 rounded-xl border border-gray-700 hidden">
+                    <div class="bg-gradient-to-r from-orange-600 to-orange-700 p-4 rounded-t-xl flex items-center justify-between">
+                        <div class="flex items-center space-x-2">
+                            <i class="fas fa-headset text-white text-xl"></i>
+                            <div>
+                                <h4 class="font-bold text-white">Support Chat</h4>
+                                <p class="text-xs text-orange-100">Chat with Task Provider</p>
+                            </div>
+                        </div>
+                        <button onclick="toggleChat()" class="text-white hover:text-gray-200 transition">
+                            <i class="fas fa-times text-xl"></i>
+                        </button>
+                    </div>
+                    
+                    <div id="chatMessages" class="chat-messages-list bg-gray-900 p-4 space-y-3">
+                        <div class="text-center py-8">
+                            <div class="loading-spinner mx-auto mb-2"></div>
+                            <p class="text-gray-400 text-sm">Loading messages...</p>
+                        </div>
+                    </div>
+                    
+                    <div class="p-4 bg-gray-800 border-t border-gray-700">
+                        <div class="flex space-x-2">
+                            <input type="text" id="chatInput" placeholder="Type your message..." 
+                                class="flex-1 bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-sm focus:outline-none chat-input"
+                                onkeypress="if(event.key==='Enter') sendChatMessage()">
+                            <button onclick="sendChatMessage()" 
+                                class="bg-orange-600 hover:bg-orange-700 px-4 py-2 rounded-lg transition">
+                                <i class="fas fa-paper-plane"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
             `;
         }
         
@@ -3748,6 +3826,118 @@
                 viewUserProfile(userId);
             }
         };
+
+        // ============================================
+        // CHAT FUNCTIONALITY
+        // ============================================
+        let chatOpen = false;
+        let chatPollInterval = null;
+        let lastMessageCount = 0;
+
+        window.toggleChat = function() {
+            chatOpen = !chatOpen;
+            const chatWidget = document.getElementById('chatWidget');
+            const chatToggle = document.getElementById('chatToggle');
+            
+            if (chatOpen) {
+                chatWidget.classList.remove('hidden');
+                chatToggle.style.transform = 'scale(0.9)';
+                loadChatMessages();
+                
+                // Clear unread badge
+                document.getElementById('chatUnreadBadge').classList.add('hidden');
+                
+                // Start polling for new messages
+                if (!chatPollInterval) {
+                    chatPollInterval = setInterval(loadChatMessages, 3000);
+                }
+            } else {
+                chatWidget.classList.add('hidden');
+                chatToggle.style.transform = 'scale(1)';
+            }
+        };
+
+        window.sendChatMessage = async function() {
+            const input = document.getElementById('chatInput');
+            const message = input.value.trim();
+            
+            if (!message) return;
+            
+            const isAdmin = Auth.currentUser.role === 'admin';
+            const chatMessage = {
+                id: 'msg_' + Date.now(),
+                userId: Auth.currentUser.id,
+                username: Auth.currentUser.username,
+                message: message,
+                isAdmin: isAdmin,
+                timestamp: Date.now()
+            };
+            
+            input.value = '';
+            
+            const result = await FirestoreDB.sendMessage(chatMessage);
+            if (result.success) {
+                loadChatMessages();
+            }
+        };
+
+        async function loadChatMessages() {
+            const messagesDiv = document.getElementById('chatMessages');
+            if (!messagesDiv) return;
+            
+            const messages = await FirestoreDB.getAllMessages();
+            
+            // Check for new messages
+            if (!chatOpen && messages.length > lastMessageCount) {
+                const badge = document.getElementById('chatUnreadBadge');
+                const unreadCount = messages.length - lastMessageCount;
+                badge.textContent = unreadCount > 9 ? '9+' : unreadCount;
+                badge.classList.remove('hidden');
+            }
+            lastMessageCount = messages.length;
+            
+            if (messages.length === 0) {
+                messagesDiv.innerHTML = `
+                    <div class="text-center py-8">
+                        <i class="fas fa-comments text-4xl text-gray-600 mb-2"></i>
+                        <p class="text-gray-400 text-sm">No messages yet</p>
+                        <p class="text-gray-500 text-xs mt-1">Start a conversation with Task Provider</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            // Scroll to bottom after rendering
+            const wasAtBottom = messagesDiv.scrollHeight - messagesDiv.scrollTop === messagesDiv.clientHeight;
+            
+            messagesDiv.innerHTML = messages.map(msg => {
+                const isCurrentUser = msg.userId === Auth.currentUser.id;
+                const time = new Date(msg.timestamp).toLocaleTimeString('en-US', { 
+                    hour: '2-digit', 
+                    minute: '2-digit' 
+                });
+                
+                return `
+                    <div class="flex ${isCurrentUser ? 'justify-end' : 'justify-start'}">
+                        <div class="max-w-[75%]">
+                            ${!isCurrentUser ? `
+                                <p class="text-xs text-gray-500 mb-1 ml-1">
+                                    ${msg.isAdmin ? '<i class="fas fa-crown text-yellow-400 mr-1"></i>Task Provider' : msg.username}
+                                </p>
+                            ` : ''}
+                            <div class="relative ${isCurrentUser ? 'chat-bubble-user' : 'chat-bubble-admin'} rounded-lg px-4 py-2 text-white">
+                                <p class="text-sm break-words">${msg.message}</p>
+                                <p class="text-xs opacity-75 mt-1">${time}</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            if (wasAtBottom || messagesDiv.scrollTop === 0) {
+                messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            }
+        }
 
         // ============================================
         // INITIALIZE APP
