@@ -848,13 +848,65 @@
         // TASK MANAGER
         // ============================================
         const TaskManager = {
-            generateTaskId() {
-                return 'TASK-' + Date.now().toString(36).toUpperCase() + '-' + Math.random().toString(36).substr(2, 4).toUpperCase();
+            async generateTaskId() {
+                // Get all tasks to find the highest ID
+                const allTasks = await FirestoreDB.getAllTasks();
+                let maxId = 999;
+                allTasks.forEach(task => {
+                    const taskNum = parseInt(task.taskId);
+                    if (!isNaN(taskNum) && taskNum > maxId) {
+                        maxId = taskNum;
+                    }
+                });
+                return String(maxId + 1);
+            },
+            
+            async getUserDailyTaskCounts(userId) {
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                const todayStart = today.getTime();
+                
+                const submissions = await FirestoreDB.getUserSubmissions(userId);
+                const allTasks = await FirestoreDB.getAllTasks();
+                
+                let postCount = 0;
+                let commentCount = 0;
+                
+                submissions.forEach(sub => {
+                    if (sub.submittedAt >= todayStart) {
+                        const task = allTasks.find(t => t.taskId === sub.taskId);
+                        if (task) {
+                            if (task.type === 'post') postCount++;
+                            else if (task.type === 'comment') commentCount++;
+                        }
+                    }
+                });
+                
+                // Also count reserved tasks for today
+                const reservedTasks = await FirestoreDB.getReservedTasks(userId);
+                reservedTasks.forEach(task => {
+                    if (task.reservedAt >= todayStart) {
+                        if (task.type === 'post') postCount++;
+                        else if (task.type === 'comment') commentCount++;
+                    }
+                });
+                
+                return { postCount, commentCount };
+            },
+            
+            canAcceptTask(taskType, dailyCounts) {
+                if (taskType === 'post') {
+                    return dailyCounts.postCount < 3;
+                } else if (taskType === 'comment') {
+                    return dailyCounts.commentCount < 10;
+                }
+                return false;
             },
             
             async createTask(taskData) {
+                const taskId = await this.generateTaskId();
                 const task = {
-                    taskId: this.generateTaskId(),
+                    taskId: taskId,
                     type: taskData.type,
                     title: taskData.title || '',
                     body: taskData.body || '',
@@ -897,6 +949,20 @@
             },
             
             async acceptTask(taskId, userId) {
+                // Check daily limits first
+                const task = await FirestoreDB.getTask(taskId);
+                if (!task) return { success: false, error: 'Task not found' };
+                
+                const dailyCounts = await this.getUserDailyTaskCounts(userId);
+                
+                if (!this.canAcceptTask(task.type, dailyCounts)) {
+                    if (task.type === 'post') {
+                        return { success: false, error: 'Daily limit reached! You can only accept 3 post tasks per day.' };
+                    } else {
+                        return { success: false, error: 'Daily limit reached! You can only accept 10 comment tasks per day.' };
+                    }
+                }
+                
                 return await FirestoreDB.acceptTask(taskId, userId);
             },
             
@@ -950,7 +1016,7 @@
                     return { success: false, error: 'Insufficient balance' };
                 }
                 if (amount < 2) {
-                    return { success: false, error: 'Minimum withdrawal is $2' };
+                    return { success: false, error: 'Minimum withdrawal is $2.00' };
                 }
                 
                 const withdrawal = {
@@ -1350,11 +1416,38 @@
             const allTasks = await FirestoreDB.getAllTasks();
             const mySubmissions = await FirestoreDB.getUserSubmissions(Auth.currentUser.id);
             const myWithdrawals = await WithdrawalManager.getUserWithdrawals(Auth.currentUser.id);
+            const dailyCounts = await TaskManager.getUserDailyTaskCounts(Auth.currentUser.id);
             
             return `
                 ${renderNavbar(false)}
                 
                 <div class="max-w-7xl mx-auto px-4 py-6">
+                    <!-- Reddit Profile Link -->
+                    <div class="bg-gradient-to-r from-orange-900/50 to-orange-800/50 rounded-xl p-4 border border-orange-700 mb-6">
+                        <div class="flex items-center justify-between flex-wrap gap-4">
+                            <div class="flex items-center space-x-3">
+                                <i class="fab fa-reddit text-orange-500 text-2xl"></i>
+                                <div>
+                                    <p class="text-sm text-gray-400">Your Reddit Profile</p>
+                                    <a href="${Auth.currentUser.redditProfileLink || '#'}" target="_blank" 
+                                        class="text-orange-400 hover:text-orange-300 hover:underline font-medium">
+                                        ${Auth.currentUser.redditProfileLink || 'Not provided'}
+                                    </a>
+                                </div>
+                            </div>
+                            <div class="flex items-center space-x-6">
+                                <div class="text-center">
+                                    <p class="text-xs text-gray-500">Daily Post Tasks</p>
+                                    <p class="font-bold ${dailyCounts.postCount >= 3 ? 'text-red-400' : 'text-green-400'}">${dailyCounts.postCount}/3</p>
+                                </div>
+                                <div class="text-center">
+                                    <p class="text-xs text-gray-500">Daily Comment Tasks</p>
+                                    <p class="font-bold ${dailyCounts.commentCount >= 10 ? 'text-red-400' : 'text-green-400'}">${dailyCounts.commentCount}/10</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
                     <!-- Stats Cards -->
                     <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
                         <div class="bg-gray-800 rounded-xl p-4 border border-gray-700">
@@ -1418,7 +1511,7 @@
                     
                     <!-- Tab Content -->
                     <div id="tabContent">
-                        ${activeTab === 'available' ? renderAvailableTasks(availableTasks, eligible) : ''}
+                        ${activeTab === 'available' ? renderAvailableTasks(availableTasks, eligible, dailyCounts) : ''}
                         ${activeTab === 'active' ? renderActiveTasks(myReservedTasks) : ''}
                         ${activeTab === 'history' ? renderSubmissionHistory(mySubmissions, allTasks) : ''}
                         ${activeTab === 'withdrawals' ? renderUserWithdrawals(myWithdrawals) : ''}
@@ -1430,7 +1523,7 @@
             `;
         }
 
-        function renderAvailableTasks(tasks, eligible) {
+        function renderAvailableTasks(tasks, eligible, dailyCounts) {
             if (tasks.length === 0) {
                 return `
                     <div class="text-center py-16 bg-gray-800 rounded-xl border border-gray-700">
@@ -1443,7 +1536,24 @@
             
             return `
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    ${tasks.map(task => `
+                    ${tasks.map(task => {
+                        const canAccept = eligible && TaskManager.canAcceptTask(task.type, dailyCounts);
+                        const limitReached = eligible && !TaskManager.canAcceptTask(task.type, dailyCounts);
+                        let buttonText = '';
+                        let buttonClass = '';
+                        
+                        if (!eligible) {
+                            buttonText = '<i class="fas fa-lock mr-2"></i>Not Eligible';
+                            buttonClass = 'bg-gray-600 cursor-not-allowed text-gray-400';
+                        } else if (limitReached) {
+                            buttonText = '<i class="fas fa-ban mr-2"></i>Daily Limit Reached';
+                            buttonClass = 'bg-red-900 cursor-not-allowed text-red-300';
+                        } else {
+                            buttonText = '<i class="fas fa-hand-pointer mr-2"></i>Accept Task';
+                            buttonClass = 'bg-orange-600 hover:bg-orange-700';
+                        }
+                        
+                        return `
                         <div class="bg-gray-800 rounded-xl p-5 border border-gray-700 task-card transition hover:border-orange-500">
                             <div class="flex items-start justify-between mb-3">
                                 <span class="px-3 py-1 ${task.type === 'post' ? 'bg-blue-600' : 'bg-purple-600'} rounded-full text-xs font-semibold">
@@ -1453,7 +1563,7 @@
                             </div>
                             
                             <div class="mb-4">
-                                <p class="text-xs text-gray-500 mb-1">Task ID: ${task.taskId}</p>
+                                <p class="text-xs text-gray-500 mb-1">Task ID: #${task.taskId}</p>
                                 ${task.type === 'post' ? `
                                     <h3 class="font-semibold text-lg mb-2">${task.title}</h3>
                                     <p class="text-gray-400 text-sm line-clamp-2">${task.body}</p>
@@ -1467,14 +1577,12 @@
                             </div>
                             
                             <button onclick="acceptTask('${task.taskId}')" 
-                                ${!eligible ? 'disabled' : ''}
-                                class="w-full py-2 rounded-lg font-semibold transition ${eligible 
-                                    ? 'bg-orange-600 hover:bg-orange-700' 
-                                    : 'bg-gray-600 cursor-not-allowed text-gray-400'}">
-                                ${eligible ? '<i class="fas fa-hand-pointer mr-2"></i>Accept Task' : '<i class="fas fa-lock mr-2"></i>Not Eligible'}
+                                ${!canAccept ? 'disabled' : ''}
+                                class="w-full py-2 rounded-lg font-semibold transition ${buttonClass}">
+                                ${buttonText}
                             </button>
                         </div>
-                    `).join('')}
+                    `}).join('')}
                 </div>
             `;
         }
@@ -1707,7 +1815,7 @@
                         ${balance >= 2 ? `
                             <div class="space-y-4">
                                 <h4 class="font-semibold text-gray-300">Withdraw Funds</h4>
-                                <p class="text-xs text-gray-500">Minimum withdrawal: $2.00</p>
+                                <p class="text-xs text-yellow-500"><i class="fas fa-info-circle mr-1"></i>Minimum withdrawal: $2.00</p>
                                 
                                 <!-- Amount -->
                                 <div>
@@ -1767,7 +1875,7 @@
                             <div class="text-center py-6">
                                 <i class="fas fa-piggy-bank text-5xl text-gray-600 mb-4"></i>
                                 <p class="text-gray-400">Minimum balance required: <strong class="text-green-400">$2.00</strong></p>
-                                <p class="text-gray-500 text-sm mt-2">Complete more tasks to reach the minimum!</p>
+                                <p class="text-gray-500 text-sm mt-2">Complete more tasks to reach the minimum withdrawal amount!</p>
                             </div>
                         `}
                     </div>
@@ -2148,17 +2256,18 @@
                         <thead class="bg-gray-700">
                             <tr>
                                 <th class="px-4 py-3 text-left text-sm">Username</th>
+                                <th class="px-4 py-3 text-left text-sm">Reddit Profile</th>
                                 <th class="px-4 py-3 text-left text-sm">Auth</th>
                                 <th class="px-4 py-3 text-left text-sm">Karma</th>
-                                <th class="px-4 py-3 text-left text-sm">Account Age</th>
+                                <th class="px-4 py-3 text-left text-sm">Age</th>
                                 <th class="px-4 py-3 text-left text-sm">Eligible</th>
-                                <th class="px-4 py-3 text-right text-sm">Wallet Balance</th>
+                                <th class="px-4 py-3 text-right text-sm">Balance</th>
                             </tr>
                         </thead>
                         <tbody>
                             ${users.length === 0 ? `
                                 <tr>
-                                    <td colspan="6" class="px-4 py-8 text-center text-gray-400">No users registered yet</td>
+                                    <td colspan="7" class="px-4 py-8 text-center text-gray-400">No users registered yet</td>
                                 </tr>
                             ` : users.map(user => {
                                 const eligible = (user.redditKarma || 0) >= 200 && (user.accountAge || 0) >= 1;
@@ -2174,6 +2283,14 @@
                                             </div>
                                         </td>
                                         <td class="px-4 py-3">
+                                            ${user.redditProfileLink 
+                                                ? `<a href="${user.redditProfileLink}" target="_blank" class="text-orange-400 hover:underline text-sm">
+                                                    <i class="fab fa-reddit mr-1"></i>View Profile
+                                                   </a>`
+                                                : '<span class="text-gray-500 text-sm">Not provided</span>'
+                                            }
+                                        </td>
+                                        <td class="px-4 py-3">
                                             ${user.authProvider === 'google' 
                                                 ? '<span class="flex items-center text-sm"><i class="fab fa-google text-blue-400 mr-1"></i>Google</span>'
                                                 : '<span class="text-sm text-gray-400"><i class="fas fa-key mr-1"></i>Local</span>'
@@ -2183,12 +2300,12 @@
                                             ${user.redditKarma || 0}
                                         </td>
                                         <td class="px-4 py-3 ${(user.accountAge || 0) >= 1 ? 'text-green-400' : 'text-red-400'}">
-                                            ${user.accountAge || 0} month(s)
+                                            ${user.accountAge || 0}m
                                         </td>
                                         <td class="px-4 py-3">
                                             ${eligible 
-                                                ? '<span class="text-green-400"><i class="fas fa-check-circle"></i> Yes</span>'
-                                                : '<span class="text-red-400"><i class="fas fa-times-circle"></i> No</span>'}
+                                                ? '<span class="text-green-400"><i class="fas fa-check-circle"></i></span>'
+                                                : '<span class="text-red-400"><i class="fas fa-times-circle"></i></span>'}
                                         </td>
                                         <td class="px-4 py-3 text-right font-semibold text-green-400">$${(user.walletBalance || 0).toFixed(2)}</td>
                                     </tr>
