@@ -752,7 +752,7 @@
                 }
             },
             
-            async register(username, password, redditKarma, accountAge) {
+            async register(username, password, redditProfileLink, redditKarma, accountAge) {
                 showLoading('Creating account...');
                 
                 const existing = await FirestoreDB.getUserByUsername(username);
@@ -761,11 +761,18 @@
                     return { success: false, error: 'Username already exists' };
                 }
                 
+                // Validate Reddit profile link
+                if (!redditProfileLink || !redditProfileLink.includes('reddit.com/user/')) {
+                    hideLoading();
+                    return { success: false, error: 'Please enter a valid Reddit profile link (e.g., https://reddit.com/user/yourname)' };
+                }
+                
                 const newUser = {
                     id: 'user_' + Date.now(),
                     username,
                     password,
                     email: null,
+                    redditProfileLink,
                     redditKarma: parseInt(redditKarma),
                     accountAge: parseInt(accountAge),
                     walletBalance: 0,
@@ -788,16 +795,24 @@
                 return { success: true, user: newUser };
             },
             
-            async updateRedditInfo(karma, accountAge) {
+            async updateRedditInfo(redditProfileLink, karma, accountAge) {
                 showLoading('Saving Reddit info...');
                 
+                // Validate Reddit profile link
+                if (!redditProfileLink || !redditProfileLink.includes('reddit.com/user/')) {
+                    hideLoading();
+                    return { success: false, error: 'Please enter a valid Reddit profile link (e.g., https://reddit.com/user/yourname)' };
+                }
+                
                 const result = await FirestoreDB.updateUser(this.currentUser.id, {
+                    redditProfileLink,
                     redditKarma: parseInt(karma),
                     accountAge: parseInt(accountAge),
                     needsRedditInfo: false
                 });
                 
                 if (result.success) {
+                    this.currentUser.redditProfileLink = redditProfileLink;
                     this.currentUser.redditKarma = parseInt(karma);
                     this.currentUser.accountAge = parseInt(accountAge);
                     this.currentUser.needsRedditInfo = false;
@@ -934,8 +949,8 @@
                 if ((user.walletBalance || 0) < amount) {
                     return { success: false, error: 'Insufficient balance' };
                 }
-                if (amount < 5) {
-                    return { success: false, error: 'Minimum withdrawal is $5' };
+                if (amount < 2) {
+                    return { success: false, error: 'Minimum withdrawal is $2' };
                 }
                 
                 const withdrawal = {
@@ -1217,6 +1232,15 @@
                                             placeholder="Choose password">
                                     </div>
                                     <div>
+                                        <label class="block text-sm text-gray-400 mb-1">
+                                            <i class="fab fa-reddit text-orange-500 mr-1"></i>Reddit Profile Link
+                                        </label>
+                                        <input type="url" id="regRedditProfile"
+                                            class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 focus:border-orange-500 focus:outline-none"
+                                            placeholder="https://reddit.com/user/yourname">
+                                        <p class="text-xs text-gray-500 mt-1">Required to verify your Reddit account</p>
+                                    </div>
+                                    <div>
                                         <label class="block text-sm text-gray-400 mb-1">Your Reddit Karma</label>
                                         <input type="number" id="regKarma"
                                             class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 focus:border-orange-500 focus:outline-none"
@@ -1277,6 +1301,15 @@
                             </h2>
                             
                             <div class="space-y-4">
+                                <div>
+                                    <label class="block text-sm text-gray-400 mb-1">
+                                        <i class="fab fa-reddit text-orange-500 mr-1"></i>Reddit Profile Link
+                                    </label>
+                                    <input type="url" id="redditProfileLink"
+                                        class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 focus:border-orange-500 focus:outline-none"
+                                        placeholder="https://reddit.com/user/yourname">
+                                    <p class="text-xs text-gray-500 mt-1">Required to verify your Reddit account</p>
+                                </div>
                                 <div>
                                     <label class="block text-sm text-gray-400 mb-1">Your Reddit Karma</label>
                                     <input type="number" id="redditKarma"
@@ -1671,15 +1704,15 @@
                             <p class="text-4xl font-bold text-green-400">$${balance.toFixed(2)}</p>
                         </div>
                         
-                        ${balance >= 5 ? `
+                        ${balance >= 2 ? `
                             <div class="space-y-4">
                                 <h4 class="font-semibold text-gray-300">Withdraw Funds</h4>
-                                <p class="text-xs text-gray-500">Minimum withdrawal: $5.00</p>
+                                <p class="text-xs text-gray-500">Minimum withdrawal: $2.00</p>
                                 
                                 <!-- Amount -->
                                 <div>
                                     <label class="block text-sm text-gray-400 mb-1">Amount ($)</label>
-                                    <input type="number" id="withdrawAmount" step="0.01" min="5" max="${balance}"
+                                    <input type="number" id="withdrawAmount" step="0.01" min="2" max="${balance}"
                                         class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 focus:border-green-500 focus:outline-none"
                                         placeholder="Enter amount" value="${balance.toFixed(2)}">
                                 </div>
@@ -1733,7 +1766,7 @@
                         ` : `
                             <div class="text-center py-6">
                                 <i class="fas fa-piggy-bank text-5xl text-gray-600 mb-4"></i>
-                                <p class="text-gray-400">Minimum balance required: <strong class="text-green-400">$5.00</strong></p>
+                                <p class="text-gray-400">Minimum balance required: <strong class="text-green-400">$2.00</strong></p>
                                 <p class="text-gray-500 text-sm mt-2">Complete more tasks to reach the minimum!</p>
                             </div>
                         `}
@@ -2326,17 +2359,18 @@
         window.handleRegister = async function() {
             const username = document.getElementById('regUsername').value;
             const password = document.getElementById('regPassword').value;
+            const redditProfile = document.getElementById('regRedditProfile').value;
             const karma = document.getElementById('regKarma').value;
             const age = document.getElementById('regAge').value;
             const errorEl = document.getElementById('authError');
             
-            if (!username || !password || !karma || !age) {
+            if (!username || !password || !redditProfile || !karma || !age) {
                 errorEl.textContent = 'Please fill in all fields';
                 errorEl.classList.remove('hidden');
                 return;
             }
             
-            const result = await Auth.register(username, password, karma, age);
+            const result = await Auth.register(username, password, redditProfile, karma, age);
             if (result.success) {
                 render();
             } else {
@@ -2346,21 +2380,22 @@
         };
 
         window.saveRedditInfo = async function() {
+            const redditProfileLink = document.getElementById('redditProfileLink').value;
             const karma = document.getElementById('redditKarma').value;
             const age = document.getElementById('redditAge').value;
             const errorEl = document.getElementById('redditInfoError');
             
-            if (!karma || !age) {
+            if (!redditProfileLink || !karma || !age) {
                 errorEl.textContent = 'Please fill in all fields';
                 errorEl.classList.remove('hidden');
                 return;
             }
             
-            const result = await Auth.updateRedditInfo(karma, age);
+            const result = await Auth.updateRedditInfo(redditProfileLink, karma, age);
             if (result.success) {
                 render();
             } else {
-                errorEl.textContent = 'Failed to update Reddit info';
+                errorEl.textContent = result.error || 'Failed to update Reddit info';
                 errorEl.classList.remove('hidden');
             }
         };
@@ -2482,8 +2517,8 @@
                 return;
             }
             
-            if (amount < 5) {
-                errorEl.textContent = 'Minimum withdrawal is $5.00';
+            if (amount < 2) {
+                errorEl.textContent = 'Minimum withdrawal is $2.00';
                 errorEl.classList.remove('hidden');
                 return;
             }
