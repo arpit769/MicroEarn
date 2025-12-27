@@ -45,33 +45,92 @@
             height: 24px;
             animation: spin 1s linear infinite;
         }
+        .big-spinner {
+            width: 48px;
+            height: 48px;
+            border-width: 4px;
+        }
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+        .firebase-status {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 12px;
+            z-index: 1000;
+        }
+        .binance-gradient {
+            background: linear-gradient(135deg, #F0B90B, #F8D12F);
+        }
+        .upi-gradient {
+            background: linear-gradient(135deg, #5F259F, #8B5CF6);
+        }
     </style>
 </head>
 <body class="bg-gray-900 text-white min-h-screen">
-    <div id="app"></div>
+    <div id="app">
+        <div class="min-h-screen flex items-center justify-center">
+            <div class="text-center">
+                <div class="loading-spinner big-spinner mx-auto mb-4"></div>
+                <p class="text-gray-400">Connecting to Firebase...</p>
+            </div>
+        </div>
+    </div>
     
     <!-- Loading Overlay -->
     <div id="loadingOverlay" class="hidden fixed inset-0 bg-black/80 flex items-center justify-center z-[100]">
         <div class="text-center">
             <div class="loading-spinner mx-auto mb-4"></div>
-            <p class="text-gray-300">Authenticating...</p>
+            <p class="text-gray-300" id="loadingText">Loading...</p>
         </div>
+    </div>
+    
+    <!-- Firebase Status Indicator -->
+    <div id="firebaseStatus" class="firebase-status bg-yellow-600 text-white">
+        <i class="fas fa-circle-notch fa-spin mr-2"></i>Connecting...
     </div>
 
     <!-- Firebase v10 Modular SDK -->
     <script type="module">
         // ============================================
-        // FIREBASE v10 MODULAR CONFIGURATION
+        // FIREBASE v10 MODULAR IMPORTS
         // ============================================
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
-        import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+        import { 
+            getAuth, 
+            signInWithPopup, 
+            GoogleAuthProvider, 
+            signOut, 
+            onAuthStateChanged 
+        } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+        import { 
+            getFirestore, 
+            collection, 
+            doc, 
+            getDoc, 
+            getDocs, 
+            setDoc, 
+            updateDoc, 
+            deleteDoc, 
+            addDoc,
+            query, 
+            where, 
+            orderBy, 
+            onSnapshot,
+            runTransaction,
+            serverTimestamp,
+            Timestamp
+        } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 
+        // =====================================================
+        // FIREBASE CONFIGURATION
+        // =====================================================
         const firebaseConfig = {
-            apiKey: "AIzaSyBRJEmHXbHysb0weZfsVNTzUL0TDtjyuVI",
+            apiKey: "AIzaSyBRJEmHXbHysb0weZfsVNTzUl0TDTjyuVI",
             authDomain: "earnwithsimpletasks.firebaseapp.com",
             projectId: "earnwithsimpletasks",
             storageBucket: "earnwithsimpletasks.firebasestorage.app",
@@ -83,227 +142,608 @@
         // Initialize Firebase v10
         const firebaseApp = initializeApp(firebaseConfig);
         const auth = getAuth(firebaseApp);
+        const db = getFirestore(firebaseApp);
         const googleProvider = new GoogleAuthProvider();
         
         // Make Firebase available globally
         window.firebaseAuth = auth;
+        window.firebaseDb = db;
         window.firebaseGoogleProvider = googleProvider;
         window.firebaseSignInWithPopup = signInWithPopup;
         window.firebaseSignOut = signOut;
-        
-        // ============================================
-        // SIMULATED MONGODB DATABASE WITH INDEXES
-        // ============================================
-        const DB = {
-            users: JSON.parse(localStorage.getItem('reddit_platform_users')) || [],
-            tasks: JSON.parse(localStorage.getItem('reddit_platform_tasks')) || [],
-            submissions: JSON.parse(localStorage.getItem('reddit_platform_submissions')) || [],
-            
-            // Indexes simulation
-            indexes: {
-                tasks: {
-                    taskId: new Map(),
-                    status: new Map(),
-                    reservedBy: new Map()
-                },
-                users: {
-                    username: new Map(),
-                    email: new Map()
-                }
-            },
-            
-            save() {
-                localStorage.setItem('reddit_platform_users', JSON.stringify(this.users));
-                localStorage.setItem('reddit_platform_tasks', JSON.stringify(this.tasks));
-                localStorage.setItem('reddit_platform_submissions', JSON.stringify(this.submissions));
-                this.rebuildIndexes();
-            },
-            
-            rebuildIndexes() {
-                this.indexes.tasks.taskId.clear();
-                this.indexes.tasks.status.clear();
-                this.indexes.tasks.reservedBy.clear();
-                this.indexes.users.username.clear();
-                this.indexes.users.email.clear();
-                
-                this.tasks.forEach((task, idx) => {
-                    this.indexes.tasks.taskId.set(task.taskId, idx);
-                    if (!this.indexes.tasks.status.has(task.status)) {
-                        this.indexes.tasks.status.set(task.status, []);
-                    }
-                    this.indexes.tasks.status.get(task.status).push(idx);
-                });
-                
-                this.users.forEach((user, idx) => {
-                    this.indexes.users.username.set(user.username, idx);
-                    if (user.email) {
-                        this.indexes.users.email.set(user.email, idx);
-                    }
-                });
-            },
-            
-            // FCFS-safe task acceptance with race condition protection
-            acceptTask(taskId, userId) {
-                const taskIdx = this.indexes.tasks.taskId.get(taskId);
-                if (taskIdx === undefined) return { success: false, error: 'Task not found' };
-                
-                const task = this.tasks[taskIdx];
-                
-                // Race condition safe check
-                if (task.status !== 'available') {
-                    return { success: false, error: 'Task is no longer available' };
-                }
-                
-                // Check if user already accepted/submitted this task
-                const existingSubmission = this.submissions.find(s => s.taskId === taskId && s.userId === userId);
-                if (existingSubmission) {
-                    return { success: false, error: 'You have already worked on this task' };
-                }
-                
-                // Atomic update simulation
-                task.status = 'reserved';
-                task.reservedBy = userId;
-                task.reservedAt = Date.now();
-                
-                this.save();
-                return { success: true };
-            },
-            
-            findOrCreateGoogleUser(googleUser) {
-                // Check if user exists by email
-                let user = this.users.find(u => u.email === googleUser.email);
-                
-                if (!user) {
-                    // Create new user from Google account
-                    user = {
-                        id: 'google_' + googleUser.uid,
-                        username: googleUser.displayName || googleUser.email.split('@')[0],
-                        email: googleUser.email,
-                        photoURL: googleUser.photoURL,
-                        password: null, // Google users don't have password
-                        authProvider: 'google',
-                        redditKarma: 0, // Will need to be updated
-                        accountAge: 0, // Will need to be updated
-                        walletBalance: 0,
-                        role: 'user',
-                        createdAt: Date.now(),
-                        needsRedditInfo: true
-                    };
-                    this.users.push(user);
-                    this.save();
-                }
-                
-                return user;
-            },
-            
-            updateRedditInfo(userId, karma, accountAge) {
-                const user = this.users.find(u => u.id === userId);
-                if (user) {
-                    user.redditKarma = parseInt(karma);
-                    user.accountAge = parseInt(accountAge);
-                    user.needsRedditInfo = false;
-                    this.save();
-                    return { success: true, user };
-                }
-                return { success: false };
-            },
-            
-            init() {
-                // Create admin if not exists or update existing admin
-                const existingAdmin = this.users.find(u => u.role === 'admin');
-                if (!existingAdmin) {
-                    this.users.push({
-                        id: 'admin_' + Date.now(),
-                        username: 'axel769',
-                        password: 'axel8129',
-                        email: 'admin@redditplatform.com',
-                        redditKarma: 10000,
-                        accountAge: 24,
-                        walletBalance: 0,
-                        role: 'admin',
-                        authProvider: 'local',
-                        createdAt: Date.now()
-                    });
-                    this.save();
-                } else {
-                    // Update admin credentials
-                    existingAdmin.username = 'axel769';
-                    existingAdmin.password = 'axel8129';
-                    this.save();
-                }
-                this.rebuildIndexes();
-            }
-        };
-        
-        DB.init();
 
         // ============================================
-        // JWT SIMULATION & AUTH
+        // FIRESTORE DATABASE OPERATIONS
+        // ============================================
+        const FirestoreDB = {
+            // Initialize admin user if not exists
+            async initAdmin() {
+                try {
+                    const adminRef = doc(db, 'users', 'admin_axel769');
+                    const adminDoc = await getDoc(adminRef);
+                    
+                    if (!adminDoc.exists()) {
+                        await setDoc(adminRef, {
+                            id: 'admin_axel769',
+                            username: 'axel769',
+                            password: 'axel8129',
+                            email: 'admin@redditplatform.com',
+                            redditKarma: 10000,
+                            accountAge: 24,
+                            walletBalance: 0,
+                            role: 'admin',
+                            authProvider: 'local',
+                            createdAt: serverTimestamp()
+                        });
+                        console.log('Admin user created in Firestore');
+                    }
+                } catch (error) {
+                    console.error('Error initializing admin:', error);
+                }
+            },
+
+            // USER OPERATIONS
+            async getUser(userId) {
+                try {
+                    const userRef = doc(db, 'users', userId);
+                    const userDoc = await getDoc(userRef);
+                    return userDoc.exists() ? { id: userDoc.id, ...userDoc.data() } : null;
+                } catch (error) {
+                    console.error('Error getting user:', error);
+                    return null;
+                }
+            },
+
+            async getUserByUsername(username) {
+                try {
+                    const usersRef = collection(db, 'users');
+                    const q = query(usersRef, where('username', '==', username));
+                    const snapshot = await getDocs(q);
+                    if (snapshot.empty) return null;
+                    const docSnap = snapshot.docs[0];
+                    return { id: docSnap.id, ...docSnap.data() };
+                } catch (error) {
+                    console.error('Error getting user by username:', error);
+                    return null;
+                }
+            },
+
+            async getUserByEmail(email) {
+                try {
+                    const usersRef = collection(db, 'users');
+                    const q = query(usersRef, where('email', '==', email));
+                    const snapshot = await getDocs(q);
+                    if (snapshot.empty) return null;
+                    const docSnap = snapshot.docs[0];
+                    return { id: docSnap.id, ...docSnap.data() };
+                } catch (error) {
+                    console.error('Error getting user by email:', error);
+                    return null;
+                }
+            },
+
+            async createUser(userData) {
+                try {
+                    const userRef = doc(db, 'users', userData.id);
+                    await setDoc(userRef, {
+                        ...userData,
+                        createdAt: serverTimestamp()
+                    });
+                    return { success: true };
+                } catch (error) {
+                    console.error('Error creating user:', error);
+                    return { success: false, error: error.message };
+                }
+            },
+
+            async updateUser(userId, updates) {
+                try {
+                    const userRef = doc(db, 'users', userId);
+                    await updateDoc(userRef, updates);
+                    return { success: true };
+                } catch (error) {
+                    console.error('Error updating user:', error);
+                    return { success: false, error: error.message };
+                }
+            },
+
+            async getAllUsers() {
+                try {
+                    const usersRef = collection(db, 'users');
+                    const q = query(usersRef, where('role', '==', 'user'));
+                    const snapshot = await getDocs(q);
+                    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                } catch (error) {
+                    console.error('Error getting all users:', error);
+                    return [];
+                }
+            },
+
+            // TASK OPERATIONS
+            async createTask(taskData) {
+                try {
+                    const taskRef = doc(db, 'tasks', taskData.taskId);
+                    await setDoc(taskRef, {
+                        ...taskData,
+                        createdAt: serverTimestamp()
+                    });
+                    return { success: true, task: taskData };
+                } catch (error) {
+                    console.error('Error creating task:', error);
+                    return { success: false, error: error.message };
+                }
+            },
+
+            async getTask(taskId) {
+                try {
+                    const taskRef = doc(db, 'tasks', taskId);
+                    const taskDoc = await getDoc(taskRef);
+                    return taskDoc.exists() ? { id: taskDoc.id, ...taskDoc.data() } : null;
+                } catch (error) {
+                    console.error('Error getting task:', error);
+                    return null;
+                }
+            },
+
+            async updateTask(taskId, updates) {
+                try {
+                    const taskRef = doc(db, 'tasks', taskId);
+                    await updateDoc(taskRef, updates);
+                    return { success: true };
+                } catch (error) {
+                    console.error('Error updating task:', error);
+                    return { success: false, error: error.message };
+                }
+            },
+
+            async deleteTask(taskId) {
+                try {
+                    const taskRef = doc(db, 'tasks', taskId);
+                    await deleteDoc(taskRef);
+                    return { success: true };
+                } catch (error) {
+                    console.error('Error deleting task:', error);
+                    return { success: false, error: error.message };
+                }
+            },
+
+            async getAllTasks() {
+                try {
+                    const tasksRef = collection(db, 'tasks');
+                    const snapshot = await getDocs(tasksRef);
+                    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                } catch (error) {
+                    console.error('Error getting all tasks:', error);
+                    return [];
+                }
+            },
+
+            async getAvailableTasks() {
+                try {
+                    await this.checkExpiredReservations();
+                    
+                    const tasksRef = collection(db, 'tasks');
+                    const q = query(tasksRef, where('status', '==', 'available'));
+                    const snapshot = await getDocs(q);
+                    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                } catch (error) {
+                    console.error('Error getting available tasks:', error);
+                    return [];
+                }
+            },
+
+            async getReservedTasks(userId) {
+                try {
+                    await this.checkExpiredReservations();
+                    
+                    const tasksRef = collection(db, 'tasks');
+                    const q = query(
+                        tasksRef, 
+                        where('status', '==', 'reserved'),
+                        where('reservedBy', '==', userId)
+                    );
+                    const snapshot = await getDocs(q);
+                    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                } catch (error) {
+                    console.error('Error getting reserved tasks:', error);
+                    return [];
+                }
+            },
+
+            // FCFS Task Accept with Transaction
+            async acceptTask(taskId, userId) {
+                try {
+                    const taskRef = doc(db, 'tasks', taskId);
+                    
+                    const result = await runTransaction(db, async (transaction) => {
+                        const taskDoc = await transaction.get(taskRef);
+                        
+                        if (!taskDoc.exists()) {
+                            throw new Error('Task not found');
+                        }
+                        
+                        const task = taskDoc.data();
+                        
+                        if (task.status !== 'available') {
+                            throw new Error('Task is no longer available');
+                        }
+                        
+                        const submissionsRef = collection(db, 'submissions');
+                        const q = query(
+                            submissionsRef,
+                            where('taskId', '==', taskId),
+                            where('userId', '==', userId)
+                        );
+                        const existingSubmissions = await getDocs(q);
+                        
+                        if (!existingSubmissions.empty) {
+                            throw new Error('You have already worked on this task');
+                        }
+                        
+                        transaction.update(taskRef, {
+                            status: 'reserved',
+                            reservedBy: userId,
+                            reservedAt: Date.now()
+                        });
+                        
+                        return { success: true };
+                    });
+                    
+                    return result;
+                } catch (error) {
+                    console.error('Error accepting task:', error);
+                    return { success: false, error: error.message };
+                }
+            },
+
+            async checkExpiredReservations() {
+                try {
+                    const thirtyMinutesAgo = Date.now() - (30 * 60 * 1000);
+                    const tasksRef = collection(db, 'tasks');
+                    const q = query(tasksRef, where('status', '==', 'reserved'));
+                    const snapshot = await getDocs(q);
+                    
+                    const updatePromises = [];
+                    snapshot.docs.forEach(doc => {
+                        const task = doc.data();
+                        if (task.reservedAt && task.reservedAt < thirtyMinutesAgo) {
+                            updatePromises.push(
+                                updateDoc(doc.ref, {
+                                    status: 'available',
+                                    reservedBy: null,
+                                    reservedAt: null
+                                })
+                            );
+                        }
+                    });
+                    
+                    await Promise.all(updatePromises);
+                } catch (error) {
+                    console.error('Error checking expired reservations:', error);
+                }
+            },
+
+            // SUBMISSION OPERATIONS
+            async createSubmission(submissionData) {
+                try {
+                    const subRef = doc(db, 'submissions', submissionData.id);
+                    await setDoc(subRef, {
+                        ...submissionData,
+                        submittedAt: Date.now()
+                    });
+                    return { success: true, submission: submissionData };
+                } catch (error) {
+                    console.error('Error creating submission:', error);
+                    return { success: false, error: error.message };
+                }
+            },
+
+            async getSubmission(submissionId) {
+                try {
+                    const subRef = doc(db, 'submissions', submissionId);
+                    const subDoc = await getDoc(subRef);
+                    return subDoc.exists() ? { id: subDoc.id, ...subDoc.data() } : null;
+                } catch (error) {
+                    console.error('Error getting submission:', error);
+                    return null;
+                }
+            },
+
+            async updateSubmission(submissionId, updates) {
+                try {
+                    const subRef = doc(db, 'submissions', submissionId);
+                    await updateDoc(subRef, updates);
+                    return { success: true };
+                } catch (error) {
+                    console.error('Error updating submission:', error);
+                    return { success: false, error: error.message };
+                }
+            },
+
+            async getAllSubmissions() {
+                try {
+                    const subsRef = collection(db, 'submissions');
+                    const snapshot = await getDocs(subsRef);
+                    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                } catch (error) {
+                    console.error('Error getting all submissions:', error);
+                    return [];
+                }
+            },
+
+            async getUserSubmissions(userId) {
+                try {
+                    const subsRef = collection(db, 'submissions');
+                    const q = query(subsRef, where('userId', '==', userId));
+                    const snapshot = await getDocs(q);
+                    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                } catch (error) {
+                    console.error('Error getting user submissions:', error);
+                    return [];
+                }
+            },
+
+            // Approve submission with wallet update
+            async approveSubmission(submissionId) {
+                try {
+                    const subRef = doc(db, 'submissions', submissionId);
+                    
+                    const result = await runTransaction(db, async (transaction) => {
+                        const subDoc = await transaction.get(subRef);
+                        
+                        if (!subDoc.exists()) {
+                            throw new Error('Submission not found');
+                        }
+                        
+                        const submission = subDoc.data();
+                        
+                        if (submission.status !== 'pending') {
+                            throw new Error('Submission already processed');
+                        }
+                        
+                        const taskRef = doc(db, 'tasks', submission.taskId);
+                        const taskDoc = await transaction.get(taskRef);
+                        
+                        if (!taskDoc.exists()) {
+                            throw new Error('Task not found');
+                        }
+                        
+                        const task = taskDoc.data();
+                        
+                        const userRef = doc(db, 'users', submission.userId);
+                        const userDoc = await transaction.get(userRef);
+                        
+                        if (!userDoc.exists()) {
+                            throw new Error('User not found');
+                        }
+                        
+                        const user = userDoc.data();
+                        
+                        transaction.update(subRef, { status: 'approved' });
+                        transaction.update(taskRef, { status: 'approved' });
+                        transaction.update(userRef, { 
+                            walletBalance: (user.walletBalance || 0) + task.price 
+                        });
+                        
+                        return { success: true };
+                    });
+                    
+                    return result;
+                } catch (error) {
+                    console.error('Error approving submission:', error);
+                    return { success: false, error: error.message };
+                }
+            },
+
+            async rejectSubmission(submissionId) {
+                try {
+                    const subRef = doc(db, 'submissions', submissionId);
+                    const subDoc = await getDoc(subRef);
+                    
+                    if (!subDoc.exists()) {
+                        return { success: false, error: 'Submission not found' };
+                    }
+                    
+                    const submission = subDoc.data();
+                    
+                    if (submission.status !== 'pending') {
+                        return { success: false, error: 'Submission already processed' };
+                    }
+                    
+                    await updateDoc(subRef, { status: 'rejected' });
+                    
+                    const taskRef = doc(db, 'tasks', submission.taskId);
+                    await updateDoc(taskRef, { status: 'rejected' });
+                    
+                    return { success: true };
+                } catch (error) {
+                    console.error('Error rejecting submission:', error);
+                    return { success: false, error: error.message };
+                }
+            },
+
+            // WITHDRAWAL OPERATIONS
+            async createWithdrawal(withdrawalData) {
+                try {
+                    const withdrawalRef = doc(db, 'withdrawals', withdrawalData.id);
+                    await setDoc(withdrawalRef, {
+                        ...withdrawalData,
+                        createdAt: Date.now()
+                    });
+                    return { success: true, withdrawal: withdrawalData };
+                } catch (error) {
+                    console.error('Error creating withdrawal:', error);
+                    return { success: false, error: error.message };
+                }
+            },
+
+            async getAllWithdrawals() {
+                try {
+                    const withdrawalsRef = collection(db, 'withdrawals');
+                    const snapshot = await getDocs(withdrawalsRef);
+                    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                } catch (error) {
+                    console.error('Error getting withdrawals:', error);
+                    return [];
+                }
+            },
+
+            async getUserWithdrawals(userId) {
+                try {
+                    const withdrawalsRef = collection(db, 'withdrawals');
+                    const q = query(withdrawalsRef, where('userId', '==', userId));
+                    const snapshot = await getDocs(q);
+                    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                } catch (error) {
+                    console.error('Error getting user withdrawals:', error);
+                    return [];
+                }
+            },
+
+            async approveWithdrawal(withdrawalId) {
+                try {
+                    const withdrawalRef = doc(db, 'withdrawals', withdrawalId);
+                    
+                    const result = await runTransaction(db, async (transaction) => {
+                        const withdrawalDoc = await transaction.get(withdrawalRef);
+                        
+                        if (!withdrawalDoc.exists()) {
+                            throw new Error('Withdrawal not found');
+                        }
+                        
+                        const withdrawal = withdrawalDoc.data();
+                        
+                        if (withdrawal.status !== 'pending') {
+                            throw new Error('Withdrawal already processed');
+                        }
+                        
+                        const userRef = doc(db, 'users', withdrawal.userId);
+                        const userDoc = await transaction.get(userRef);
+                        
+                        if (!userDoc.exists()) {
+                            throw new Error('User not found');
+                        }
+                        
+                        const user = userDoc.data();
+                        
+                        if ((user.walletBalance || 0) < withdrawal.amount) {
+                            throw new Error('Insufficient balance');
+                        }
+                        
+                        transaction.update(withdrawalRef, { 
+                            status: 'approved',
+                            processedAt: Date.now()
+                        });
+                        transaction.update(userRef, { 
+                            walletBalance: (user.walletBalance || 0) - withdrawal.amount 
+                        });
+                        
+                        return { success: true };
+                    });
+                    
+                    return result;
+                } catch (error) {
+                    console.error('Error approving withdrawal:', error);
+                    return { success: false, error: error.message };
+                }
+            },
+
+            async rejectWithdrawal(withdrawalId) {
+                try {
+                    const withdrawalRef = doc(db, 'withdrawals', withdrawalId);
+                    await updateDoc(withdrawalRef, { 
+                        status: 'rejected',
+                        processedAt: Date.now()
+                    });
+                    return { success: true };
+                } catch (error) {
+                    console.error('Error rejecting withdrawal:', error);
+                    return { success: false, error: error.message };
+                }
+            }
+        };
+
+        // ============================================
+        // AUTH MANAGER
         // ============================================
         const Auth = {
-            currentUser: JSON.parse(localStorage.getItem('reddit_platform_session')) || null,
+            currentUser: null,
             
-            generateToken(user) {
-                return btoa(JSON.stringify({ userId: user.id, exp: Date.now() + 86400000 }));
+            async init() {
+                const session = localStorage.getItem('reddit_platform_session');
+                if (session) {
+                    const userData = JSON.parse(session);
+                    const user = await FirestoreDB.getUser(userData.id);
+                    if (user) {
+                        this.currentUser = user;
+                    } else {
+                        localStorage.removeItem('reddit_platform_session');
+                    }
+                }
             },
             
-            login(username, password) {
-                const user = DB.users.find(u => u.username === username && u.password === password);
-                if (!user) return { success: false, error: 'Invalid credentials' };
+            async login(username, password) {
+                showLoading('Logging in...');
                 
-                const token = this.generateToken(user);
-                this.currentUser = { ...user, token };
-                localStorage.setItem('reddit_platform_session', JSON.stringify(this.currentUser));
-                return { success: true, user: this.currentUser };
+                const user = await FirestoreDB.getUserByUsername(username);
+                
+                if (!user || user.password !== password) {
+                    hideLoading();
+                    return { success: false, error: 'Invalid credentials' };
+                }
+                
+                this.currentUser = user;
+                localStorage.setItem('reddit_platform_session', JSON.stringify(user));
+                
+                hideLoading();
+                return { success: true, user };
             },
             
             async loginWithGoogle() {
                 try {
-                    showLoading();
+                    showLoading('Signing in with Google...');
                     
-                    console.log('Starting Google Sign-In...');
-                    console.log('Auth object:', window.firebaseAuth);
-                    console.log('Provider:', window.firebaseGoogleProvider);
-                    
-                    // Use Firebase v10 modular SDK
-                    const result = await window.firebaseSignInWithPopup(window.firebaseAuth, window.firebaseGoogleProvider);
-                    
-                    console.log('Sign-in successful:', result);
+                    const result = await signInWithPopup(auth, googleProvider);
                     const googleUser = result.user;
                     
-                    // Find or create user in our database
-                    const user = DB.findOrCreateGoogleUser({
-                        uid: googleUser.uid,
-                        email: googleUser.email,
-                        displayName: googleUser.displayName,
-                        photoURL: googleUser.photoURL
-                    });
+                    let user = await FirestoreDB.getUserByEmail(googleUser.email);
                     
-                    const token = this.generateToken(user);
-                    this.currentUser = { ...user, token };
-                    localStorage.setItem('reddit_platform_session', JSON.stringify(this.currentUser));
+                    if (!user) {
+                        const newUser = {
+                            id: 'google_' + googleUser.uid,
+                            username: googleUser.displayName || googleUser.email.split('@')[0],
+                            email: googleUser.email,
+                            photoURL: googleUser.photoURL,
+                            password: null,
+                            authProvider: 'google',
+                            redditKarma: 0,
+                            accountAge: 0,
+                            walletBalance: 0,
+                            role: 'user',
+                            needsRedditInfo: true
+                        };
+                        
+                        await FirestoreDB.createUser(newUser);
+                        user = newUser;
+                    }
+                    
+                    this.currentUser = user;
+                    localStorage.setItem('reddit_platform_session', JSON.stringify(user));
                     
                     hideLoading();
-                    return { success: true, user: this.currentUser, needsRedditInfo: user.needsRedditInfo };
+                    return { success: true, user, needsRedditInfo: user.needsRedditInfo };
                 } catch (error) {
                     hideLoading();
                     console.error('Google sign-in error:', error);
-                    console.error('Error code:', error.code);
-                    console.error('Error message:', error.message);
                     
-                    // Provide more helpful error messages
                     let errorMessage = 'Google sign-in failed';
                     
                     if (error.code === 'auth/unauthorized-domain') {
-                        errorMessage = 'This domain is not authorized in Firebase. Please add "' + window.location.hostname + '" to your Firebase Console > Authentication > Settings > Authorized domains';
+                        errorMessage = 'Domain not authorized. Add this domain to Firebase Console.';
                     } else if (error.code === 'auth/popup-blocked') {
-                        errorMessage = 'Popup was blocked by browser. Please allow popups for this site.';
+                        errorMessage = 'Popup blocked. Please allow popups.';
                     } else if (error.code === 'auth/popup-closed-by-user') {
-                        errorMessage = 'Sign-in popup was closed. Please try again.';
-                    } else if (error.code === 'auth/cancelled-popup-request') {
-                        errorMessage = 'Another popup is already open. Please close it and try again.';
-                    } else if (error.code === 'auth/network-request-failed') {
-                        errorMessage = 'Network error. Please check your internet connection.';
+                        errorMessage = 'Sign-in cancelled.';
                     } else if (error.message) {
                         errorMessage = error.message;
                     }
@@ -312,12 +752,16 @@
                 }
             },
             
-            register(username, password, redditKarma, accountAge) {
-                if (DB.users.find(u => u.username === username)) {
+            async register(username, password, redditKarma, accountAge) {
+                showLoading('Creating account...');
+                
+                const existing = await FirestoreDB.getUserByUsername(username);
+                if (existing) {
+                    hideLoading();
                     return { success: false, error: 'Username already exists' };
                 }
                 
-                const user = {
+                const newUser = {
                     id: 'user_' + Date.now(),
                     username,
                     password,
@@ -327,20 +771,54 @@
                     walletBalance: 0,
                     role: 'user',
                     authProvider: 'local',
-                    createdAt: Date.now()
+                    needsRedditInfo: false
                 };
                 
-                DB.users.push(user);
-                DB.save();
+                const result = await FirestoreDB.createUser(newUser);
                 
-                return this.login(username, password);
+                if (!result.success) {
+                    hideLoading();
+                    return result;
+                }
+                
+                this.currentUser = newUser;
+                localStorage.setItem('reddit_platform_session', JSON.stringify(newUser));
+                
+                hideLoading();
+                return { success: true, user: newUser };
+            },
+            
+            async updateRedditInfo(karma, accountAge) {
+                showLoading('Saving Reddit info...');
+                
+                const result = await FirestoreDB.updateUser(this.currentUser.id, {
+                    redditKarma: parseInt(karma),
+                    accountAge: parseInt(accountAge),
+                    needsRedditInfo: false
+                });
+                
+                if (result.success) {
+                    this.currentUser.redditKarma = parseInt(karma);
+                    this.currentUser.accountAge = parseInt(accountAge);
+                    this.currentUser.needsRedditInfo = false;
+                    localStorage.setItem('reddit_platform_session', JSON.stringify(this.currentUser));
+                }
+                
+                hideLoading();
+                return result;
+            },
+            
+            async refreshUser() {
+                if (!this.currentUser) return;
+                const user = await FirestoreDB.getUser(this.currentUser.id);
+                if (user) {
+                    this.currentUser = user;
+                    localStorage.setItem('reddit_platform_session', JSON.stringify(user));
+                }
             },
             
             logout() {
-                // Sign out from Firebase v10 if signed in
-                if (window.firebaseAuth) {
-                    window.firebaseSignOut(window.firebaseAuth).catch(err => console.log('Firebase signout:', err));
-                }
+                signOut(auth).catch(err => console.log('Firebase signout:', err));
                 this.currentUser = null;
                 localStorage.removeItem('reddit_platform_session');
             },
@@ -348,27 +826,18 @@
             isEligible(user = this.currentUser) {
                 if (!user) return false;
                 return user.redditKarma >= 200 && user.accountAge >= 1;
-            },
-            
-            refreshUser() {
-                if (!this.currentUser) return;
-                const user = DB.users.find(u => u.id === this.currentUser.id);
-                if (user) {
-                    this.currentUser = { ...user, token: this.currentUser.token };
-                    localStorage.setItem('reddit_platform_session', JSON.stringify(this.currentUser));
-                }
             }
         };
 
         // ============================================
-        // TASK MANAGEMENT
+        // TASK MANAGER
         // ============================================
         const TaskManager = {
             generateTaskId() {
                 return 'TASK-' + Date.now().toString(36).toUpperCase() + '-' + Math.random().toString(36).substr(2, 4).toUpperCase();
             },
             
-            createTask(taskData) {
+            async createTask(taskData) {
                 const task = {
                     taskId: this.generateTaskId(),
                     type: taskData.type,
@@ -380,65 +849,40 @@
                     price: parseFloat(taskData.price),
                     status: 'available',
                     reservedBy: null,
-                    reservedAt: null,
-                    createdAt: Date.now()
+                    reservedAt: null
                 };
                 
-                DB.tasks.push(task);
-                DB.save();
-                return task;
+                return await FirestoreDB.createTask(task);
             },
             
-            updateTask(taskId, updates) {
-                const task = DB.tasks.find(t => t.taskId === taskId);
+            async updateTask(taskId, updates) {
+                const task = await FirestoreDB.getTask(taskId);
                 if (!task) return { success: false, error: 'Task not found' };
-                
                 if (task.status !== 'available') {
                     return { success: false, error: 'Cannot edit task that is not available' };
                 }
-                
-                Object.assign(task, updates);
-                DB.save();
-                return { success: true };
+                return await FirestoreDB.updateTask(taskId, updates);
             },
             
-            deleteTask(taskId) {
-                const idx = DB.tasks.findIndex(t => t.taskId === taskId);
-                if (idx === -1) return { success: false, error: 'Task not found' };
-                
-                if (DB.tasks[idx].status !== 'available') {
+            async deleteTask(taskId) {
+                const task = await FirestoreDB.getTask(taskId);
+                if (!task) return { success: false, error: 'Task not found' };
+                if (task.status !== 'available') {
                     return { success: false, error: 'Cannot delete task that is not available' };
                 }
-                
-                DB.tasks.splice(idx, 1);
-                DB.save();
-                return { success: true };
+                return await FirestoreDB.deleteTask(taskId);
             },
             
-            getAvailableTasks() {
-                this.checkExpiredReservations();
-                return DB.tasks.filter(t => t.status === 'available');
+            async getAvailableTasks() {
+                return await FirestoreDB.getAvailableTasks();
             },
             
-            getMyReservedTasks(userId) {
-                this.checkExpiredReservations();
-                return DB.tasks.filter(t => t.reservedBy === userId && t.status === 'reserved');
+            async getMyReservedTasks(userId) {
+                return await FirestoreDB.getReservedTasks(userId);
             },
             
-            checkExpiredReservations() {
-                const thirtyMinutes = 30 * 60 * 1000;
-                const now = Date.now();
-                
-                DB.tasks.forEach(task => {
-                    if (task.status === 'reserved' && task.reservedAt) {
-                        if (now - task.reservedAt > thirtyMinutes) {
-                            task.status = 'available';
-                            task.reservedBy = null;
-                            task.reservedAt = null;
-                        }
-                    }
-                });
-                DB.save();
+            async acceptTask(taskId, userId) {
+                return await FirestoreDB.acceptTask(taskId, userId);
             },
             
             getRemainingTime(task) {
@@ -448,15 +892,14 @@
                 return Math.max(0, thirtyMinutes - elapsed);
             },
             
-            submitTask(taskId, userId, redditLink) {
-                const task = DB.tasks.find(t => t.taskId === taskId);
-                if (!task) return { success: false, error: 'Task not found' };
+            async submitTask(taskId, userId, redditLink) {
+                const task = await FirestoreDB.getTask(taskId);
                 
+                if (!task) return { success: false, error: 'Task not found' };
                 if (task.status !== 'reserved' || task.reservedBy !== userId) {
                     return { success: false, error: 'You cannot submit this task' };
                 }
                 
-                // Validate Reddit link
                 const isValidRedditLink = redditLink.includes('reddit.com') || redditLink.includes('redd.it');
                 if (!isValidRedditLink) {
                     return { success: false, error: 'Please provide a valid Reddit link' };
@@ -467,84 +910,109 @@
                     taskId,
                     userId,
                     redditLink,
-                    status: 'pending',
-                    submittedAt: Date.now()
+                    status: 'pending'
                 };
                 
-                DB.submissions.push(submission);
-                task.status = 'submitted';
-                DB.save();
+                const result = await FirestoreDB.createSubmission(submission);
                 
-                return { success: true, submission };
+                if (result.success) {
+                    await FirestoreDB.updateTask(taskId, { status: 'submitted' });
+                }
+                
+                return result;
             }
         };
 
         // ============================================
-        // ADMIN FUNCTIONS
+        // WITHDRAWAL MANAGER
+        // ============================================
+        const WithdrawalManager = {
+            async createWithdrawal(userId, amount, method, details) {
+                const user = await FirestoreDB.getUser(userId);
+                
+                if (!user) return { success: false, error: 'User not found' };
+                if ((user.walletBalance || 0) < amount) {
+                    return { success: false, error: 'Insufficient balance' };
+                }
+                if (amount < 5) {
+                    return { success: false, error: 'Minimum withdrawal is $5' };
+                }
+                
+                const withdrawal = {
+                    id: 'wd_' + Date.now(),
+                    userId,
+                    username: user.username,
+                    amount: parseFloat(amount),
+                    method,
+                    details,
+                    status: 'pending'
+                };
+                
+                return await FirestoreDB.createWithdrawal(withdrawal);
+            },
+            
+            async getUserWithdrawals(userId) {
+                return await FirestoreDB.getUserWithdrawals(userId);
+            },
+            
+            async getAllWithdrawals() {
+                const withdrawals = await FirestoreDB.getAllWithdrawals();
+                const users = await FirestoreDB.getAllUsers();
+                
+                return withdrawals.map(wd => {
+                    const user = users.find(u => u.id === wd.userId);
+                    return { ...wd, user };
+                });
+            },
+            
+            async approveWithdrawal(withdrawalId) {
+                return await FirestoreDB.approveWithdrawal(withdrawalId);
+            },
+            
+            async rejectWithdrawal(withdrawalId) {
+                return await FirestoreDB.rejectWithdrawal(withdrawalId);
+            }
+        };
+
+        // ============================================
+        // ADMIN MANAGER
         // ============================================
         const AdminManager = {
-            getAllSubmissions() {
-                return DB.submissions.map(sub => {
-                    const task = DB.tasks.find(t => t.taskId === sub.taskId);
-                    const user = DB.users.find(u => u.id === sub.userId);
+            async getAllSubmissions() {
+                const submissions = await FirestoreDB.getAllSubmissions();
+                const tasks = await FirestoreDB.getAllTasks();
+                const users = await FirestoreDB.getAllUsers();
+                
+                return submissions.map(sub => {
+                    const task = tasks.find(t => t.taskId === sub.taskId);
+                    const user = users.find(u => u.id === sub.userId);
                     return { ...sub, task, user };
                 });
             },
             
-            approveSubmission(submissionId) {
-                const submission = DB.submissions.find(s => s.id === submissionId);
-                if (!submission) return { success: false, error: 'Submission not found' };
-                
-                if (submission.status !== 'pending') {
-                    return { success: false, error: 'Submission already processed' };
-                }
-                
-                const task = DB.tasks.find(t => t.taskId === submission.taskId);
-                const user = DB.users.find(u => u.id === submission.userId);
-                
-                if (!task || !user) {
-                    return { success: false, error: 'Task or user not found' };
-                }
-                
-                submission.status = 'approved';
-                task.status = 'approved';
-                user.walletBalance += task.price;
-                
-                DB.save();
-                return { success: true };
+            async approveSubmission(submissionId) {
+                return await FirestoreDB.approveSubmission(submissionId);
             },
             
-            rejectSubmission(submissionId) {
-                const submission = DB.submissions.find(s => s.id === submissionId);
-                if (!submission) return { success: false, error: 'Submission not found' };
-                
-                if (submission.status !== 'pending') {
-                    return { success: false, error: 'Submission already processed' };
-                }
-                
-                const task = DB.tasks.find(t => t.taskId === submission.taskId);
-                
-                submission.status = 'rejected';
-                if (task) task.status = 'rejected';
-                
-                DB.save();
-                return { success: true };
+            async rejectSubmission(submissionId) {
+                return await FirestoreDB.rejectSubmission(submissionId);
             },
             
-            getAllUsers() {
-                return DB.users.filter(u => u.role !== 'admin');
+            async getAllUsers() {
+                return await FirestoreDB.getAllUsers();
             },
             
-            getAllTasks() {
-                TaskManager.checkExpiredReservations();
-                return DB.tasks;
+            async getAllTasks() {
+                await FirestoreDB.checkExpiredReservations();
+                return await FirestoreDB.getAllTasks();
             }
         };
 
         // ============================================
-        // LOADING HELPERS
+        // UI HELPERS
         // ============================================
-        function showLoading() {
+        function showLoading(text = 'Loading...') {
+            document.getElementById('loadingText').textContent = text;
             document.getElementById('loadingOverlay').classList.remove('hidden');
         }
         
@@ -552,13 +1020,28 @@
             document.getElementById('loadingOverlay').classList.add('hidden');
         }
 
+        function updateFirebaseStatus(connected, message) {
+            const statusEl = document.getElementById('firebaseStatus');
+            if (connected) {
+                statusEl.className = 'firebase-status bg-green-600 text-white';
+                statusEl.innerHTML = '<i class="fas fa-check-circle mr-2"></i>' + message;
+            } else {
+                statusEl.className = 'firebase-status bg-red-600 text-white';
+                statusEl.innerHTML = '<i class="fas fa-exclamation-circle mr-2"></i>' + message;
+            }
+            
+            if (connected) {
+                setTimeout(() => {
+                    statusEl.style.display = 'none';
+                }, 3000);
+            }
+        }
+
         // ============================================
         // UI RENDERING
         // ============================================
-        let currentView = Auth.currentUser ? (Auth.currentUser.role === 'admin' ? 'admin-dashboard' : 'user-dashboard') : 'login';
         let activeTab = 'available';
         let adminTab = 'tasks';
-        let showRedditInfoModal = false;
 
         function formatTime(ms) {
             const minutes = Math.floor(ms / 60000);
@@ -570,7 +1053,7 @@
             return new Date(timestamp).toLocaleString();
         }
 
-        function render() {
+        async function render() {
             const app = document.getElementById('app');
             
             if (!Auth.currentUser) {
@@ -578,9 +1061,9 @@
             } else if (Auth.currentUser.needsRedditInfo) {
                 app.innerHTML = renderRedditInfoPage();
             } else if (Auth.currentUser.role === 'admin') {
-                app.innerHTML = renderAdminPanel();
+                app.innerHTML = await renderAdminPanel();
             } else {
-                app.innerHTML = renderUserPanel();
+                app.innerHTML = await renderUserPanel();
             }
             
             attachEventListeners();
@@ -599,15 +1082,19 @@
                                     <i class="fab fa-reddit text-orange-500 text-2xl"></i>
                                     <span class="text-xl font-bold">Reddit Tasks</span>
                                 </div>
+                                <span class="bg-green-600 text-xs px-2 py-1 rounded-full">
+                                    <i class="fas fa-database mr-1"></i>Firebase
+                                </span>
                                 ${isAdmin ? '<span class="bg-purple-600 text-xs px-2 py-1 rounded-full">ADMIN</span>' : ''}
                             </div>
                             
                             <div class="flex items-center space-x-4">
                                 ${!isAdmin ? `
-                                    <div class="flex items-center space-x-2 bg-gray-700 px-3 py-1 rounded-lg">
+                                    <button onclick="openWalletModal()" class="flex items-center space-x-2 bg-gray-700 hover:bg-gray-600 px-3 py-1 rounded-lg transition cursor-pointer">
                                         <i class="fas fa-wallet text-green-400"></i>
-                                        <span class="font-semibold">$${Auth.currentUser.walletBalance.toFixed(2)}</span>
-                                    </div>
+                                        <span class="font-semibold">$${(Auth.currentUser.walletBalance || 0).toFixed(2)}</span>
+                                        <i class="fas fa-chevron-down text-xs text-gray-400"></i>
+                                    </button>
                                 ` : ''}
                                 
                                 <div class="flex items-center space-x-2">
@@ -640,10 +1127,10 @@
                                 </div>
                                 <div class="flex items-center space-x-4 text-sm">
                                     <span class="${Auth.currentUser.redditKarma >= 200 ? 'text-green-400' : 'text-red-400'}">
-                                        <i class="fas fa-arrow-up mr-1"></i>${Auth.currentUser.redditKarma} karma
+                                        <i class="fas fa-arrow-up mr-1"></i>${Auth.currentUser.redditKarma || 0} karma
                                     </span>
                                     <span class="${Auth.currentUser.accountAge >= 1 ? 'text-green-400' : 'text-red-400'}">
-                                        <i class="fas fa-calendar mr-1"></i>${Auth.currentUser.accountAge} month(s) old
+                                        <i class="fas fa-calendar mr-1"></i>${Auth.currentUser.accountAge || 0} month(s) old
                                     </span>
                                 </div>
                             </div>
@@ -661,10 +1148,12 @@
                             <i class="fab fa-reddit text-orange-500 text-6xl mb-4"></i>
                             <h1 class="text-3xl font-bold">Reddit Task Platform</h1>
                             <p class="text-gray-400 mt-2">Complete Reddit tasks and earn rewards</p>
+                            <div class="mt-3 inline-flex items-center px-3 py-1 bg-green-900/50 border border-green-700 rounded-full text-sm text-green-400">
+                                <i class="fas fa-database mr-2"></i>Powered by Firebase
+                            </div>
                         </div>
                         
                         <div class="bg-gray-800 rounded-xl p-6 shadow-2xl border border-gray-700">
-                            <!-- Google Sign In Button -->
                             <button onclick="handleGoogleLogin()" 
                                 class="w-full google-btn text-white py-3 rounded-lg font-semibold transition flex items-center justify-center space-x-3 mb-6 hover:opacity-90">
                                 <svg class="w-5 h-5" viewBox="0 0 24 24">
@@ -710,7 +1199,7 @@
                                         <i class="fas fa-sign-in-alt mr-2"></i>Login
                                     </button>
                                 </div>
-                                
+                                <p class="text-xs text-gray-500 mt-4 text-center">Admin: axel769 / axel8129</p>
                             </div>
                             
                             <div id="registerForm" class="hidden">
@@ -815,22 +1304,19 @@
                                 </button>
                             </div>
                         </div>
-                        
-                        <div class="mt-6 bg-yellow-900/30 rounded-xl p-4 border border-yellow-700">
-                            <h3 class="font-semibold text-yellow-400 mb-2"><i class="fas fa-exclamation-circle mr-2"></i>Why we need this?</h3>
-                            <p class="text-sm text-gray-400">To ensure quality, only Reddit accounts with minimum 200 karma and 1 month age can accept tasks.</p>
-                        </div>
                     </div>
                 </div>
             `;
         }
 
-        function renderUserPanel() {
-            Auth.refreshUser();
+        async function renderUserPanel() {
+            await Auth.refreshUser();
             const eligible = Auth.isEligible();
-            const availableTasks = TaskManager.getAvailableTasks();
-            const myReservedTasks = TaskManager.getMyReservedTasks(Auth.currentUser.id);
-            const mySubmissions = DB.submissions.filter(s => s.userId === Auth.currentUser.id);
+            const availableTasks = await TaskManager.getAvailableTasks();
+            const myReservedTasks = await TaskManager.getMyReservedTasks(Auth.currentUser.id);
+            const allTasks = await FirestoreDB.getAllTasks();
+            const mySubmissions = await FirestoreDB.getUserSubmissions(Auth.currentUser.id);
+            const myWithdrawals = await WithdrawalManager.getUserWithdrawals(Auth.currentUser.id);
             
             return `
                 ${renderNavbar(false)}
@@ -865,11 +1351,11 @@
                                 <i class="fas fa-check-circle text-3xl text-green-400"></i>
                             </div>
                         </div>
-                        <div class="bg-gray-800 rounded-xl p-4 border border-gray-700">
+                        <div class="bg-gray-800 rounded-xl p-4 border border-gray-700 cursor-pointer hover:border-green-500 transition" onclick="openWalletModal()">
                             <div class="flex items-center justify-between">
                                 <div>
                                     <p class="text-gray-400 text-sm">Wallet Balance</p>
-                                    <p class="text-2xl font-bold text-green-400">$${Auth.currentUser.walletBalance.toFixed(2)}</p>
+                                    <p class="text-2xl font-bold text-green-400">$${(Auth.currentUser.walletBalance || 0).toFixed(2)}</p>
                                 </div>
                                 <i class="fas fa-wallet text-3xl text-green-400"></i>
                             </div>
@@ -877,19 +1363,23 @@
                     </div>
                     
                     <!-- Tabs -->
-                    <div class="flex space-x-2 mb-6 border-b border-gray-700 pb-2">
+                    <div class="flex space-x-2 mb-6 border-b border-gray-700 pb-2 overflow-x-auto">
                         <button onclick="switchUserTab('available')" 
-                            class="px-4 py-2 rounded-t-lg ${activeTab === 'available' ? 'bg-orange-600' : 'bg-gray-700 hover:bg-gray-600'}">
+                            class="px-4 py-2 rounded-t-lg whitespace-nowrap ${activeTab === 'available' ? 'bg-orange-600' : 'bg-gray-700 hover:bg-gray-600'}">
                             <i class="fas fa-list mr-2"></i>Available Tasks
                         </button>
                         <button onclick="switchUserTab('active')"
-                            class="px-4 py-2 rounded-t-lg ${activeTab === 'active' ? 'bg-orange-600' : 'bg-gray-700 hover:bg-gray-600'}">
+                            class="px-4 py-2 rounded-t-lg whitespace-nowrap ${activeTab === 'active' ? 'bg-orange-600' : 'bg-gray-700 hover:bg-gray-600'}">
                             <i class="fas fa-hourglass-half mr-2"></i>My Active Tasks
                             ${myReservedTasks.length > 0 ? `<span class="ml-2 bg-red-500 text-xs px-2 py-0.5 rounded-full">${myReservedTasks.length}</span>` : ''}
                         </button>
                         <button onclick="switchUserTab('history')"
-                            class="px-4 py-2 rounded-t-lg ${activeTab === 'history' ? 'bg-orange-600' : 'bg-gray-700 hover:bg-gray-600'}">
+                            class="px-4 py-2 rounded-t-lg whitespace-nowrap ${activeTab === 'history' ? 'bg-orange-600' : 'bg-gray-700 hover:bg-gray-600'}">
                             <i class="fas fa-history mr-2"></i>Submission History
+                        </button>
+                        <button onclick="switchUserTab('withdrawals')"
+                            class="px-4 py-2 rounded-t-lg whitespace-nowrap ${activeTab === 'withdrawals' ? 'bg-orange-600' : 'bg-gray-700 hover:bg-gray-600'}">
+                            <i class="fas fa-money-bill-wave mr-2"></i>Withdrawals
                         </button>
                     </div>
                     
@@ -897,11 +1387,13 @@
                     <div id="tabContent">
                         ${activeTab === 'available' ? renderAvailableTasks(availableTasks, eligible) : ''}
                         ${activeTab === 'active' ? renderActiveTasks(myReservedTasks) : ''}
-                        ${activeTab === 'history' ? renderSubmissionHistory(mySubmissions) : ''}
+                        ${activeTab === 'history' ? renderSubmissionHistory(mySubmissions, allTasks) : ''}
+                        ${activeTab === 'withdrawals' ? renderUserWithdrawals(myWithdrawals) : ''}
                     </div>
                 </div>
                 
                 ${renderSubmitModal()}
+                ${renderWalletModal()}
             `;
         }
 
@@ -969,7 +1461,7 @@
                 <div class="space-y-4">
                     ${tasks.map(task => {
                         const remaining = TaskManager.getRemainingTime(task);
-                        const isUrgent = remaining < 5 * 60 * 1000; // Less than 5 minutes
+                        const isUrgent = remaining < 5 * 60 * 1000;
                         
                         return `
                             <div class="bg-gray-800 rounded-xl p-5 border ${isUrgent ? 'border-red-500' : 'border-gray-700'}">
@@ -1012,7 +1504,7 @@
             `;
         }
 
-        function renderSubmissionHistory(submissions) {
+        function renderSubmissionHistory(submissions, allTasks) {
             if (submissions.length === 0) {
                 return `
                     <div class="text-center py-16 bg-gray-800 rounded-xl border border-gray-700">
@@ -1024,7 +1516,7 @@
             }
             
             return `
-                <div class="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden">
+                <div class="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden overflow-x-auto">
                     <table class="w-full">
                         <thead class="bg-gray-700">
                             <tr>
@@ -1037,7 +1529,7 @@
                         </thead>
                         <tbody>
                             ${submissions.map(sub => {
-                                const task = DB.tasks.find(t => t.taskId === sub.taskId);
+                                const task = allTasks.find(t => t.taskId === sub.taskId);
                                 const statusColors = {
                                     pending: 'bg-yellow-600',
                                     approved: 'bg-green-600',
@@ -1059,6 +1551,68 @@
                                         </td>
                                         <td class="px-4 py-3 text-right font-semibold ${sub.status === 'approved' ? 'text-green-400' : 'text-gray-400'}">
                                             ${sub.status === 'approved' ? '+' : ''}$${task ? task.price.toFixed(2) : '0.00'}
+                                        </td>
+                                    </tr>
+                                `;
+                            }).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        }
+
+        function renderUserWithdrawals(withdrawals) {
+            if (withdrawals.length === 0) {
+                return `
+                    <div class="text-center py-16 bg-gray-800 rounded-xl border border-gray-700">
+                        <i class="fas fa-money-bill-wave text-6xl text-gray-600 mb-4"></i>
+                        <p class="text-gray-400 text-xl">No withdrawal history</p>
+                        <p class="text-gray-500 mt-2">Your withdrawal requests will appear here</p>
+                        <button onclick="openWalletModal()" class="mt-4 bg-green-600 hover:bg-green-700 px-6 py-2 rounded-lg font-semibold transition">
+                            <i class="fas fa-wallet mr-2"></i>Request Withdrawal
+                        </button>
+                    </div>
+                `;
+            }
+            
+            return `
+                <div class="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden overflow-x-auto">
+                    <table class="w-full">
+                        <thead class="bg-gray-700">
+                            <tr>
+                                <th class="px-4 py-3 text-left text-sm">ID</th>
+                                <th class="px-4 py-3 text-left text-sm">Amount</th>
+                                <th class="px-4 py-3 text-left text-sm">Method</th>
+                                <th class="px-4 py-3 text-left text-sm">Details</th>
+                                <th class="px-4 py-3 text-left text-sm">Date</th>
+                                <th class="px-4 py-3 text-left text-sm">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${withdrawals.map(wd => {
+                                const statusColors = {
+                                    pending: 'bg-yellow-600',
+                                    approved: 'bg-green-600',
+                                    rejected: 'bg-red-600'
+                                };
+                                return `
+                                    <tr class="border-t border-gray-700 hover:bg-gray-700/50">
+                                        <td class="px-4 py-3 text-sm font-mono">${wd.id}</td>
+                                        <td class="px-4 py-3 font-semibold text-green-400">$${wd.amount.toFixed(2)}</td>
+                                        <td class="px-4 py-3">
+                                            <span class="flex items-center">
+                                                ${wd.method === 'binance' 
+                                                    ? '<i class="fab fa-bitcoin text-yellow-400 mr-2"></i>Binance'
+                                                    : '<i class="fas fa-mobile-alt text-purple-400 mr-2"></i>UPI'
+                                                }
+                                            </span>
+                                        </td>
+                                        <td class="px-4 py-3 text-sm text-gray-400">${wd.details}</td>
+                                        <td class="px-4 py-3 text-sm text-gray-400">${formatDate(wd.createdAt)}</td>
+                                        <td class="px-4 py-3">
+                                            <span class="px-2 py-1 ${statusColors[wd.status]} rounded-full text-xs capitalize">
+                                                ${wd.status}
+                                            </span>
                                         </td>
                                     </tr>
                                 `;
@@ -1099,20 +1653,110 @@
             `;
         }
 
+        function renderWalletModal() {
+            const balance = Auth.currentUser.walletBalance || 0;
+            return `
+                <div id="walletModal" class="hidden fixed inset-0 bg-black/70 modal-backdrop flex items-center justify-center z-50 px-4">
+                    <div class="bg-gray-800 rounded-xl p-6 max-w-md w-full border border-gray-700">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-xl font-bold"><i class="fas fa-wallet text-green-400 mr-2"></i>Wallet</h3>
+                            <button onclick="closeWalletModal()" class="text-gray-400 hover:text-white">
+                                <i class="fas fa-times text-xl"></i>
+                            </button>
+                        </div>
+                        
+                        <!-- Balance Display -->
+                        <div class="bg-gradient-to-r from-green-900 to-green-800 rounded-xl p-6 mb-6 text-center">
+                            <p class="text-gray-300 text-sm mb-1">Available Balance</p>
+                            <p class="text-4xl font-bold text-green-400">$${balance.toFixed(2)}</p>
+                        </div>
+                        
+                        ${balance >= 5 ? `
+                            <div class="space-y-4">
+                                <h4 class="font-semibold text-gray-300">Withdraw Funds</h4>
+                                <p class="text-xs text-gray-500">Minimum withdrawal: $5.00</p>
+                                
+                                <!-- Amount -->
+                                <div>
+                                    <label class="block text-sm text-gray-400 mb-1">Amount ($)</label>
+                                    <input type="number" id="withdrawAmount" step="0.01" min="5" max="${balance}"
+                                        class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 focus:border-green-500 focus:outline-none"
+                                        placeholder="Enter amount" value="${balance.toFixed(2)}">
+                                </div>
+                                
+                                <!-- Method Selection -->
+                                <div>
+                                    <label class="block text-sm text-gray-400 mb-2">Withdrawal Method</label>
+                                    <div class="grid grid-cols-2 gap-3">
+                                        <button onclick="selectWithdrawMethod('binance')" id="methodBinance"
+                                            class="p-4 rounded-lg border-2 border-gray-600 hover:border-yellow-500 transition flex flex-col items-center">
+                                            <i class="fab fa-bitcoin text-3xl text-yellow-400 mb-2"></i>
+                                            <span class="font-semibold">Binance</span>
+                                            <span class="text-xs text-gray-500">Pay ID / USDT</span>
+                                        </button>
+                                        <button onclick="selectWithdrawMethod('upi')" id="methodUpi"
+                                            class="p-4 rounded-lg border-2 border-gray-600 hover:border-purple-500 transition flex flex-col items-center">
+                                            <i class="fas fa-mobile-alt text-3xl text-purple-400 mb-2"></i>
+                                            <span class="font-semibold">UPI</span>
+                                            <span class="text-xs text-gray-500">UPI ID</span>
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <!-- Binance Details -->
+                                <div id="binanceDetails" class="hidden">
+                                    <label class="block text-sm text-gray-400 mb-1">
+                                        <i class="fab fa-bitcoin text-yellow-400 mr-1"></i>Binance Pay ID or USDT Address
+                                    </label>
+                                    <input type="text" id="binanceId"
+                                        class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 focus:border-yellow-500 focus:outline-none"
+                                        placeholder="Enter Binance Pay ID or TRC20/BEP20 address">
+                                </div>
+                                
+                                <!-- UPI Details -->
+                                <div id="upiDetails" class="hidden">
+                                    <label class="block text-sm text-gray-400 mb-1">
+                                        <i class="fas fa-mobile-alt text-purple-400 mr-1"></i>UPI ID
+                                    </label>
+                                    <input type="text" id="upiId"
+                                        class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 focus:border-purple-500 focus:outline-none"
+                                        placeholder="yourname@upi">
+                                </div>
+                                
+                                <div id="withdrawError" class="hidden bg-red-900/50 border border-red-700 text-red-300 px-4 py-2 rounded-lg text-sm"></div>
+                                
+                                <button onclick="requestWithdrawal()" id="withdrawBtn" disabled
+                                    class="w-full bg-gray-600 py-3 rounded-lg font-semibold transition cursor-not-allowed">
+                                    <i class="fas fa-paper-plane mr-2"></i>Select a withdrawal method
+                                </button>
+                            </div>
+                        ` : `
+                            <div class="text-center py-6">
+                                <i class="fas fa-piggy-bank text-5xl text-gray-600 mb-4"></i>
+                                <p class="text-gray-400">Minimum balance required: <strong class="text-green-400">$5.00</strong></p>
+                                <p class="text-gray-500 text-sm mt-2">Complete more tasks to reach the minimum!</p>
+                            </div>
+                        `}
+                    </div>
+                </div>
+            `;
+        }
+
         // ============================================
         // ADMIN PANEL
         // ============================================
-        function renderAdminPanel() {
-            const allTasks = AdminManager.getAllTasks();
-            const allSubmissions = AdminManager.getAllSubmissions();
-            const allUsers = AdminManager.getAllUsers();
+        async function renderAdminPanel() {
+            const allTasks = await AdminManager.getAllTasks();
+            const allSubmissions = await AdminManager.getAllSubmissions();
+            const allUsers = await AdminManager.getAllUsers();
+            const allWithdrawals = await WithdrawalManager.getAllWithdrawals();
             
             return `
                 ${renderNavbar(true)}
                 
                 <div class="max-w-7xl mx-auto px-4 py-6">
                     <!-- Admin Stats -->
-                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                    <div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
                         <div class="bg-gray-800 rounded-xl p-4 border border-gray-700">
                             <div class="flex items-center justify-between">
                                 <div>
@@ -1149,22 +1793,37 @@
                                 <i class="fas fa-check-circle text-3xl text-green-400"></i>
                             </div>
                         </div>
+                        <div class="bg-gray-800 rounded-xl p-4 border border-yellow-600">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-gray-400 text-sm">Pending Withdrawals</p>
+                                    <p class="text-2xl font-bold text-yellow-400">${allWithdrawals.filter(w => w.status === 'pending').length}</p>
+                                </div>
+                                <i class="fas fa-money-bill-wave text-3xl text-yellow-400"></i>
+                            </div>
+                        </div>
                     </div>
                     
                     <!-- Admin Tabs -->
-                    <div class="flex space-x-2 mb-6 border-b border-gray-700 pb-2">
+                    <div class="flex space-x-2 mb-6 border-b border-gray-700 pb-2 overflow-x-auto">
                         <button onclick="switchAdminTab('tasks')"
-                            class="px-4 py-2 rounded-t-lg ${adminTab === 'tasks' ? 'bg-purple-600' : 'bg-gray-700 hover:bg-gray-600'}">
+                            class="px-4 py-2 rounded-t-lg whitespace-nowrap ${adminTab === 'tasks' ? 'bg-purple-600' : 'bg-gray-700 hover:bg-gray-600'}">
                             <i class="fas fa-tasks mr-2"></i>Manage Tasks
                         </button>
                         <button onclick="switchAdminTab('submissions')"
-                            class="px-4 py-2 rounded-t-lg ${adminTab === 'submissions' ? 'bg-purple-600' : 'bg-gray-700 hover:bg-gray-600'}">
+                            class="px-4 py-2 rounded-t-lg whitespace-nowrap ${adminTab === 'submissions' ? 'bg-purple-600' : 'bg-gray-700 hover:bg-gray-600'}">
                             <i class="fas fa-file-alt mr-2"></i>Submissions
                             ${allSubmissions.filter(s => s.status === 'pending').length > 0 ? 
                                 `<span class="ml-2 bg-red-500 text-xs px-2 py-0.5 rounded-full">${allSubmissions.filter(s => s.status === 'pending').length}</span>` : ''}
                         </button>
+                        <button onclick="switchAdminTab('withdrawals')"
+                            class="px-4 py-2 rounded-t-lg whitespace-nowrap ${adminTab === 'withdrawals' ? 'bg-purple-600' : 'bg-gray-700 hover:bg-gray-600'}">
+                            <i class="fas fa-money-bill-wave mr-2"></i>Withdrawals
+                            ${allWithdrawals.filter(w => w.status === 'pending').length > 0 ? 
+                                `<span class="ml-2 bg-yellow-500 text-xs px-2 py-0.5 rounded-full">${allWithdrawals.filter(w => w.status === 'pending').length}</span>` : ''}
+                        </button>
                         <button onclick="switchAdminTab('users')"
-                            class="px-4 py-2 rounded-t-lg ${adminTab === 'users' ? 'bg-purple-600' : 'bg-gray-700 hover:bg-gray-600'}">
+                            class="px-4 py-2 rounded-t-lg whitespace-nowrap ${adminTab === 'users' ? 'bg-purple-600' : 'bg-gray-700 hover:bg-gray-600'}">
                             <i class="fas fa-users mr-2"></i>Users
                         </button>
                     </div>
@@ -1173,6 +1832,7 @@
                     <div id="adminTabContent">
                         ${adminTab === 'tasks' ? renderAdminTasks(allTasks) : ''}
                         ${adminTab === 'submissions' ? renderAdminSubmissions(allSubmissions) : ''}
+                        ${adminTab === 'withdrawals' ? renderAdminWithdrawals(allWithdrawals) : ''}
                         ${adminTab === 'users' ? renderAdminUsers(allUsers) : ''}
                     </div>
                 </div>
@@ -1196,7 +1856,7 @@
                         <p class="text-gray-400 text-xl">No tasks created yet</p>
                     </div>
                 ` : `
-                    <div class="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden">
+                    <div class="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden overflow-x-auto">
                         <table class="w-full">
                             <thead class="bg-gray-700">
                                 <tr>
@@ -1226,7 +1886,7 @@
                                                 </span>
                                             </td>
                                             <td class="px-4 py-3 text-sm text-gray-400 max-w-xs truncate">
-                                                ${task.type === 'post' ? task.title : task.commentText.substring(0, 50) + '...'}
+                                                ${task.type === 'post' ? task.title : (task.commentText || '').substring(0, 50) + '...'}
                                             </td>
                                             <td class="px-4 py-3 font-semibold text-green-400">$${task.price.toFixed(2)}</td>
                                             <td class="px-4 py-3">
@@ -1312,7 +1972,7 @@
                     ${processedSubmissions.length > 0 ? `
                         <div>
                             <h3 class="text-lg font-semibold mb-4">Processed Submissions</h3>
-                            <div class="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden">
+                            <div class="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden overflow-x-auto">
                                 <table class="w-full">
                                     <thead class="bg-gray-700">
                                         <tr>
@@ -1347,9 +2007,110 @@
             `;
         }
 
+        function renderAdminWithdrawals(withdrawals) {
+            const pendingWithdrawals = withdrawals.filter(w => w.status === 'pending');
+            const processedWithdrawals = withdrawals.filter(w => w.status !== 'pending');
+            
+            return `
+                <div class="space-y-6">
+                    ${pendingWithdrawals.length > 0 ? `
+                        <div>
+                            <h3 class="text-lg font-semibold mb-4 flex items-center">
+                                <i class="fas fa-money-bill-wave text-yellow-400 mr-2"></i>
+                                Pending Withdrawals (${pendingWithdrawals.length})
+                            </h3>
+                            <div class="grid gap-4">
+                                ${pendingWithdrawals.map(wd => `
+                                    <div class="bg-gray-800 rounded-xl p-5 border border-yellow-600">
+                                        <div class="flex items-start justify-between mb-4">
+                                            <div>
+                                                <p class="font-mono text-sm text-gray-400">${wd.id}</p>
+                                                <p class="font-semibold">${wd.username}</p>
+                                            </div>
+                                            <span class="text-green-400 font-bold text-xl">$${wd.amount.toFixed(2)}</span>
+                                        </div>
+                                        
+                                        <div class="bg-gray-700 rounded-lg p-4 mb-4">
+                                            <div class="flex items-center mb-2">
+                                                ${wd.method === 'binance' 
+                                                    ? '<span class="binance-gradient text-gray-900 px-3 py-1 rounded-full text-sm font-semibold"><i class="fab fa-bitcoin mr-1"></i>Binance</span>'
+                                                    : '<span class="upi-gradient text-white px-3 py-1 rounded-full text-sm font-semibold"><i class="fas fa-mobile-alt mr-1"></i>UPI</span>'
+                                                }
+                                            </div>
+                                            <p class="text-sm text-gray-300 mt-2">
+                                                <strong>${wd.method === 'binance' ? 'Pay ID / Address:' : 'UPI ID:'}</strong>
+                                            </p>
+                                            <p class="font-mono text-white bg-gray-600 px-3 py-2 rounded mt-1 break-all">${wd.details}</p>
+                                        </div>
+                                        
+                                        <div class="flex space-x-3">
+                                            <button onclick="approveWithdrawal('${wd.id}')"
+                                                class="flex-1 bg-green-600 hover:bg-green-700 py-2 rounded-lg font-semibold transition">
+                                                <i class="fas fa-check mr-2"></i>Mark as Paid
+                                            </button>
+                                            <button onclick="rejectWithdrawal('${wd.id}')"
+                                                class="flex-1 bg-red-600 hover:bg-red-700 py-2 rounded-lg font-semibold transition">
+                                                <i class="fas fa-times mr-2"></i>Reject
+                                            </button>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    ` : `
+                        <div class="text-center py-8 bg-gray-800 rounded-xl border border-gray-700">
+                            <i class="fas fa-check-circle text-4xl text-green-400 mb-2"></i>
+                            <p class="text-gray-400">No pending withdrawal requests</p>
+                        </div>
+                    `}
+                    
+                    ${processedWithdrawals.length > 0 ? `
+                        <div>
+                            <h3 class="text-lg font-semibold mb-4">Processed Withdrawals</h3>
+                            <div class="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden overflow-x-auto">
+                                <table class="w-full">
+                                    <thead class="bg-gray-700">
+                                        <tr>
+                                            <th class="px-4 py-3 text-left text-sm">ID</th>
+                                            <th class="px-4 py-3 text-left text-sm">User</th>
+                                            <th class="px-4 py-3 text-left text-sm">Amount</th>
+                                            <th class="px-4 py-3 text-left text-sm">Method</th>
+                                            <th class="px-4 py-3 text-left text-sm">Status</th>
+                                            <th class="px-4 py-3 text-left text-sm">Date</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        ${processedWithdrawals.map(wd => `
+                                            <tr class="border-t border-gray-700">
+                                                <td class="px-4 py-3 font-mono text-sm">${wd.id}</td>
+                                                <td class="px-4 py-3">${wd.username}</td>
+                                                <td class="px-4 py-3 font-semibold text-green-400">$${wd.amount.toFixed(2)}</td>
+                                                <td class="px-4 py-3">
+                                                    ${wd.method === 'binance' 
+                                                        ? '<span class="text-yellow-400"><i class="fab fa-bitcoin mr-1"></i>Binance</span>'
+                                                        : '<span class="text-purple-400"><i class="fas fa-mobile-alt mr-1"></i>UPI</span>'
+                                                    }
+                                                </td>
+                                                <td class="px-4 py-3">
+                                                    <span class="px-2 py-1 ${wd.status === 'approved' ? 'bg-green-600' : 'bg-red-600'} rounded-full text-xs capitalize">
+                                                        ${wd.status === 'approved' ? 'Paid' : 'Rejected'}
+                                                    </span>
+                                                </td>
+                                                <td class="px-4 py-3 text-sm text-gray-400">${formatDate(wd.processedAt || wd.createdAt)}</td>
+                                            </tr>
+                                        `).join('')}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+        }
+
         function renderAdminUsers(users) {
             return `
-                <div class="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden">
+                <div class="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden overflow-x-auto">
                     <table class="w-full">
                         <thead class="bg-gray-700">
                             <tr>
@@ -1367,7 +2128,7 @@
                                     <td colspan="6" class="px-4 py-8 text-center text-gray-400">No users registered yet</td>
                                 </tr>
                             ` : users.map(user => {
-                                const eligible = user.redditKarma >= 200 && user.accountAge >= 1;
+                                const eligible = (user.redditKarma || 0) >= 200 && (user.accountAge || 0) >= 1;
                                 return `
                                     <tr class="border-t border-gray-700 hover:bg-gray-700/50">
                                         <td class="px-4 py-3">
@@ -1385,18 +2146,18 @@
                                                 : '<span class="text-sm text-gray-400"><i class="fas fa-key mr-1"></i>Local</span>'
                                             }
                                         </td>
-                                        <td class="px-4 py-3 ${user.redditKarma >= 200 ? 'text-green-400' : 'text-red-400'}">
-                                            ${user.redditKarma}
+                                        <td class="px-4 py-3 ${(user.redditKarma || 0) >= 200 ? 'text-green-400' : 'text-red-400'}">
+                                            ${user.redditKarma || 0}
                                         </td>
-                                        <td class="px-4 py-3 ${user.accountAge >= 1 ? 'text-green-400' : 'text-red-400'}">
-                                            ${user.accountAge} month(s)
+                                        <td class="px-4 py-3 ${(user.accountAge || 0) >= 1 ? 'text-green-400' : 'text-red-400'}">
+                                            ${user.accountAge || 0} month(s)
                                         </td>
                                         <td class="px-4 py-3">
                                             ${eligible 
                                                 ? '<span class="text-green-400"><i class="fas fa-check-circle"></i> Yes</span>'
                                                 : '<span class="text-red-400"><i class="fas fa-times-circle"></i> No</span>'}
                                         </td>
-                                        <td class="px-4 py-3 text-right font-semibold text-green-400">$${user.walletBalance.toFixed(2)}</td>
+                                        <td class="px-4 py-3 text-right font-semibold text-green-400">$${(user.walletBalance || 0).toFixed(2)}</td>
                                     </tr>
                                 `;
                             }).join('')}
@@ -1491,20 +2252,26 @@
         // ============================================
         // EVENT HANDLERS
         // ============================================
+        let timerInterval = null;
+        let selectedWithdrawMethod = null;
+        
         function attachEventListeners() {
-            // Timer updates for active tasks
-            setInterval(() => {
-                const myReservedTasks = TaskManager.getMyReservedTasks(Auth.currentUser?.id);
-                myReservedTasks.forEach(task => {
-                    const timerEl = document.getElementById(`timer-${task.taskId}`);
-                    if (timerEl) {
-                        const remaining = TaskManager.getRemainingTime(task);
-                        timerEl.textContent = formatTime(remaining);
-                        if (remaining === 0) {
-                            render();
+            if (timerInterval) clearInterval(timerInterval);
+            
+            timerInterval = setInterval(async () => {
+                if (Auth.currentUser && Auth.currentUser.role !== 'admin') {
+                    const myReservedTasks = await TaskManager.getMyReservedTasks(Auth.currentUser.id);
+                    myReservedTasks.forEach(task => {
+                        const timerEl = document.getElementById(`timer-${task.taskId}`);
+                        if (timerEl) {
+                            const remaining = TaskManager.getRemainingTime(task);
+                            timerEl.textContent = formatTime(remaining);
+                            if (remaining === 0) {
+                                render();
+                            }
                         }
-                    }
-                });
+                    });
+                }
             }, 1000);
         }
 
@@ -1528,12 +2295,12 @@
             }
         };
 
-        window.handleLogin = function() {
+        window.handleLogin = async function() {
             const username = document.getElementById('loginUsername').value;
             const password = document.getElementById('loginPassword').value;
             const errorEl = document.getElementById('authError');
             
-            const result = Auth.login(username, password);
+            const result = await Auth.login(username, password);
             if (result.success) {
                 render();
             } else {
@@ -1553,15 +2320,10 @@
             } else {
                 errorEl.innerHTML = '<strong>Error:</strong> ' + result.error;
                 errorEl.classList.remove('hidden');
-                
-                // Also show alert for unauthorized domain error
-                if (result.error.includes('not authorized')) {
-                    alert('⚠️ Firebase Domain Error:\n\n' + result.error + '\n\nCurrent domain: ' + window.location.hostname);
-                }
             }
         };
 
-        window.handleRegister = function() {
+        window.handleRegister = async function() {
             const username = document.getElementById('regUsername').value;
             const password = document.getElementById('regPassword').value;
             const karma = document.getElementById('regKarma').value;
@@ -1574,7 +2336,7 @@
                 return;
             }
             
-            const result = Auth.register(username, password, karma, age);
+            const result = await Auth.register(username, password, karma, age);
             if (result.success) {
                 render();
             } else {
@@ -1583,7 +2345,7 @@
             }
         };
 
-        window.saveRedditInfo = function() {
+        window.saveRedditInfo = async function() {
             const karma = document.getElementById('redditKarma').value;
             const age = document.getElementById('redditAge').value;
             const errorEl = document.getElementById('redditInfoError');
@@ -1594,10 +2356,8 @@
                 return;
             }
             
-            const result = DB.updateRedditInfo(Auth.currentUser.id, karma, age);
+            const result = await Auth.updateRedditInfo(karma, age);
             if (result.success) {
-                Auth.currentUser = { ...result.user, token: Auth.currentUser.token };
-                localStorage.setItem('reddit_platform_session', JSON.stringify(Auth.currentUser));
                 render();
             } else {
                 errorEl.textContent = 'Failed to update Reddit info';
@@ -1622,8 +2382,11 @@
         };
 
         // Task handlers
-        window.acceptTask = function(taskId) {
-            const result = DB.acceptTask(taskId, Auth.currentUser.id);
+        window.acceptTask = async function(taskId) {
+            showLoading('Accepting task...');
+            const result = await TaskManager.acceptTask(taskId, Auth.currentUser.id);
+            hideLoading();
+            
             if (result.success) {
                 activeTab = 'active';
                 render();
@@ -1643,7 +2406,7 @@
             document.getElementById('submitModal').classList.add('hidden');
         };
 
-        window.submitTask = function() {
+        window.submitTask = async function() {
             const taskId = document.getElementById('submitTaskId').value;
             const redditLink = document.getElementById('redditLink').value;
             const errorEl = document.getElementById('submitError');
@@ -1654,7 +2417,10 @@
                 return;
             }
             
-            const result = TaskManager.submitTask(taskId, Auth.currentUser.id, redditLink);
+            showLoading('Submitting task...');
+            const result = await TaskManager.submitTask(taskId, Auth.currentUser.id, redditLink);
+            hideLoading();
+            
             if (result.success) {
                 closeSubmitModal();
                 activeTab = 'history';
@@ -1665,8 +2431,89 @@
             }
         };
 
+        // Wallet handlers
+        window.openWalletModal = function() {
+            selectedWithdrawMethod = null;
+            render().then(() => {
+                document.getElementById('walletModal').classList.remove('hidden');
+            });
+        };
+
+        window.closeWalletModal = function() {
+            document.getElementById('walletModal').classList.add('hidden');
+        };
+
+        window.selectWithdrawMethod = function(method) {
+            selectedWithdrawMethod = method;
+            
+            document.getElementById('methodBinance').classList.remove('border-yellow-500');
+            document.getElementById('methodUpi').classList.remove('border-purple-500');
+            document.getElementById('binanceDetails').classList.add('hidden');
+            document.getElementById('upiDetails').classList.add('hidden');
+            
+            if (method === 'binance') {
+                document.getElementById('methodBinance').classList.add('border-yellow-500');
+                document.getElementById('binanceDetails').classList.remove('hidden');
+            } else {
+                document.getElementById('methodUpi').classList.add('border-purple-500');
+                document.getElementById('upiDetails').classList.remove('hidden');
+            }
+            
+            const btn = document.getElementById('withdrawBtn');
+            btn.disabled = false;
+            btn.className = 'w-full bg-green-600 hover:bg-green-700 py-3 rounded-lg font-semibold transition cursor-pointer';
+            btn.innerHTML = '<i class="fas fa-paper-plane mr-2"></i>Request Withdrawal';
+        };
+
+        window.requestWithdrawal = async function() {
+            const amount = parseFloat(document.getElementById('withdrawAmount').value);
+            const errorEl = document.getElementById('withdrawError');
+            
+            let details = '';
+            if (selectedWithdrawMethod === 'binance') {
+                details = document.getElementById('binanceId').value;
+            } else {
+                details = document.getElementById('upiId').value;
+            }
+            
+            if (!details) {
+                errorEl.textContent = 'Please enter your ' + (selectedWithdrawMethod === 'binance' ? 'Binance Pay ID or address' : 'UPI ID');
+                errorEl.classList.remove('hidden');
+                return;
+            }
+            
+            if (amount < 5) {
+                errorEl.textContent = 'Minimum withdrawal is $5.00';
+                errorEl.classList.remove('hidden');
+                return;
+            }
+            
+            showLoading('Processing withdrawal request...');
+            const result = await WithdrawalManager.createWithdrawal(
+                Auth.currentUser.id,
+                amount,
+                selectedWithdrawMethod,
+                details
+            );
+            hideLoading();
+            
+            if (result.success) {
+                closeWalletModal();
+                activeTab = 'withdrawals';
+                render();
+            } else {
+                errorEl.textContent = result.error;
+                errorEl.classList.remove('hidden');
+            }
+        };
+
         // Admin handlers
-        window.openTaskModal = function(task = null) {
+        window.openTaskModal = async function(taskId = null) {
+            let task = null;
+            if (taskId) {
+                task = await FirestoreDB.getTask(taskId);
+            }
+            
             document.getElementById('editingTaskId').value = task?.taskId || '';
             document.getElementById('taskModalTitle').textContent = task ? 'Edit Task' : 'Create New Task';
             document.getElementById('taskModalBtn').textContent = task ? 'Update Task' : 'Create Task';
@@ -1704,13 +2551,13 @@
             document.getElementById('commentFields').classList.toggle('hidden', type !== 'comment');
         };
 
-        window.saveTask = function() {
+        window.saveTask = async function() {
             const editingId = document.getElementById('editingTaskId').value;
             const type = document.getElementById('taskType').value;
             const price = document.getElementById('taskPrice').value;
             const errorEl = document.getElementById('taskError');
             
-            let taskData = { type, price };
+            let taskData = { type, price: parseFloat(price) };
             
             if (type === 'post') {
                 taskData.title = document.getElementById('taskTitle').value;
@@ -1739,15 +2586,21 @@
                 return;
             }
             
+            showLoading(editingId ? 'Updating task...' : 'Creating task...');
+            
+            let result;
             if (editingId) {
-                const result = TaskManager.updateTask(editingId, taskData);
-                if (!result.success) {
-                    errorEl.textContent = result.error;
-                    errorEl.classList.remove('hidden');
-                    return;
-                }
+                result = await TaskManager.updateTask(editingId, taskData);
             } else {
-                TaskManager.createTask(taskData);
+                result = await TaskManager.createTask(taskData);
+            }
+            
+            hideLoading();
+            
+            if (!result.success) {
+                errorEl.textContent = result.error;
+                errorEl.classList.remove('hidden');
+                return;
             }
             
             closeTaskModal();
@@ -1755,15 +2608,15 @@
         };
 
         window.editTask = function(taskId) {
-            const task = DB.tasks.find(t => t.taskId === taskId);
-            if (task) {
-                openTaskModal(task);
-            }
+            openTaskModal(taskId);
         };
 
-        window.deleteTask = function(taskId) {
+        window.deleteTask = async function(taskId) {
             if (confirm('Are you sure you want to delete this task?')) {
-                const result = TaskManager.deleteTask(taskId);
+                showLoading('Deleting task...');
+                const result = await TaskManager.deleteTask(taskId);
+                hideLoading();
+                
                 if (result.success) {
                     render();
                 } else {
@@ -1772,8 +2625,11 @@
             }
         };
 
-        window.approveSubmission = function(submissionId) {
-            const result = AdminManager.approveSubmission(submissionId);
+        window.approveSubmission = async function(submissionId) {
+            showLoading('Approving submission...');
+            const result = await AdminManager.approveSubmission(submissionId);
+            hideLoading();
+            
             if (result.success) {
                 render();
             } else {
@@ -1781,9 +2637,12 @@
             }
         };
 
-        window.rejectSubmission = function(submissionId) {
+        window.rejectSubmission = async function(submissionId) {
             if (confirm('Are you sure you want to reject this submission?')) {
-                const result = AdminManager.rejectSubmission(submissionId);
+                showLoading('Rejecting submission...');
+                const result = await AdminManager.rejectSubmission(submissionId);
+                hideLoading();
+                
                 if (result.success) {
                     render();
                 } else {
@@ -1792,17 +2651,60 @@
             }
         };
 
-        // Initial render
-        render();
+        window.approveWithdrawal = async function(withdrawalId) {
+            if (confirm('Confirm that you have sent the payment?')) {
+                showLoading('Processing...');
+                const result = await WithdrawalManager.approveWithdrawal(withdrawalId);
+                hideLoading();
+                
+                if (result.success) {
+                    render();
+                } else {
+                    alert(result.error);
+                }
+            }
+        };
 
-        // Auto-refresh for expired reservations
-        setInterval(() => {
-            TaskManager.checkExpiredReservations();
-        }, 10000);
-        
-        // Log Firebase v10 status
-        console.log('Reddit Task Platform initialized with Firebase v10 Modular SDK');
+        window.rejectWithdrawal = async function(withdrawalId) {
+            if (confirm('Are you sure you want to reject this withdrawal?')) {
+                showLoading('Processing...');
+                const result = await WithdrawalManager.rejectWithdrawal(withdrawalId);
+                hideLoading();
+                
+                if (result.success) {
+                    render();
+                } else {
+                    alert(result.error);
+                }
+            }
+        };
+
+        // ============================================
+        // INITIALIZE APP
+        // ============================================
+        async function initApp() {
+            try {
+                console.log('Initializing app with Firebase...');
+                
+                await FirestoreDB.initAdmin();
+                await Auth.init();
+                
+                updateFirebaseStatus(true, 'Connected to Firebase');
+                
+                render();
+                
+                setInterval(async () => {
+                    await FirestoreDB.checkExpiredReservations();
+                }, 30000);
+                
+                console.log('App initialized successfully');
+            } catch (error) {
+                console.error('Error initializing app:', error);
+                updateFirebaseStatus(false, 'Connection failed: ' + error.message);
+            }
+        }
+
+        initApp();
     </script>
 </body>
 </html>
-`
