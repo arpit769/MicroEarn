@@ -1077,7 +1077,8 @@
         // ============================================
         // TASK MANAGER
         // ============================================
-        let userPanelCache = null;
+      
+
         const TaskManager = {
             async generateTaskId() {
                 // Get all tasks to find the highest ID
@@ -1409,6 +1410,18 @@ async function safeUpdateActivity(userId) {
             
             attachEventListeners();
         }
+            1413 async function renderUserPanelOnly() {
+     const app = document.getElementById('app');
+    app.innerHTML = await renderUserPanel();
+    attachEventListeners();
+}
+
+ async function renderAdminPanelOnly() {
+     const app = document.getElementById('app');
+     app.innerHTML = await renderAdminPanel();
+     attachEventListeners();
+ }
+
 
         function renderNavbar(isAdmin = false) {
             const eligible = Auth.isEligible();
@@ -3158,15 +3171,17 @@ const {
         };
 
         // Tab handlers
-        window.switchUserTab = function(tab) {
-            activeTab = tab;
-            render();
-        };
+       window.switchUserTab = function(tab) {
+    activeTab = tab;
+    renderUserPanelOnly();
+};
 
-        window.switchAdminTab = function(tab) {
-            adminTab = tab;
-            render();
-        };
+
+       window.switchAdminTab = function(tab) {
+    adminTab = tab;
+    renderAdminPanelOnly();
+};
+
 
         // Task handlers
         window.acceptTask = async function(taskId) {
