@@ -256,7 +256,20 @@
 
     <!-- Firebase v10 Modular SDK -->
     <script type="module">
-        // ============================================
+        
+        // ===============================
+        // GLOBAL GUARDS (ADDED)
+        // ===============================
+        let listenersAttached = false;
+        let lastActivityUpdate = 0;
+
+        async function safeUpdateActivity(userId) {
+            const now = Date.now();
+            if (now - lastActivityUpdate < 60000) return; // 1 minute throttle
+            lastActivityUpdate = now;
+            await FirestoreDB.updateUserActivity(userId);
+        }
+// ============================================
         // FIREBASE v10 MODULAR IMPORTS
         // ============================================
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
@@ -1077,8 +1090,6 @@
         // ============================================
         // TASK MANAGER
         // ============================================
-      
-
         const TaskManager = {
             async generateTaskId() {
                 // Get all tasks to find the highest ID
@@ -1343,16 +1354,6 @@
         // ============================================
         // UI HELPERS
         // ============================================
-
-        let lastActivityUpdate = 0;
-
-async function safeUpdateActivity(userId) {
-  const now = Date.now();
-  if (now - lastActivityUpdate < 60000) return; // 1 minute me sirf 1 baar
-  lastActivityUpdate = now;
-  await FirestoreDB.updateUserActivity(userId);
-}
-
         function showLoading(text = 'Loading...') {
             document.getElementById('loadingText').textContent = text;
             document.getElementById('loadingOverlay').classList.remove('hidden');
@@ -1410,19 +1411,6 @@ async function safeUpdateActivity(userId) {
             
             attachEventListeners();
         }
-           async function renderUserPanelOnly() {
-    const app = document.getElementById('app');
-    app.innerHTML = await renderUserPanel();
-    attachEventListeners();
-}
-
-async function renderAdminPanelOnly() {
-    const app = document.getElementById('app');
-    app.innerHTML = await renderAdminPanel();
-    attachEventListeners();
-}
-
-
 
         function renderNavbar(isAdmin = false) {
             const eligible = Auth.isEligible();
@@ -1690,37 +1678,19 @@ async function renderAdminPanelOnly() {
             `;
         }
 
-       async function renderUserPanel() {
-    await Auth.refreshUser();
-
-    // Update user activity
-    // await FirestoreDB.updateUserActivity(Auth.currentUser.id);
-
+        async function renderUserPanel() {
+            await Auth.refreshUser();
             // Update user activity
-            // await FirestoreDB.updateUserActivity(Auth.currentUser.id);
+            await safeUpdateActivity(Auth.currentUser.id);
             
             const eligible = Auth.isEligible();
-
-if (!userPanelCache) {
-    userPanelCache = {
-        availableTasks: await TaskManager.getAvailableTasks(),
-        myReservedTasks: await TaskManager.getMyReservedTasks(Auth.currentUser.id),
-        mySubmissions: await FirestoreDB.getUserSubmissions(Auth.currentUser.id),
-        myWithdrawals: await WithdrawalManager.getUserWithdrawals(Auth.currentUser.id),
-        dailyCounts: await TaskManager.getUserDailyTaskCounts(Auth.currentUser.id),
-        cooldownRemaining: await TaskManager.getUserCooldownRemaining(Auth.currentUser.id)
-    };
-}
-
-const {
-    availableTasks,
-    myReservedTasks,
-    mySubmissions,
-    myWithdrawals,
-    dailyCounts,
-    cooldownRemaining
-} = userPanelCache;
-
+            const availableTasks = await TaskManager.getAvailableTasks();
+            const myReservedTasks = await TaskManager.getMyReservedTasks(Auth.currentUser.id);
+            const allTasks = await FirestoreDB.getAllTasks();
+            const mySubmissions = await FirestoreDB.getUserSubmissions(Auth.currentUser.id);
+            const myWithdrawals = await WithdrawalManager.getUserWithdrawals(Auth.currentUser.id);
+            const dailyCounts = await TaskManager.getUserDailyTaskCounts(Auth.currentUser.id);
+            const cooldownRemaining = await TaskManager.getUserCooldownRemaining(Auth.currentUser.id);
             
             return `
                 ${renderNavbar(false)}
@@ -3057,6 +3027,8 @@ const {
         }
         
         function attachEventListeners() {
+            if (listenersAttached) return;
+            listenersAttached = true;
             if (timerInterval) clearInterval(timerInterval);
             
             timerInterval = setInterval(async () => {
@@ -3172,17 +3144,15 @@ const {
         };
 
         // Tab handlers
-       window.switchUserTab = function(tab) {
-    activeTab = tab;
-    renderUserPanelOnly();
-};
+        window.switchUserTab = function(tab) {
+            activeTab = tab;
+            render();
+        };
 
-
-       window.switchAdminTab = function(tab) {
-    adminTab = tab;
-    renderAdminPanelOnly();
-};
-
+        window.switchAdminTab = function(tab) {
+            adminTab = tab;
+            render();
+        };
 
         // Task handlers
         window.acceptTask = async function(taskId) {
