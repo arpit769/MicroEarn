@@ -1410,17 +1410,18 @@ async function safeUpdateActivity(userId) {
             
             attachEventListeners();
         }
-            1413 async function renderUserPanelOnly() {
-     const app = document.getElementById('app');
+           async function renderUserPanelOnly() {
+    const app = document.getElementById('app');
     app.innerHTML = await renderUserPanel();
     attachEventListeners();
 }
 
- async function renderAdminPanelOnly() {
-     const app = document.getElementById('app');
-     app.innerHTML = await renderAdminPanel();
-     attachEventListeners();
- }
+async function renderAdminPanelOnly() {
+    const app = document.getElementById('app');
+    app.innerHTML = await renderAdminPanel();
+    attachEventListeners();
+}
+
 
 
         function renderNavbar(isAdmin = false) {
