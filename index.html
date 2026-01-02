@@ -1077,6 +1077,7 @@
         // ============================================
         // TASK MANAGER
         // ============================================
+        let userPanelCache = null;
         const TaskManager = {
             async generateTaskId() {
                 // Get all tasks to find the highest ID
@@ -1685,13 +1686,27 @@ async function safeUpdateActivity(userId) {
             // await FirestoreDB.updateUserActivity(Auth.currentUser.id);
             
             const eligible = Auth.isEligible();
-            const availableTasks = await TaskManager.getAvailableTasks();
-            const myReservedTasks = await TaskManager.getMyReservedTasks(Auth.currentUser.id);
-            const allTasks = await FirestoreDB.getAllTasks();
-            const mySubmissions = await FirestoreDB.getUserSubmissions(Auth.currentUser.id);
-            const myWithdrawals = await WithdrawalManager.getUserWithdrawals(Auth.currentUser.id);
-            const dailyCounts = await TaskManager.getUserDailyTaskCounts(Auth.currentUser.id);
-            const cooldownRemaining = await TaskManager.getUserCooldownRemaining(Auth.currentUser.id);
+
+if (!userPanelCache) {
+    userPanelCache = {
+        availableTasks: await TaskManager.getAvailableTasks(),
+        myReservedTasks: await TaskManager.getMyReservedTasks(Auth.currentUser.id),
+        mySubmissions: await FirestoreDB.getUserSubmissions(Auth.currentUser.id),
+        myWithdrawals: await WithdrawalManager.getUserWithdrawals(Auth.currentUser.id),
+        dailyCounts: await TaskManager.getUserDailyTaskCounts(Auth.currentUser.id),
+        cooldownRemaining: await TaskManager.getUserCooldownRemaining(Auth.currentUser.id)
+    };
+}
+
+const {
+    availableTasks,
+    myReservedTasks,
+    mySubmissions,
+    myWithdrawals,
+    dailyCounts,
+    cooldownRemaining
+} = userPanelCache;
+
             
             return `
                 ${renderNavbar(false)}
