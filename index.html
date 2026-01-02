@@ -257,18 +257,27 @@
     <!-- Firebase v10 Modular SDK -->
     <script type="module">
         
-        // ===============================
-        // GLOBAL GUARDS (ADDED)
-        // ===============================
-        let listenersAttached = false;
-        let lastActivityUpdate = 0;
-
-        async function safeUpdateActivity(userId) {
-            const now = Date.now();
-            if (now - lastActivityUpdate < 60000) return; // 1 minute throttle
-            lastActivityUpdate = now;
-            await FirestoreDB.updateUserActivity(userId);
+// ===============================
+// UI-ONLY COUNTDOWN (NO FIRESTORE)
+// ===============================
+function renderCountdownTimers() {
+    const timers = document.querySelectorAll('[data-expiry]');
+    timers.forEach(el => {
+        const expiry = Number(el.getAttribute('data-expiry'));
+        if (!expiry) return;
+        const diff = expiry - Date.now();
+        if (diff <= 0) {
+            el.textContent = 'Expired';
+            return;
         }
+        const m = Math.floor(diff / 60000);
+        const s = Math.floor((diff % 60000) / 1000);
+        el.textContent = `${m}m ${s}s`;
+    });
+}
+
+// Start UI-only timer
+setInterval(renderCountdownTimers, 1000);
 // ============================================
         // FIREBASE v10 MODULAR IMPORTS
         // ============================================
@@ -1681,7 +1690,12 @@
         async function renderUserPanel() {
             await Auth.refreshUser();
             // Update user activity
-            await safeUpdateActivity(Auth.currentUser.id);
+            let lastActivityUpdate = window.__lastActivityUpdate || 0;
+    const now = Date.now();
+    if (now - lastActivityUpdate > 60000) {
+        window.__lastActivityUpdate = now;
+        await FirestoreDB.updateUserActivity(Auth.currentUser.id);
+    }
             
             const eligible = Auth.isEligible();
             const availableTasks = await TaskManager.getAvailableTasks();
@@ -3026,26 +3040,15 @@
             }, 2000);
         }
         
-        function attachEventListeners() {
-            if (listenersAttached) return;
-            listenersAttached = true;
-            if (timerInterval) clearInterval(timerInterval);
+        let listenersAttached = false;
+function attachEventListeners() {
+    if (listenersAttached) return;
+    listenersAttached = true;
+            if (timerInterval) // clearInterval(timerInterval); // disabled
             
-            timerInterval = setInterval(async () => {
-                if (Auth.currentUser && Auth.currentUser.role !== 'admin') {
-                    const myReservedTasks = await TaskManager.getMyReservedTasks(Auth.currentUser.id);
-                    myReservedTasks.forEach(task => {
-                        const timerEl = document.getElementById(`timer-${task.taskId}`);
-                        if (timerEl) {
-                            const remaining = TaskManager.getRemainingTime(task);
-                            timerEl.textContent = formatTime(remaining);
-                            if (remaining === 0) {
-                                render();
-                            }
-                        }
-                    });
-                }
-            }, 1000);
+            // ❌ REMOVED: Firestore polling interval (was causing 20+ requests per click)
+// Timer is now UI-only. See renderCountdownTimers().
+
         }
 
         // Auth handlers
