@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="hi">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -37,7 +37,7 @@
             <span class="font-black text-slate-950">R</span>
           </div>
           <div>
-            <div class="text-sm tracking-wide text-white/80">Earn With Simple Tasks</div>
+            <div class="text-sm tracking-wide text-white/80">Earn with Simple Tasks</div>
             <div class="text-lg font-semibold">Reddit Tasks</div>
           </div>
         </div>
@@ -49,7 +49,7 @@
           </div>
 
           <button id="btnLogin" class="inline-flex items-center gap-2 rounded-xl bg-white text-slate-950 px-3 py-2 text-sm font-semibold hover:bg-white/90">
-            <span>Google se Login</span>
+            <span>Login with Google</span>
           </button>
 
           <div id="userMenu" class="hidden items-center gap-2">
@@ -70,12 +70,12 @@
         <div class="grid md:grid-cols-2 gap-6 items-center">
           <div>
             <h1 class="text-2xl md:text-3xl font-bold leading-tight">
-              Reddit par <span class="text-indigo-300">Post</span> / <span class="text-emerald-300">Comment</span> tasks.
+              Reddit <span class="text-indigo-300">Post</span> / <span class="text-emerald-300">Comment</span> tasks.
               <span class="block mt-2 text-white/80 text-lg font-semibold">User Panel + Admin Panel</span>
             </h1>
             <p class="mt-3 text-sm md:text-base text-white/70">
-              Google login ke baad user tasks claim kar sakta hai (30 min lock), aur 30 min ke andar proof link submit karega.
-              Admin panel se tasks create honge aur users list dekhi ja sakti hai.
+              After Google login, a user can claim a task (30 min lock), and must submit a proof link within the time window.
+              Admin panel can create tasks and view users/submissions.
             </p>
             <div class="mt-5 flex flex-wrap gap-3">
               <button id="btnLoginHero" class="inline-flex items-center gap-2 rounded-xl bg-indigo-500 px-4 py-2 text-sm font-semibold hover:bg-indigo-400">
@@ -105,13 +105,13 @@
             </div>
             <ol class="mt-3 space-y-2 text-sm text-white/75 list-decimal list-inside">
               <li>Login</li>
-              <li>Reddit profile + karma fill (min 200)</li>
-              <li>Task claim (30 min ke liye lock)</li>
-              <li>Proof link submit within 30 min</li>
-              <li>Admin users list + tasks manage</li>
+              <li>Fill Reddit profile + karma (min 200)</li>
+              <li>Claim a task (locked for claim window)</li>
+              <li>Submit proof link within the claim window</li>
+              <li>Admin manages tasks and views users/submissions</li>
             </ol>
             <div class="mt-4 rounded-xl border border-white/10 p-3 text-xs text-white/60">
-              Note: Production ke liye Firestore rules zaroor configure karein.
+              Note: Configure Firestore security rules for production.
             </div>
           </div>
         </div>
@@ -165,7 +165,7 @@
         <div id="panelUser" class="mt-4">
           <div id="userEligibilityBanner" class="hidden rounded-2xl border border-amber-400/20 bg-amber-500/10 p-4 text-sm text-amber-100">
             <div class="font-semibold">Reddit profile required</div>
-            <div class="mt-1 text-amber-100/90">Task claim karne ke liye Reddit username aur minimum karma <b>200+</b> fill karna zaroori hai.</div>
+            <div class="mt-1 text-amber-100/90">To claim tasks you must fill your Reddit username and have minimum karma <b>200+</b>.</div>
             <div class="mt-3">
               <button id="btnOpenProfileFromBanner" class="rounded-xl bg-amber-300 text-slate-950 px-4 py-2 text-sm font-semibold hover:bg-amber-200">Fill Profile</button>
             </div>
@@ -186,7 +186,7 @@
                 <button id="btnOpenClaimModal" class="rounded-xl bg-white text-slate-950 px-4 py-2 text-sm font-semibold hover:bg-white/90">Open</button>
               </div>
             </div>
-            <div class="mt-3 text-xs text-white/60">Note: Jab tak active claim hai, aap dusra task claim nahi kar sakte.</div>
+            <div class="mt-3 text-xs text-white/60">Note: While you have an active claim, you cannot claim another task.</div>
           </div>
 
           <div class="mt-4 flex items-center justify-between">
@@ -195,7 +195,7 @@
           </div>
 
           <div id="tasksEmpty" class="hidden mt-4 rounded-2xl border border-white/10 p-6 text-center text-white/70">
-            Abhi koi task available nahi hai.
+            No tasks available right now.
           </div>
 
           <div id="tasksList" class="mt-4 grid gap-3"></div>
@@ -204,12 +204,12 @@
             <div class="flex items-center justify-between">
               <div>
                 <div class="text-lg font-semibold">My Submissions</div>
-                <div class="text-xs text-white/60">Aapke submitted proofs</div>
+                <div class="text-xs text-white/60">Your submitted proofs</div>
               </div>
               <div id="mineLoading" class="hidden items-center gap-2 text-xs text-white/60"><span class="spinner"></span><span>Loading...</span></div>
             </div>
             <div id="mineEmpty" class="hidden mt-4 rounded-2xl border border-white/10 p-6 text-center text-white/70">
-              Aapne abhi tak koi submission nahi kiya.
+              You have not submitted any proof yet.
             </div>
             <div id="mineList" class="mt-4 grid gap-3"></div>
           </div>
@@ -230,7 +230,7 @@
               <div class="lg:col-span-2 rounded-2xl border border-white/10 glass p-5">
                 <div class="flex items-center justify-between">
                   <h2 class="text-lg font-semibold">Create a Reddit Task (Admin)</h2>
-                  <div class="text-xs text-white/60">Firestore: tasks</div>
+                  <div class="text-xs text-white/60">Firestore: tasks (ID starts from 1010)</div>
                 </div>
 
                 <form id="createForm" class="mt-4 grid md:grid-cols-2 gap-3">
@@ -261,7 +261,7 @@
                     <label class="block">
                       <div class="text-xs text-white/60">Image URL (optional)</div>
                       <input id="ctImage" class="mt-1 w-full rounded-xl border border-white/10 bg-slate-950/40 px-3 py-2 text-sm outline-none" placeholder="https://..." />
-                      <div class="mt-1 text-[11px] text-white/45">Optional preview image. (Reddit pe post ke liye aap manually upload karoge; yeh sirf reference/preview ke liye)</div>
+                      <div class="mt-1 text-[11px] text-white/45">Optional preview image (reference only).</div>
                     </label>
                   </div>
 
@@ -273,7 +273,7 @@
                     </label>
                     <label class="block">
                       <div class="text-xs text-white/60">Comment Text / Instructions</div>
-                      <textarea id="ctInstructions" class="mt-1 w-full rounded-xl border border-white/10 bg-slate-950/40 px-3 py-2 text-sm outline-none" rows="4" placeholder="Comment me kya likhna hai / rules..." required></textarea>
+                      <textarea id="ctInstructions" class="mt-1 w-full rounded-xl border border-white/10 bg-slate-950/40 px-3 py-2 text-sm outline-none" rows="4" placeholder="What to comment / rules..." required></textarea>
                     </label>
                   </div>
 
@@ -294,7 +294,7 @@
                   <label class="block">
                     <div class="text-xs text-white/60">Claim window (minutes)</div>
                     <input id="ctClaimMins" type="number" min="1" step="1" class="mt-1 w-full rounded-xl border border-white/10 bg-slate-950/40 px-3 py-2 text-sm outline-none" value="30" required />
-                    <div class="mt-1 text-[11px] text-white/45">Default 30 minutes (aap change kar sakte ho).</div>
+                    <div class="mt-1 text-[11px] text-white/45">Default 30 minutes.</div>
                   </label>
 
                   <label class="block">
@@ -304,7 +304,7 @@
                   </label>
 
                   <div class="md:col-span-2 flex items-center justify-between gap-3 pt-2">
-                    <div id="createHint" class="text-xs text-white/60">Tip: Clear instructions do. User ko 30 min ke andar proof submit karna hoga.</div>
+                    <div id="createHint" class="text-xs text-white/60">Tip: Write clear instructions. User must submit proof within the claim window.</div>
                     <button id="btnCreateTask" class="inline-flex items-center gap-2 rounded-xl bg-emerald-500 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-emerald-400">
                       <span id="createBtnText">Create Task</span>
                       <span id="createSpinner" class="hidden spinner" aria-hidden="true"></span>
@@ -316,13 +316,14 @@
               <aside class="rounded-2xl border border-white/10 bg-slate-950/40 p-5">
                 <div class="text-sm font-semibold">Admin Notes</div>
                 <ul class="mt-3 space-y-2 text-sm text-white/70">
-                  <li>Task claim hone ke baad 30 min lock rahega.</li>
-                  <li>Lock expired hone par task automatic available ho jayega (client-side visibility).</li>
-                  <li>Users list me Reddit profile + karma show hoga.</li>
+                  <li>After a claim, the task is locked for the configured window.</li>
+                  <li>When the lock expires, the task becomes available again (with client-side cleanup).</li>
+                  <li>Users list shows Reddit profile + karma.</li>
                 </ul>
                 <div class="mt-5 rounded-xl border border-white/10 p-3 text-xs text-white/60">
                   Collections:
-                  <div class="mt-2 font-mono text-[11px] text-white/70">users / tasks / submissions</div>
+                  <div class="mt-2 font-mono text-[11px] text-white/70">users / tasks / submissions / meta</div>
+                  <div class="mt-2 text-[11px] text-white/45">Counter doc: meta/counters → nextTaskId (starts at 1010)</div>
                 </div>
               </aside>
             </div>
@@ -367,7 +368,7 @@
       </section>
 
       <footer class="mt-10 pb-10 text-center text-xs text-white/45">
-        Firebase Auth + Firestore. Production ke liye Firestore rules/indexes set karna zaroori hai.
+        Firebase Auth + Firestore. Configure Firestore rules/indexes for production.
       </footer>
     </main>
   </div>
@@ -422,12 +423,12 @@
 
             <form id="submitForm" class="mt-3 grid gap-3">
               <label class="block">
-                <div class="text-xs text-white/60">Completion Proof Link (reddit post/comment URL)</div>
+                <div class="text-xs text-white/60">Completion Proof Link (Reddit post/comment URL)</div>
                 <input id="proofLink" class="mt-1 w-full rounded-xl border border-white/10 bg-slate-950/40 px-3 py-2 text-sm outline-none" placeholder="https://www.reddit.com/..." required />
               </label>
               <label class="block">
                 <div class="text-xs text-white/60">Note (optional)</div>
-                <textarea id="proofNote" class="mt-1 w-full rounded-xl border border-white/10 bg-slate-950/40 px-3 py-2 text-sm outline-none" rows="3" placeholder="Kuch extra info..."></textarea>
+                <textarea id="proofNote" class="mt-1 w-full rounded-xl border border-white/10 bg-slate-950/40 px-3 py-2 text-sm outline-none" rows="3" placeholder="Any extra info..."></textarea>
               </label>
               <div class="flex items-center justify-between gap-3">
                 <div id="submitHint" class="text-xs text-white/60"></div>
@@ -476,7 +477,7 @@
             <input id="rpKarma" type="number" min="0" step="1" class="mt-1 w-full rounded-xl border border-white/10 bg-slate-950/40 px-3 py-2 text-sm outline-none" placeholder="200" required />
           </label>
           <div class="flex items-center justify-between gap-3 pt-2">
-            <div id="profileHint" class="text-xs text-white/60">Karma 200+ hona chahiye.</div>
+            <div id="profileHint" class="text-xs text-white/60">Karma must be 200+ to claim tasks.</div>
             <button id="btnSaveProfile" class="inline-flex items-center gap-2 rounded-xl bg-emerald-500 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-emerald-400">
               <span id="profileBtnText">Save</span>
               <span id="profileSpinner" class="hidden spinner" aria-hidden="true"></span>
@@ -507,7 +508,6 @@
     import {
       getFirestore,
       collection,
-      addDoc,
       doc,
       setDoc,
       getDoc,
@@ -535,13 +535,16 @@
     };
 
     // --- Admin allowlist (EDIT THIS) ---
-    // Aap yahan apna admin email/uid add kar do.
     const ADMIN_EMAILS = [
       // "youradmin@gmail.com"
     ];
     const ADMIN_UIDS = [
       // "yourAdminUid"
     ];
+
+    // --- Task counter ---
+    const TASK_ID_START = 1010;
+    const COUNTER_DOC = { col: 'meta', doc: 'counters', field: 'nextTaskId' };
 
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
@@ -585,7 +588,6 @@
     const mineEmpty = el('mineEmpty');
     const mineList = el('mineList');
 
-    const profileStatus = el('profileStatus');
     const profileDot = el('profileDot');
     const profileText = el('profileText');
     const btnEditProfile = el('btnEditProfile');
@@ -933,7 +935,7 @@
 
         profileText.textContent = eligible
           ? `Profile: OK (u/${safe(currentUserDoc.redditUsername)} • karma ${karma})`
-          : 'Profile: pending (fill reddit + karma 200+)';
+          : 'Profile: pending (fill Reddit + karma 200+)';
 
         profileDot.className = `inline-block h-2 w-2 rounded-full ${eligible ? 'bg-emerald-400' : 'bg-amber-300'}`;
 
@@ -971,7 +973,7 @@
       tasksLoading.classList.remove('hidden');
       adminTasksLoading.classList.remove('hidden');
 
-      const q = query(collection(db, 'tasks'), orderBy('createdAt', 'desc'), limit(200));
+      const q = query(collection(db, 'tasks'), orderBy('createdAt', 'desc'), limit(300));
       unsubTasks = onSnapshot(q, (snap) => {
         tasksCache = snap.docs.map(d => ({ id: d.id, ...d.data() }));
         tasksLoading.classList.add('hidden');
@@ -993,7 +995,7 @@
       mineLoading.classList.remove('hidden');
       mineEmpty.classList.add('hidden');
 
-      const q = query(collection(db, 'submissions'), where('uid', '==', currentUser.uid), orderBy('createdAt', 'desc'), limit(100));
+      const q = query(collection(db, 'submissions'), where('uid', '==', currentUser.uid), orderBy('createdAt', 'desc'), limit(200));
       unsubMine = onSnapshot(q, (snap) => {
         const list = snap.docs.map(d => ({ id: d.id, ...d.data() }));
         renderMine(list);
@@ -1023,6 +1025,7 @@
                 ${badgeForType(s.taskType)}
                 <span class="text-xs rounded-full border border-white/10 px-2 py-0.5 text-white/60">${escapeHtml(s.status || 'pending')}</span>
                 <span class="text-xs text-white/50">${fmtTime(s.createdAt)}</span>
+                ${s.taskId ? `<span class="text-xs rounded-full border border-white/10 px-2 py-0.5 text-white/60">Task #${escapeHtml(s.taskId)}</span>` : ''}
               </div>
               <div class="mt-2 font-semibold break-words">${escapeHtml(s.taskTitle || 'Task')}</div>
               <a class="mt-2 block text-sm text-indigo-300 hover:underline break-all" href="${escapeAttr(s.proofLink || '#')}" target="_blank" rel="noreferrer">${escapeHtml(s.proofLink || '')}</a>
@@ -1044,7 +1047,7 @@
       if (unsubUsers) return; // already running
 
       usersLoading.classList.remove('hidden');
-      const q = query(collection(db, 'users'), orderBy('createdAt', 'desc'), limit(200));
+      const q = query(collection(db, 'users'), orderBy('createdAt', 'desc'), limit(300));
       unsubUsers = onSnapshot(q, (snap) => {
         const list = snap.docs.map(d => ({ id: d.id, ...d.data() }));
         renderUsers(list);
@@ -1097,7 +1100,7 @@
                 </div>
                 <div class="rounded-xl border border-white/10 p-2">
                   <div class="text-white/50">Active claim</div>
-                  <div>${hasActive ? `Task: ${escapeHtml(u.activeClaimTaskId)} • left ${msToClock(activeUntil - nowMs())}` : '—'}</div>
+                  <div>${hasActive ? `Task #${escapeHtml(u.activeClaimTaskId)} • left ${msToClock(activeUntil - nowMs())}` : '—'}</div>
                 </div>
               </div>
             </div>
@@ -1118,7 +1121,7 @@
       if (unsubSubs) return;
 
       subsLoading.classList.remove('hidden');
-      const q = query(collection(db, 'submissions'), orderBy('createdAt', 'desc'), limit(200));
+      const q = query(collection(db, 'submissions'), orderBy('createdAt', 'desc'), limit(300));
       unsubSubs = onSnapshot(q, (snap) => {
         const list = snap.docs.map(d => ({ id: d.id, ...d.data() }));
         renderAdminSubs(list);
@@ -1147,6 +1150,7 @@
                 ${badgeForType(s.taskType)}
                 <span class="text-xs rounded-full border border-white/10 px-2 py-0.5 text-white/60">${escapeHtml(s.status || 'pending')}</span>
                 <span class="text-xs text-white/50">${fmtTime(s.createdAt)}</span>
+                ${s.taskId ? `<span class="text-xs rounded-full border border-white/10 px-2 py-0.5 text-white/60">Task #${escapeHtml(s.taskId)}</span>` : ''}
               </div>
               <div class="mt-2 font-semibold break-words">${escapeHtml(s.taskTitle || 'Task')}</div>
               <div class="mt-1 text-xs text-white/60">By: ${escapeHtml(s.userName || 'User')} • ${escapeHtml(s.userEmail || '')}</div>
@@ -1178,6 +1182,22 @@
     ctType.addEventListener('change', syncCreateFields);
     syncCreateFields();
 
+    async function allocateNextTaskId(tx) {
+      const counterRef = doc(db, COUNTER_DOC.col, COUNTER_DOC.doc);
+      const snap = await tx.get(counterRef);
+
+      let next = TASK_ID_START;
+      if (snap.exists()) {
+        const raw = snap.data()?.[COUNTER_DOC.field];
+        const n = Number(raw);
+        next = Number.isFinite(n) && n >= TASK_ID_START ? n : TASK_ID_START;
+      }
+
+      // Persist next+1
+      tx.set(counterRef, { [COUNTER_DOC.field]: next + 1 }, { merge: true });
+      return next;
+    }
+
     createForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       if (!currentUser || !isAdmin) {
@@ -1199,24 +1219,24 @@
       const instructions = el('ctInstructions').value.trim();
 
       if (!subreddit || !title) {
-        showToast({ title: 'Missing fields', message: 'Subreddit + Title required.', type: 'warn' });
+        showToast({ title: 'Missing fields', message: 'Subreddit + Title are required.', type: 'warn' });
         return;
       }
       if (!Number.isFinite(reward) || reward < 0) {
-        showToast({ title: 'Invalid price', message: 'Price (USD) sahi do.', type: 'warn' });
+        showToast({ title: 'Invalid price', message: 'Please enter a valid USD price.', type: 'warn' });
         return;
       }
       if (!Number.isFinite(claimMins) || claimMins < 1) {
-        showToast({ title: 'Invalid claim window', message: 'Minutes minimum 1.', type: 'warn' });
+        showToast({ title: 'Invalid claim window', message: 'Minutes must be at least 1.', type: 'warn' });
         return;
       }
 
       if (type === 'post' && !body) {
-        showToast({ title: 'Missing body', message: 'Post task ke liye body required.', type: 'warn' });
+        showToast({ title: 'Missing body', message: 'Post tasks require a body.', type: 'warn' });
         return;
       }
       if (type === 'comment' && (!targetLink || !instructions)) {
-        showToast({ title: 'Missing fields', message: 'Comment task ke liye target link + instructions required.', type: 'warn' });
+        showToast({ title: 'Missing fields', message: 'Comment tasks require target link + instructions.', type: 'warn' });
         return;
       }
 
@@ -1224,34 +1244,49 @@
       try {
         const expiresAt = expireDays > 0 ? new Date(Date.now() + expireDays * 24 * 60 * 60 * 1000) : null;
 
-        await addDoc(collection(db, 'tasks'), {
-          type,
-          subreddit,
-          title,
-          reward,
-          status,
-          claimMins,
-          // post-specific
-          body: type === 'post' ? body : null,
-          imageUrl: type === 'post' ? (imageUrl || null) : null,
-          // comment-specific
-          targetLink: type === 'comment' ? targetLink : null,
-          instructions: type === 'comment' ? instructions : null,
+        let createdTaskId = null;
+        await runTransaction(db, async (tx) => {
+          const taskNo = await allocateNextTaskId(tx);
+          const taskId = String(taskNo); // integer-only doc id (as string)
 
-          // locking
-          lockedByUid: null,
-          lockedByName: null,
-          lockedUntil: null,
-          lockedAt: null,
+          const taskRef = doc(db, 'tasks', taskId);
+          const existing = await tx.get(taskRef);
+          if (existing.exists()) throw new Error(`Task ID collision (#${taskId}). Try again.`);
 
-          // stats
-          submittedCount: 0,
+          tx.set(taskRef, {
+            taskNo,
+            type,
+            subreddit,
+            title,
+            reward,
+            status,
+            claimMins,
 
-          createdByUid: currentUser.uid,
-          createdByName: currentUser.displayName || null,
-          createdByEmail: currentUser.email || null,
-          createdAt: serverTimestamp(),
-          expiresAt: expiresAt ? expiresAt : null
+            // post-specific
+            body: type === 'post' ? body : null,
+            imageUrl: type === 'post' ? (imageUrl || null) : null,
+
+            // comment-specific
+            targetLink: type === 'comment' ? targetLink : null,
+            instructions: type === 'comment' ? instructions : null,
+
+            // locking
+            lockedByUid: null,
+            lockedByName: null,
+            lockedUntil: null,
+            lockedAt: null,
+
+            // stats
+            submittedCount: 0,
+
+            createdByUid: currentUser.uid,
+            createdByName: currentUser.displayName || null,
+            createdByEmail: currentUser.email || null,
+            createdAt: serverTimestamp(),
+            expiresAt: expiresAt ? expiresAt : null
+          });
+
+          createdTaskId = taskId;
         });
 
         createForm.reset();
@@ -1260,7 +1295,7 @@
         el('ctExpireDays').value = 0;
         syncCreateFields();
 
-        showToast({ title: 'Task created', message: 'Task Firestore me save ho gaya.' });
+        showToast({ title: 'Task created', message: `Task #${createdTaskId} saved successfully.` });
         setAdminTab('tasks');
         setPanel('admin');
       } catch (err) {
@@ -1331,9 +1366,9 @@
       activeClaimPill.classList.remove('hidden');
 
       const t = tasksCache.find(x => x.id === ac.id);
-      activeClaimTitle.textContent = t?.title || ac.id;
+      activeClaimTitle.textContent = t?.title || `Task #${ac.id}`;
       const sub = t?.subreddit ? `r/${t.subreddit}` : '—';
-      activeClaimMeta.textContent = `${(t?.type || 'task').toUpperCase()} • ${sub} • Price $${Number(t?.reward ?? 0).toFixed(2)}`;
+      activeClaimMeta.textContent = `Task #${ac.id} • ${(t?.type || 'task').toUpperCase()} • ${sub} • Price $${Number(t?.reward ?? 0).toFixed(2)}`;
       activeClaimCountdown.textContent = msToClock(ac.until - nowMs());
     }
 
@@ -1343,7 +1378,7 @@
 
       let out = [...list];
       if (t !== 'all') out = out.filter(x => x.type === t);
-      if (s) out = out.filter(x => safe(x.title).toLowerCase().includes(s) || safe(x.subreddit).toLowerCase().includes(s));
+      if (s) out = out.filter(x => safe(x.title).toLowerCase().includes(s) || safe(x.subreddit).toLowerCase().includes(s) || safe(x.id).toLowerCase().includes(s));
       return out;
     }
 
@@ -1357,7 +1392,7 @@
       if (activeClaim) {
         // If active claim exists, we hide available tasks list to enforce single claim.
         tasksEmpty.classList.add('hidden');
-        tasksList.innerHTML = `<div class="rounded-2xl border border-white/10 bg-slate-950/40 p-6 text-white/70 text-center">Aapka active claim chal raha hai. Pehle usko complete karke submit karein.</div>`;
+        tasksList.innerHTML = `<div class="rounded-2xl border border-white/10 bg-slate-950/40 p-6 text-white/70 text-center">You have an active claim. Complete it and submit proof first.</div>`;
         return;
       }
 
@@ -1367,9 +1402,8 @@
 
       // hide tasks locked by other users
       const visible = base.filter(t => {
-        const { locked, until } = lockInfo(t);
+        const { locked } = lockInfo(t);
         if (!locked) return true;
-        // if locked, show only if it's mine (but mine will be shown via activeClaim anyway)
         return t.lockedByUid === currentUser.uid;
       });
 
@@ -1399,13 +1433,14 @@
             <div class="min-w-0">
               <div class="flex flex-wrap items-center gap-2">
                 ${badgeForType(t.type)}
+                <span class="text-xs rounded-full border border-white/10 px-2 py-0.5 text-white/60">Task #${escapeHtml(t.id)}</span>
                 <span class="text-xs text-white/60">r/${escapeHtml(safe(t.subreddit))}</span>
                 ${t.expiresAt ? `<span class="text-xs text-white/50">Exp: ${fmtTime(t.expiresAt)}</span>` : ''}
               </div>
               <div class="mt-2 font-semibold leading-snug break-words">${escapeHtml(safe(t.title))}</div>
               ${extra}
               <div class="mt-2 text-xs text-white/60">Created: ${fmtTime(t.createdAt)} • By: ${escapeHtml(safe(t.createdByName || '—'))}</div>
-              ${locked ? `<div class="mt-2 text-xs text-amber-200">Locked ${lockedByMe ? '(you)' : ''} until: ${new Date(until).toLocaleTimeString()}</div>` : ''}
+              ${locked ? `<div class="mt-2 text-xs text-amber-200">Locked ${lockedByMe ? '(you)' : ''} • unlocks at ${new Date(until).toLocaleTimeString()}</div>` : ''}
             </div>
 
             <div class="flex flex-col sm:flex-row items-start sm:items-center gap-2 shrink-0">
@@ -1456,6 +1491,7 @@
             <div class="min-w-0">
               <div class="flex flex-wrap items-center gap-2">
                 ${badgeForType(t.type)}
+                <span class="text-xs rounded-full border border-white/10 px-2 py-0.5 text-white/60">Task #${escapeHtml(t.id)}</span>
                 <span class="text-xs text-white/60">r/${escapeHtml(safe(t.subreddit))}</span>
                 <span class="text-xs rounded-full border border-white/10 px-2 py-0.5 text-white/60">${escapeHtml(safe(t.status || 'open'))}</span>
                 <span class="text-xs rounded-full border border-white/10 px-2 py-0.5 text-white/60">Price: $${Number(t.reward ?? 0).toFixed(2)}</span>
@@ -1492,10 +1528,11 @@
 
       const existing = getActiveClaim();
       if (existing) {
-        showToast({ title: 'Already claimed', message: 'Aapke paas already active claim hai.', type: 'warn' });
+        showToast({ title: 'Already claimed', message: 'You already have an active claim.', type: 'warn' });
         return;
       }
 
+      let claimMinsUsed = 30;
       try {
         await runTransaction(db, async (tx) => {
           const taskRef = doc(db, 'tasks', taskId);
@@ -1503,7 +1540,7 @@
 
           const [tSnap, uSnap] = await Promise.all([tx.get(taskRef), tx.get(userRef)]);
           if (!tSnap.exists()) throw new Error('Task not found');
-          if (!uSnap.exists()) throw new Error('User doc missing');
+          if (!uSnap.exists()) throw new Error('User document missing');
 
           const t = tSnap.data();
           const u = uSnap.data();
@@ -1516,14 +1553,14 @@
           if (!hasUsername || karma < 200) throw new Error('Reddit profile/karma not eligible');
 
           const uUntil = toMs(u.activeClaimUntil);
-          if (u.activeClaimTaskId && uUntil > nowMs()) throw new Error('User already has active claim');
+          if (u.activeClaimTaskId && uUntil > nowMs()) throw new Error('User already has an active claim');
 
           const tUntil = toMs(t.lockedUntil);
           const tLocked = tUntil && tUntil > nowMs();
           if (tLocked) throw new Error('Task already locked');
 
-          const claimMins = Number(t.claimMins ?? 30);
-          const lockUntil = new Date(Date.now() + claimMins * 60 * 1000);
+          claimMinsUsed = Number(t.claimMins ?? 30);
+          const lockUntil = new Date(Date.now() + claimMinsUsed * 60 * 1000);
 
           tx.update(taskRef, {
             lockedByUid: currentUser.uid,
@@ -1538,8 +1575,7 @@
           });
         });
 
-        showToast({ title: 'Claimed', message: 'Task aapke liye lock ho gaya. 30 min me submit karna hoga.' });
-        // Open modal for quick submit
+        showToast({ title: 'Claimed', message: `Task locked for ${claimMinsUsed} minutes. Submit proof before time runs out.` });
         await openTaskModal(taskId);
       } catch (err) {
         console.error(err);
@@ -1567,7 +1603,7 @@
           lockedAt: null,
           lockedUntil: null
         });
-        showToast({ title: 'Unlocked', message: 'Task force unlock ho gaya.' });
+        showToast({ title: 'Unlocked', message: `Task #${taskId} has been force unlocked.` });
       } catch (err) {
         console.error(err);
         showToast({ title: 'Unlock failed', message: err?.message || 'Unknown error', type: 'error' });
@@ -1603,7 +1639,7 @@
         const ref = doc(db, 'tasks', taskId);
         const snap = await getDoc(ref);
         if (!snap.exists()) {
-          showToast({ title: 'Not found', message: 'Task delete ho gaya.', type: 'warn' });
+          showToast({ title: 'Not found', message: 'This task was deleted.', type: 'warn' });
           return;
         }
 
@@ -1611,7 +1647,7 @@
         const t = openTask;
 
         // Basic
-        modalType.textContent = `${(t.type || 'task').toUpperCase()} • ${t.status || 'open'}`;
+        modalType.textContent = `${(t.type || 'task').toUpperCase()} • ${t.status || 'open'} • Task #${t.id}`;
         modalTitle.textContent = t.title || '—';
         modalMeta.textContent = `Created: ${fmtTime(t.createdAt)} • r/${t.subreddit || '—'} • By: ${t.createdByName || '—'}`;
 
@@ -1657,7 +1693,7 @@
           modalLockInfo.textContent = (t.status === 'closed')
             ? 'Task is closed.'
             : (t.status === 'submitted')
-              ? 'Already submitted by a user.'
+              ? 'Task is already submitted.'
               : 'Not locked. You can claim if eligible.';
         }
 
@@ -1665,7 +1701,7 @@
         const canSubmit = lockedByMe && (until > nowMs());
         submitHint.textContent = canSubmit
           ? `Submit within ${msToClock(until - nowMs())}`
-          : (lockedByMe ? 'Lock expired. Claim reset ho gaya hoga.' : 'Claim required to submit.');
+          : (lockedByMe ? 'Lock expired. You may need to claim again if available.' : 'Claim required to submit.');
 
         submitForm.classList.toggle('opacity-60', !canSubmit);
         proofLink.disabled = !canSubmit;
@@ -1736,7 +1772,7 @@
 
           const [tSnap, uSnap] = await Promise.all([tx.get(taskRef), tx.get(userRef)]);
           if (!tSnap.exists()) throw new Error('Task not found');
-          if (!uSnap.exists()) throw new Error('User doc missing');
+          if (!uSnap.exists()) throw new Error('User document missing');
 
           const t = tSnap.data();
           const u = uSnap.data();
@@ -1787,7 +1823,7 @@
         });
 
         submitForm.reset();
-        showToast({ title: 'Submitted', message: 'Proof submit ho gaya (pending review).' });
+        showToast({ title: 'Submitted', message: 'Proof submitted (pending review).' });
         closeModal();
       } catch (err) {
         console.error(err);
@@ -1813,7 +1849,7 @@
       profileOverlay.classList.add('hidden');
       document.body.style.overflow = '';
       profileForm.reset();
-      profileHint.textContent = 'Karma 200+ hona chahiye.';
+      profileHint.textContent = 'Karma must be 200+ to claim tasks.';
     }
 
     btnEditProfile.addEventListener('click', openProfile);
@@ -1832,13 +1868,13 @@
       const karma = Number(rpKarma.value);
 
       if (!username) {
-        profileHint.textContent = 'Reddit username required.';
-        showToast({ title: 'Invalid', message: 'Reddit username required.', type: 'warn' });
+        profileHint.textContent = 'Reddit username is required.';
+        showToast({ title: 'Invalid', message: 'Reddit username is required.', type: 'warn' });
         return;
       }
       if (!Number.isFinite(karma) || karma < 0) {
-        profileHint.textContent = 'Karma number sahi do.';
-        showToast({ title: 'Invalid', message: 'Karma number sahi do.', type: 'warn' });
+        profileHint.textContent = 'Please enter a valid karma number.';
+        showToast({ title: 'Invalid', message: 'Please enter a valid karma number.', type: 'warn' });
         return;
       }
       if (karma < 200) {
@@ -1854,7 +1890,7 @@
           redditProfileLink: link || null,
           redditKarma: karma
         });
-        showToast({ title: 'Saved', message: 'Profile update ho gaya.' });
+        showToast({ title: 'Saved', message: 'Profile updated successfully.' });
         closeProfile();
       } catch (err) {
         console.error(err);
@@ -1905,14 +1941,12 @@
           }
         });
       } catch (err) {
-        // silent
         console.warn('Cleanup failed', err);
       }
     }
 
     // periodic countdown refresh
     setInterval(() => {
-      // update countdown text even without user doc changes
       if (!currentUser) return;
       renderAll();
 
