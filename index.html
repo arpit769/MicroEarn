@@ -49,7 +49,8 @@
           </div>
 
           <button id="btnLogin" class="inline-flex items-center gap-2 rounded-xl bg-white text-slate-950 px-3 py-2 text-sm font-semibold hover:bg-white/90">
-            <span>Login with Google</span>
+            <span class="hidden sm:inline">Login with Google</span>
+            <span class="sm:hidden">Login</span>
           </button>
 
           <div id="userMenu" class="hidden items-center gap-2">
@@ -141,18 +142,18 @@
           </div>
 
           <div class="flex flex-wrap items-center gap-2">
-            <div class="rounded-2xl border border-white/10 bg-slate-950/40 p-2 flex items-center gap-2">
-              <input id="searchInput" class="w-56 bg-transparent outline-none text-sm placeholder:text-white/40" placeholder="Search title/subreddit..." />
-              <button id="btnClearSearch" class="text-xs text-white/60 hover:text-white">Clear</button>
+            <div class="w-full sm:w-auto rounded-2xl border border-white/10 bg-slate-950/40 p-2 flex items-center gap-2">
+              <input id="searchInput" class="min-w-0 w-full sm:w-56 bg-transparent outline-none text-sm placeholder:text-white/40" placeholder="Search title/subreddit/task id..." />
+              <button id="btnClearSearch" class="shrink-0 text-xs text-white/60 hover:text-white">Clear</button>
             </div>
 
-            <select id="typeFilter" class="rounded-2xl border border-white/10 bg-slate-950/40 px-3 py-2 text-sm outline-none">
+            <select id="typeFilter" class="w-full sm:w-auto rounded-2xl border border-white/10 bg-slate-950/40 px-3 py-2 text-sm outline-none">
               <option value="all">All Types</option>
               <option value="post">Post</option>
               <option value="comment">Comment</option>
             </select>
 
-            <select id="adminStatusFilter" class="hidden rounded-2xl border border-white/10 bg-slate-950/40 px-3 py-2 text-sm outline-none">
+            <select id="adminStatusFilter" class="hidden w-full sm:w-auto rounded-2xl border border-white/10 bg-slate-950/40 px-3 py-2 text-sm outline-none">
               <option value="all">All Status</option>
               <option value="open">Open</option>
               <option value="submitted">Submitted</option>
@@ -178,7 +179,7 @@
                 <div id="activeClaimTitle" class="mt-1 text-lg font-semibold">—</div>
                 <div id="activeClaimMeta" class="mt-1 text-xs text-white/60">—</div>
               </div>
-              <div class="flex items-center gap-2">
+              <div class="flex flex-col sm:flex-row sm:items-center gap-2">
                 <div class="rounded-xl border border-white/10 px-3 py-2 text-sm">
                   <span class="text-white/60">Time left</span>
                   <span id="activeClaimCountdown" class="ml-2 font-semibold">—</span>
@@ -198,7 +199,7 @@
             No tasks available right now.
           </div>
 
-          <div id="tasksList" class="mt-4 grid gap-3"></div>
+          <div id="tasksList" class="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3"></div>
 
           <div class="mt-10">
             <div class="flex items-center justify-between">
@@ -211,13 +212,13 @@
             <div id="mineEmpty" class="hidden mt-4 rounded-2xl border border-white/10 p-6 text-center text-white/70">
               You have not submitted any proof yet.
             </div>
-            <div id="mineList" class="mt-4 grid gap-3"></div>
+            <div id="mineList" class="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3"></div>
           </div>
         </div>
 
         <!-- ADMIN PANEL -->
         <div id="panelAdmin" class="hidden mt-4">
-          <div class="rounded-2xl border border-white/10 bg-slate-950/40 p-1 inline-flex">
+          <div class="rounded-2xl border border-white/10 bg-slate-950/40 p-1 inline-flex flex-wrap">
             <button data-admin-tab="create" class="adminTab rounded-xl px-4 py-2 text-sm font-semibold bg-white/10">Create Task</button>
             <button data-admin-tab="tasks" class="adminTab rounded-xl px-4 py-2 text-sm font-semibold hover:bg-white/5">Manage Tasks</button>
             <button data-admin-tab="users" class="adminTab rounded-xl px-4 py-2 text-sm font-semibold hover:bg-white/5">Users</button>
@@ -247,9 +248,10 @@
                     <input id="ctSubreddit" class="mt-1 w-full rounded-xl border border-white/10 bg-slate-950/40 px-3 py-2 text-sm outline-none" placeholder="e.g. AskReddit" required />
                   </label>
 
-                  <label class="block md:col-span-2">
-                    <div class="text-xs text-white/60">Title</div>
-                    <input id="ctTitle" class="mt-1 w-full rounded-xl border border-white/10 bg-slate-950/40 px-3 py-2 text-sm outline-none" placeholder="Post title / Comment task title" required />
+                  <label id="ctTitleWrap" class="block md:col-span-2">
+                    <div class="text-xs text-white/60">Title (Post only)</div>
+                    <input id="ctTitle" class="mt-1 w-full rounded-xl border border-white/10 bg-slate-950/40 px-3 py-2 text-sm outline-none" placeholder="Post title..." />
+                    <div class="mt-1 text-[11px] text-white/45">For comment tasks, a title is auto-generated.</div>
                   </label>
 
                   <!-- Post fields -->
@@ -267,6 +269,9 @@
 
                   <!-- Comment fields -->
                   <div id="commentFields" class="md:col-span-2 hidden grid gap-3">
+                    <div class="rounded-xl border border-white/10 bg-slate-950/30 p-3 text-xs text-white/60">
+                      Comment tasks do not require a title. A title will be generated automatically.
+                    </div>
                     <label class="block">
                       <div class="text-xs text-white/60">Target Link (post URL)</div>
                       <input id="ctTargetLink" class="mt-1 w-full rounded-xl border border-white/10 bg-slate-950/40 px-3 py-2 text-sm outline-none" placeholder="https://www.reddit.com/..." />
@@ -374,9 +379,9 @@
   </div>
 
   <!-- Task modal (details + claim/submit) -->
-  <div id="modalOverlay" class="fixed inset-0 z-50 hidden">
+  <div id="modalOverlay" class="fixed inset-0 z-50 hidden overflow-y-auto">
     <div class="absolute inset-0 bg-black/70"></div>
-    <div class="relative mx-auto max-w-3xl px-4 py-10">
+    <div class="relative mx-auto max-w-3xl px-4 py-6 sm:py-10">
       <div class="rounded-2xl border border-white/10 bg-slate-950/80 backdrop-blur p-5">
         <div class="flex items-start justify-between gap-4">
           <div class="min-w-0">
@@ -450,9 +455,9 @@
   </div>
 
   <!-- Profile modal -->
-  <div id="profileOverlay" class="fixed inset-0 z-[55] hidden">
+  <div id="profileOverlay" class="fixed inset-0 z-[55] hidden overflow-y-auto">
     <div class="absolute inset-0 bg-black/70"></div>
-    <div class="relative mx-auto max-w-xl px-4 py-10">
+    <div class="relative mx-auto max-w-xl px-4 py-6 sm:py-10">
       <div class="rounded-2xl border border-white/10 bg-slate-950/85 backdrop-blur p-5">
         <div class="flex items-start justify-between gap-4">
           <div>
@@ -518,7 +523,6 @@
       orderBy,
       limit,
       onSnapshot,
-      getDocs,
       runTransaction,
       increment
     } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
@@ -769,12 +773,18 @@
 
       adminStatusFilter.classList.toggle('hidden', userActive || !isAdmin);
 
-      renderAll();
-
-      if (!userActive && isAdmin) {
+      // Optimization: stop admin listeners when leaving admin panel
+      if (userActive) {
+        if (unsubUsers) { unsubUsers(); unsubUsers = null; }
+        if (unsubSubs) { unsubSubs(); unsubSubs = null; }
+        usersLoading.classList.add('hidden');
+        subsLoading.classList.add('hidden');
+      } else if (isAdmin) {
         startUsersListener();
         startAdminSubsListener();
       }
+
+      renderAll();
     }
 
     btnPanelUser.addEventListener('click', () => setPanel('user'));
@@ -978,6 +988,16 @@
         tasksCache = snap.docs.map(d => ({ id: d.id, ...d.data() }));
         tasksLoading.classList.add('hidden');
         adminTasksLoading.classList.add('hidden');
+
+        // Keep modal in sync without extra reads
+        if (!modalOverlay.classList.contains('hidden') && openTask) {
+          const updated = tasksCache.find(x => x.id === openTask.id);
+          if (updated) {
+            openTask = updated;
+            updateModalDynamic(openTask);
+          }
+        }
+
         renderAll();
       }, (err) => {
         console.error(err);
@@ -1171,8 +1191,15 @@
     function syncCreateFields() {
       const type = ctType.value;
       const post = type === 'post';
+
       postFields.classList.toggle('hidden', !post);
       commentFields.classList.toggle('hidden', post);
+
+      // Title is only needed for post tasks
+      const titleWrap = el('ctTitleWrap');
+      titleWrap?.classList.toggle('hidden', !post);
+      el('ctTitle').required = post;
+      if (!post) el('ctTitle').value = '';
 
       // Required toggles
       el('ctBody').required = post;
@@ -1181,6 +1208,12 @@
     }
     ctType.addEventListener('change', syncCreateFields);
     syncCreateFields();
+
+    function autoTitleForComment({ subreddit, instructions }) {
+      const s = safe(instructions).trim().replace(/\s+/g, ' ');
+      const short = s.length > 50 ? s.slice(0, 50).trim() + '…' : s;
+      return `Comment in r/${subreddit}${short ? ` — ${short}` : ''}`;
+    }
 
     async function allocateNextTaskId(tx) {
       const counterRef = doc(db, COUNTER_DOC.col, COUNTER_DOC.doc);
@@ -1207,7 +1240,7 @@
 
       const type = el('ctType').value;
       const subreddit = el('ctSubreddit').value.trim();
-      const title = el('ctTitle').value.trim();
+      const rawTitle = el('ctTitle').value.trim();
       const reward = Number(el('ctReward').value);
       const status = el('ctStatus').value;
       const claimMins = Number(el('ctClaimMins').value || 30);
@@ -1218,8 +1251,14 @@
       const targetLink = el('ctTargetLink').value.trim();
       const instructions = el('ctInstructions').value.trim();
 
-      if (!subreddit || !title) {
-        showToast({ title: 'Missing fields', message: 'Subreddit + Title are required.', type: 'warn' });
+      if (!subreddit) {
+        showToast({ title: 'Missing fields', message: 'Subreddit is required.', type: 'warn' });
+        return;
+      }
+
+      const title = type === 'post' ? rawTitle : autoTitleForComment({ subreddit, instructions });
+      if (type === 'post' && !title) {
+        showToast({ title: 'Missing fields', message: 'Post tasks require a title.', type: 'warn' });
         return;
       }
       if (!Number.isFinite(reward) || reward < 0) {
@@ -1340,13 +1379,6 @@
     function renderAll() {
       if (!currentUser) return;
 
-      // Update active claim UI text countdown
-      const ac = getActiveClaim();
-      if (ac) {
-        const left = ac.until - nowMs();
-        activeClaimTime.textContent = msToClock(left);
-      }
-
       if (uiPanel === 'user') {
         renderUserTasks();
         renderActiveClaimCard();
@@ -1390,9 +1422,8 @@
 
       const activeClaim = getActiveClaim();
       if (activeClaim) {
-        // If active claim exists, we hide available tasks list to enforce single claim.
         tasksEmpty.classList.add('hidden');
-        tasksList.innerHTML = `<div class="rounded-2xl border border-white/10 bg-slate-950/40 p-6 text-white/70 text-center">You have an active claim. Complete it and submit proof first.</div>`;
+        tasksList.innerHTML = `<div class="rounded-2xl border border-white/10 bg-slate-950/40 p-6 text-white/70 text-center sm:col-span-2 xl:col-span-3">You have an active claim. Complete it and submit proof first.</div>`;
         return;
       }
 
@@ -1443,7 +1474,7 @@
               ${locked ? `<div class="mt-2 text-xs text-amber-200">Locked ${lockedByMe ? '(you)' : ''} • unlocks at ${new Date(until).toLocaleTimeString()}</div>` : ''}
             </div>
 
-            <div class="flex flex-col sm:flex-row items-start sm:items-center gap-2 shrink-0">
+            <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 shrink-0">
               <div class="rounded-xl border border-white/10 px-3 py-2 text-sm">
                 <span class="text-white/60">Price</span>
                 <span class="ml-2 font-semibold">$${Number(t.reward ?? 0).toFixed(2)}</span>
@@ -1576,7 +1607,7 @@
         });
 
         showToast({ title: 'Claimed', message: `Task locked for ${claimMinsUsed} minutes. Submit proof before time runs out.` });
-        await openTaskModal(taskId);
+        await openTaskModal(taskId, true);
       } catch (err) {
         console.error(err);
         showToast({ title: 'Claim failed', message: err?.message || 'Unknown error', type: 'error' });
@@ -1633,18 +1664,66 @@
       if (e.key === 'Escape' && !modalOverlay.classList.contains('hidden')) closeModal();
     });
 
-    async function openTaskModal(taskId) {
+    function updateModalDynamic(t) {
+      if (!currentUser || !t) return;
+
+      const { locked, until } = lockInfo(t);
+      const lockedByMe = locked && t.lockedByUid === currentUser.uid;
+      const canClaim = (t.status !== 'closed') && (t.status !== 'submitted') && !locked && userEligible() && !getActiveClaim();
+
+      // Admin actions
+      btnForceUnlock.classList.toggle('hidden', !(isAdmin && locked));
+      btnForceUnlock.onclick = () => forceUnlockTask(t.id);
+
+      // Claim action
+      btnClaim.classList.toggle('hidden', !canClaim);
+      btnClaim.onclick = () => claimTask(t.id);
+
+      if (locked) {
+        modalLockInfo.textContent = lockedByMe
+          ? `Locked by you • time left ${msToClock(until - nowMs())}`
+          : `Locked by ${t.lockedByName || t.lockedByUid || 'someone'} • available in ${msToClock(until - nowMs())}`;
+      } else {
+        modalLockInfo.textContent = (t.status === 'closed')
+          ? 'Task is closed.'
+          : (t.status === 'submitted')
+            ? 'Task is already submitted.'
+            : 'Not locked. You can claim if eligible.';
+      }
+
+      // Submit form visibility/enable
+      const canSubmit = lockedByMe && (until > nowMs());
+      submitHint.textContent = canSubmit
+        ? `Submit within ${msToClock(until - nowMs())}`
+        : (lockedByMe ? 'Lock expired. You may need to claim again if available.' : 'Claim required to submit.');
+
+      submitForm.classList.toggle('opacity-60', !canSubmit);
+      proofLink.disabled = !canSubmit;
+      proofNote.disabled = !canSubmit;
+      btnSubmitProof.disabled = !canSubmit;
+      btnSubmitProof.classList.toggle('opacity-50', !canSubmit);
+      btnSubmitProof.classList.toggle('cursor-not-allowed', !canSubmit);
+    }
+
+    async function openTaskModal(taskId, forceFetch = false) {
       if (!currentUser) return;
       try {
-        const ref = doc(db, 'tasks', taskId);
-        const snap = await getDoc(ref);
-        if (!snap.exists()) {
-          showToast({ title: 'Not found', message: 'This task was deleted.', type: 'warn' });
-          return;
+        let t = null;
+        if (!forceFetch) {
+          t = tasksCache.find(x => x.id === taskId) || null;
         }
 
-        openTask = { id: taskId, ...snap.data() };
-        const t = openTask;
+        if (!t) {
+          const ref = doc(db, 'tasks', taskId);
+          const snap = await getDoc(ref);
+          if (!snap.exists()) {
+            showToast({ title: 'Not found', message: 'This task was deleted.', type: 'warn' });
+            return;
+          }
+          t = { id: taskId, ...snap.data() };
+        }
+
+        openTask = t;
 
         // Basic
         modalType.textContent = `${(t.type || 'task').toUpperCase()} • ${t.status || 'open'} • Task #${t.id}`;
@@ -1673,42 +1752,8 @@
 
         modalReward.textContent = `$${Number(t.reward ?? 0).toFixed(2)}`;
 
-        // Lock state
-        const { locked, until } = lockInfo(t);
-        const lockedByMe = locked && t.lockedByUid === currentUser.uid;
-        const canClaim = (t.status !== 'closed') && (t.status !== 'submitted') && !locked && userEligible() && !getActiveClaim();
-
-        // Admin actions
-        btnForceUnlock.classList.toggle('hidden', !(isAdmin && locked));
-        btnForceUnlock.onclick = () => forceUnlockTask(t.id);
-
-        btnClaim.classList.toggle('hidden', !canClaim);
-        btnClaim.onclick = () => claimTask(t.id);
-
-        if (locked) {
-          modalLockInfo.textContent = lockedByMe
-            ? `Locked by you • time left ${msToClock(until - nowMs())}`
-            : `Locked by ${t.lockedByName || t.lockedByUid || 'someone'} • available in ${msToClock(until - nowMs())}`;
-        } else {
-          modalLockInfo.textContent = (t.status === 'closed')
-            ? 'Task is closed.'
-            : (t.status === 'submitted')
-              ? 'Task is already submitted.'
-              : 'Not locked. You can claim if eligible.';
-        }
-
-        // Submit form visibility/enable
-        const canSubmit = lockedByMe && (until > nowMs());
-        submitHint.textContent = canSubmit
-          ? `Submit within ${msToClock(until - nowMs())}`
-          : (lockedByMe ? 'Lock expired. You may need to claim again if available.' : 'Claim required to submit.');
-
-        submitForm.classList.toggle('opacity-60', !canSubmit);
-        proofLink.disabled = !canSubmit;
-        proofNote.disabled = !canSubmit;
-        btnSubmitProof.disabled = !canSubmit;
-        btnSubmitProof.classList.toggle('opacity-50', !canSubmit);
-        btnSubmitProof.classList.toggle('cursor-not-allowed', !canSubmit);
+        // dynamic
+        updateModalDynamic(t);
 
         listenTaskSubmissions(taskId);
         openModal();
@@ -1785,12 +1830,12 @@
           const uUntil = toMs(u.activeClaimUntil);
           if (u.activeClaimTaskId !== openTask.id || !uUntil || uUntil <= nowMs()) throw new Error('Your active claim is not valid');
 
-          // Avoid duplicate submission by same user for same task
-          const dupQ = query(collection(db, 'submissions'), where('taskId', '==', openTask.id), where('uid', '==', currentUser.uid), limit(1));
-          const dupSnap = await getDocs(dupQ);
-          if (!dupSnap.empty) throw new Error('Already submitted for this task');
+          // Prevent duplicates without query/index
+          const subId = `${openTask.id}_${currentUser.uid}`;
+          const subRef = doc(db, 'submissions', subId);
+          const subSnap = await tx.get(subRef);
+          if (subSnap.exists()) throw new Error('Already submitted for this task');
 
-          const subRef = doc(collection(db, 'submissions'));
           tx.set(subRef, {
             taskId: openTask.id,
             taskTitle: t.title || null,
@@ -1945,19 +1990,23 @@
       }
     }
 
-    // periodic countdown refresh
+    // Lightweight tick: update countdown-only UI (no full re-render)
     setInterval(() => {
       if (!currentUser) return;
-      renderAll();
 
-      // If modal open and task locked by me, refresh lock info text and submit hint
-      if (!modalOverlay.classList.contains('hidden') && openTask) {
-        const { locked, until } = lockInfo(openTask);
-        if (locked && openTask.lockedByUid === currentUser.uid) {
-          modalLockInfo.textContent = `Locked by you • time left ${msToClock(until - nowMs())}`;
-          submitHint.textContent = `Submit within ${msToClock(until - nowMs())}`;
-        }
+      const ac = getActiveClaim();
+      if (ac) {
+        const left = ac.until - nowMs();
+        activeClaimTime.textContent = msToClock(left);
+        activeClaimCountdown.textContent = msToClock(left);
       }
+
+      if (!modalOverlay.classList.contains('hidden') && openTask) {
+        updateModalDynamic(openTask);
+      }
+
+      // occasional cleanup if claim expired
+      maybeCleanupExpiredClaim();
     }, 1000);
 
     // --- Initial UI state ---
