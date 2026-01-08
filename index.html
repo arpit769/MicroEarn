@@ -278,8 +278,9 @@
                   </div>
 
                   <label class="block">
-                    <div class="text-xs text-white/60">Reward (points)</div>
-                    <input id="ctReward" type="number" min="0" step="1" class="mt-1 w-full rounded-xl border border-white/10 bg-slate-950/40 px-3 py-2 text-sm outline-none" value="10" required />
+                    <div class="text-xs text-white/60">Price (USD)</div>
+                    <input id="ctReward" type="number" min="0" step="0.01" class="mt-1 w-full rounded-xl border border-white/10 bg-slate-950/40 px-3 py-2 text-sm outline-none" value="1" required />
+                    <div class="mt-1 text-[11px] text-white/45">Amount in USD ($).</div>
                   </label>
 
                   <label class="block">
@@ -401,9 +402,9 @@
               <a id="modalLink" href="#" target="_blank" rel="noreferrer" class="mt-1 text-sm text-indigo-300 hover:underline break-all">—</a>
             </div>
             <div class="flex items-center gap-2">
-              <span class="text-xs text-white/60">Reward:</span>
+              <span class="text-xs text-white/60">Price:</span>
               <span id="modalReward" class="text-sm font-semibold">—</span>
-              <span class="text-xs text-white/60">points</span>
+              <span class="text-xs text-white/60">USD</span>
             </div>
           </div>
 
@@ -1028,8 +1029,8 @@
               ${s.note ? `<div class="mt-2 text-xs text-white/70 whitespace-pre-wrap">${escapeHtml(s.note)}</div>` : ''}
             </div>
             <div class="shrink-0 rounded-xl border border-white/10 px-3 py-2 text-sm">
-              <span class="text-white/60">Reward</span>
-              <span class="ml-2 font-semibold">${Number(s.reward ?? 0)}</span>
+              <span class="text-white/60">Price</span>
+              <span class="ml-2 font-semibold">$${Number(s.reward ?? 0).toFixed(2)}</span>
             </div>
           </div>
         `;
@@ -1153,8 +1154,8 @@
               ${s.note ? `<div class="mt-2 text-xs text-white/70 whitespace-pre-wrap">${escapeHtml(s.note)}</div>` : ''}
             </div>
             <div class="shrink-0 rounded-xl border border-white/10 px-3 py-2 text-sm">
-              <span class="text-white/60">Reward</span>
-              <span class="ml-2 font-semibold">${Number(s.reward ?? 0)}</span>
+              <span class="text-white/60">Price</span>
+              <span class="ml-2 font-semibold">$${Number(s.reward ?? 0).toFixed(2)}</span>
             </div>
           </div>
         `;
@@ -1202,7 +1203,7 @@
         return;
       }
       if (!Number.isFinite(reward) || reward < 0) {
-        showToast({ title: 'Invalid reward', message: 'Reward sahi do.', type: 'warn' });
+        showToast({ title: 'Invalid price', message: 'Price (USD) sahi do.', type: 'warn' });
         return;
       }
       if (!Number.isFinite(claimMins) || claimMins < 1) {
@@ -1254,7 +1255,7 @@
         });
 
         createForm.reset();
-        el('ctReward').value = 10;
+        el('ctReward').value = 1;
         el('ctClaimMins').value = 30;
         el('ctExpireDays').value = 0;
         syncCreateFields();
@@ -1332,7 +1333,7 @@
       const t = tasksCache.find(x => x.id === ac.id);
       activeClaimTitle.textContent = t?.title || ac.id;
       const sub = t?.subreddit ? `r/${t.subreddit}` : '—';
-      activeClaimMeta.textContent = `${(t?.type || 'task').toUpperCase()} • ${sub} • Reward ${Number(t?.reward ?? 0)}`;
+      activeClaimMeta.textContent = `${(t?.type || 'task').toUpperCase()} • ${sub} • Price $${Number(t?.reward ?? 0).toFixed(2)}`;
       activeClaimCountdown.textContent = msToClock(ac.until - nowMs());
     }
 
@@ -1409,8 +1410,8 @@
 
             <div class="flex flex-col sm:flex-row items-start sm:items-center gap-2 shrink-0">
               <div class="rounded-xl border border-white/10 px-3 py-2 text-sm">
-                <span class="text-white/60">Reward</span>
-                <span class="ml-2 font-semibold">${Number(t.reward ?? 0)}</span>
+                <span class="text-white/60">Price</span>
+                <span class="ml-2 font-semibold">$${Number(t.reward ?? 0).toFixed(2)}</span>
               </div>
               <button class="btnDetails rounded-xl border border-white/10 px-3 py-2 text-sm hover:bg-white/5" data-task-id="${t.id}">
                 Details
@@ -1457,6 +1458,7 @@
                 ${badgeForType(t.type)}
                 <span class="text-xs text-white/60">r/${escapeHtml(safe(t.subreddit))}</span>
                 <span class="text-xs rounded-full border border-white/10 px-2 py-0.5 text-white/60">${escapeHtml(safe(t.status || 'open'))}</span>
+                <span class="text-xs rounded-full border border-white/10 px-2 py-0.5 text-white/60">Price: $${Number(t.reward ?? 0).toFixed(2)}</span>
                 ${t.expiresAt ? `<span class="text-xs text-white/50">Exp: ${fmtTime(t.expiresAt)}</span>` : ''}
               </div>
               <div class="mt-2 font-semibold leading-snug break-words">${escapeHtml(safe(t.title))}</div>
@@ -1633,7 +1635,7 @@
           modalLink.href = t.targetLink || '#';
         }
 
-        modalReward.textContent = String(Number(t.reward ?? 0));
+        modalReward.textContent = `$${Number(t.reward ?? 0).toFixed(2)}`;
 
         // Lock state
         const { locked, until } = lockInfo(t);
