@@ -1,1181 +1,1932 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="hi">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reddit Task Hub - Admin & User Panels</title>
-    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        .gradient-bg {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        }
-        .card-hover:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 40px rgba(0,0,0,0.15);
-        }
-        .loader {
-            border: 3px solid #f3f3f3;
-            border-top: 3px solid #667eea;
-            border-radius: 50%;
-            width: 24px;
-            height: 24px;
-            animation: spin 1s linear infinite;
-        }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        .claimed-overlay {
-            background: rgba(0,0,0,0.7);
-        }
-        .timer-warning {
-            animation: pulse 1s infinite;
-        }
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Reddit Tasks — Admin & User Panel</title>
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+  <style>
+    :root { color-scheme: dark; }
+    html, body { height: 100%; }
+    .glass { background: rgba(15, 23, 42, 0.55); backdrop-filter: blur(10px); }
+    .gridbg {
+      background-image:
+        radial-gradient(closest-side, rgba(99,102,241,.25), transparent 70%),
+        radial-gradient(closest-side, rgba(34,197,94,.18), transparent 70%),
+        linear-gradient(to bottom, rgba(2,6,23,1), rgba(2,6,23,.9));
+      background-position: 10% 0%, 90% 20%, 0 0;
+      background-size: 900px 900px, 900px 900px, 100% 100%;
+      background-repeat: no-repeat;
+    }
+    .spinner {
+      width: 18px; height: 18px; border-radius: 999px;
+      border: 2px solid rgba(255,255,255,.25);
+      border-top-color: rgba(255,255,255,.9);
+      animation: spin 800ms linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
 </head>
-<body class="bg-gray-100 min-h-screen">
-    <!-- Login Page -->
-    <div id="loginPage" class="min-h-screen gradient-bg flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md">
-            <div class="text-center mb-8">
-                <div class="w-20 h-20 bg-gradient-to-r from-orange-500 to-red-500 rounded-full mx-auto flex items-center justify-center mb-4">
-                    <i class="fab fa-reddit-alien text-4xl text-white"></i>
-                </div>
-                <h1 class="text-2xl font-bold text-gray-800">Reddit Task Hub</h1>
-                <p class="text-gray-500 mt-2">Complete Reddit tasks & earn!</p>
-            </div>
-            <button id="googleLoginBtn" class="w-full bg-white border-2 border-gray-200 rounded-xl px-6 py-3 flex items-center justify-center gap-3 hover:bg-gray-50 transition-all duration-300 shadow-sm hover:shadow">
-                <svg class="w-6 h-6" viewBox="0 0 24 24">
-                    <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                    <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                    <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-                    <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-                </svg>
-                <span class="text-gray-700 font-medium">Continue with Google</span>
-            </button>
-            <p id="loginError" class="text-red-500 text-center mt-4 hidden"></p>
+<body class="min-h-full gridbg text-slate-100">
+  <div class="min-h-screen">
+    <!-- Top bar -->
+    <header class="sticky top-0 z-30 border-b border-white/10 bg-slate-950/60 backdrop-blur">
+      <div class="mx-auto max-w-7xl px-4 py-3 flex items-center justify-between gap-3">
+        <div class="flex items-center gap-3">
+          <div class="h-9 w-9 rounded-xl bg-gradient-to-br from-indigo-500 to-emerald-400 grid place-items-center shadow-lg shadow-indigo-500/20">
+            <span class="font-black text-slate-950">R</span>
+          </div>
+          <div>
+            <div class="text-sm tracking-wide text-white/80">Earn With Simple Tasks</div>
+            <div class="text-lg font-semibold">Reddit Tasks</div>
+          </div>
         </div>
-    </div>
 
-    <!-- Reddit Profile Modal -->
-    <div id="profileModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden p-4">
-        <div class="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md">
-            <div class="text-center mb-6">
-                <div class="w-16 h-16 bg-orange-500 rounded-full mx-auto flex items-center justify-center mb-4">
-                    <i class="fab fa-reddit-alien text-3xl text-white"></i>
-                </div>
-                <h2 class="text-xl font-bold text-gray-800">Complete Your Profile</h2>
-                <p class="text-gray-500 text-sm mt-2">Enter your Reddit details (Min 200+ Karma Required)</p>
+        <div class="flex items-center gap-2">
+          <div id="netBadge" class="hidden sm:flex items-center gap-2 rounded-full border border-white/10 px-3 py-1 text-xs text-white/70">
+            <span class="inline-block h-2 w-2 rounded-full bg-emerald-400" id="netDot"></span>
+            <span id="netText">Online</span>
+          </div>
+
+          <button id="btnLogin" class="inline-flex items-center gap-2 rounded-xl bg-white text-slate-950 px-3 py-2 text-sm font-semibold hover:bg-white/90">
+            <span>Google se Login</span>
+          </button>
+
+          <div id="userMenu" class="hidden items-center gap-2">
+            <div class="hidden md:block text-right">
+              <div id="userName" class="text-sm font-semibold leading-5">—</div>
+              <div id="userEmail" class="text-xs text-white/60">—</div>
             </div>
-            <form id="profileForm" class="space-y-4">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Reddit Username</label>
-                    <div class="flex items-center border border-gray-300 rounded-lg overflow-hidden">
-                        <span class="bg-gray-100 px-3 py-2 text-gray-500">u/</span>
-                        <input type="text" id="redditUsername" required class="flex-1 px-4 py-2 focus:outline-none" placeholder="your_username">
-                    </div>
+            <img id="userPhoto" alt="" class="h-9 w-9 rounded-full border border-white/10" />
+            <button id="btnLogout" class="rounded-xl border border-white/10 px-3 py-2 text-sm hover:bg-white/5">Logout</button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main class="mx-auto max-w-7xl px-4 py-6">
+      <!-- Hero (logged out) -->
+      <section id="hero" class="rounded-2xl border border-white/10 glass p-6 md:p-8">
+        <div class="grid md:grid-cols-2 gap-6 items-center">
+          <div>
+            <h1 class="text-2xl md:text-3xl font-bold leading-tight">
+              Reddit par <span class="text-indigo-300">Post</span> / <span class="text-emerald-300">Comment</span> tasks.
+              <span class="block mt-2 text-white/80 text-lg font-semibold">User Panel + Admin Panel</span>
+            </h1>
+            <p class="mt-3 text-sm md:text-base text-white/70">
+              Google login ke baad user tasks claim kar sakta hai (30 min lock), aur 30 min ke andar proof link submit karega.
+              Admin panel se tasks create honge aur users list dekhi ja sakti hai.
+            </p>
+            <div class="mt-5 flex flex-wrap gap-3">
+              <button id="btnLoginHero" class="inline-flex items-center gap-2 rounded-xl bg-indigo-500 px-4 py-2 text-sm font-semibold hover:bg-indigo-400">
+                <span>Start — Google Login</span>
+              </button>
+              <a href="#" id="btnDemoScroll" class="inline-flex items-center gap-2 rounded-xl border border-white/10 px-4 py-2 text-sm hover:bg-white/5">UI Preview</a>
+            </div>
+            <div class="mt-6 grid grid-cols-3 gap-3 text-center">
+              <div class="rounded-xl border border-white/10 p-3">
+                <div class="text-xs text-white/60">Lock</div>
+                <div class="mt-1 font-semibold">30 min</div>
+              </div>
+              <div class="rounded-xl border border-white/10 p-3">
+                <div class="text-xs text-white/60">Eligibility</div>
+                <div class="mt-1 font-semibold">Karma 200+</div>
+              </div>
+              <div class="rounded-xl border border-white/10 p-3">
+                <div class="text-xs text-white/60">Backend</div>
+                <div class="mt-1 font-semibold">Firebase</div>
+              </div>
+            </div>
+          </div>
+          <div class="rounded-2xl border border-white/10 p-5 bg-slate-950/40">
+            <div class="flex items-center justify-between">
+              <div class="text-sm font-semibold">Flow</div>
+              <div class="text-xs text-white/60">v2</div>
+            </div>
+            <ol class="mt-3 space-y-2 text-sm text-white/75 list-decimal list-inside">
+              <li>Login</li>
+              <li>Reddit profile + karma fill (min 200)</li>
+              <li>Task claim (30 min ke liye lock)</li>
+              <li>Proof link submit within 30 min</li>
+              <li>Admin users list + tasks manage</li>
+            </ol>
+            <div class="mt-4 rounded-xl border border-white/10 p-3 text-xs text-white/60">
+              Note: Production ke liye Firestore rules zaroor configure karein.
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- App -->
+      <section id="app" class="hidden mt-6">
+        <!-- Panel switch + quick status -->
+        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
+          <div class="flex flex-col md:flex-row md:items-center gap-3">
+            <div class="inline-flex rounded-2xl border border-white/10 bg-slate-950/40 p-1">
+              <button id="btnPanelUser" class="rounded-xl px-4 py-2 text-sm font-semibold bg-white/10">User Panel</button>
+              <button id="btnPanelAdmin" class="hidden rounded-xl px-4 py-2 text-sm font-semibold hover:bg-white/5">Admin Panel</button>
+            </div>
+
+            <div id="profileStatus" class="rounded-2xl border border-white/10 bg-slate-950/40 px-3 py-2 text-sm text-white/70 flex items-center gap-2">
+              <span id="profileDot" class="inline-block h-2 w-2 rounded-full bg-amber-300"></span>
+              <span id="profileText">Profile: pending</span>
+              <button id="btnEditProfile" class="ml-1 text-xs underline text-indigo-200 hover:text-indigo-100">Edit</button>
+            </div>
+
+            <div id="activeClaimPill" class="hidden rounded-2xl border border-white/10 bg-slate-950/40 px-3 py-2 text-sm text-white/70">
+              <span class="text-white/60">Active claim:</span>
+              <span id="activeClaimTime" class="ml-1 font-semibold">—</span>
+              <button id="btnOpenActiveClaim" class="ml-2 text-xs underline text-emerald-200 hover:text-emerald-100">Open</button>
+            </div>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-2">
+            <div class="rounded-2xl border border-white/10 bg-slate-950/40 p-2 flex items-center gap-2">
+              <input id="searchInput" class="w-56 bg-transparent outline-none text-sm placeholder:text-white/40" placeholder="Search title/subreddit..." />
+              <button id="btnClearSearch" class="text-xs text-white/60 hover:text-white">Clear</button>
+            </div>
+
+            <select id="typeFilter" class="rounded-2xl border border-white/10 bg-slate-950/40 px-3 py-2 text-sm outline-none">
+              <option value="all">All Types</option>
+              <option value="post">Post</option>
+              <option value="comment">Comment</option>
+            </select>
+
+            <select id="adminStatusFilter" class="hidden rounded-2xl border border-white/10 bg-slate-950/40 px-3 py-2 text-sm outline-none">
+              <option value="all">All Status</option>
+              <option value="open">Open</option>
+              <option value="submitted">Submitted</option>
+              <option value="closed">Closed</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- USER PANEL -->
+        <div id="panelUser" class="mt-4">
+          <div id="userEligibilityBanner" class="hidden rounded-2xl border border-amber-400/20 bg-amber-500/10 p-4 text-sm text-amber-100">
+            <div class="font-semibold">Reddit profile required</div>
+            <div class="mt-1 text-amber-100/90">Task claim karne ke liye Reddit username aur minimum karma <b>200+</b> fill karna zaroori hai.</div>
+            <div class="mt-3">
+              <button id="btnOpenProfileFromBanner" class="rounded-xl bg-amber-300 text-slate-950 px-4 py-2 text-sm font-semibold hover:bg-amber-200">Fill Profile</button>
+            </div>
+          </div>
+
+          <div id="activeClaimCard" class="hidden mt-4 rounded-2xl border border-white/10 glass p-5">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+              <div>
+                <div class="text-sm text-white/60">Your active claim</div>
+                <div id="activeClaimTitle" class="mt-1 text-lg font-semibold">—</div>
+                <div id="activeClaimMeta" class="mt-1 text-xs text-white/60">—</div>
+              </div>
+              <div class="flex items-center gap-2">
+                <div class="rounded-xl border border-white/10 px-3 py-2 text-sm">
+                  <span class="text-white/60">Time left</span>
+                  <span id="activeClaimCountdown" class="ml-2 font-semibold">—</span>
                 </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Karma</label>
-                    <input type="number" id="redditKarma" required min="200" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent" placeholder="Your total karma">
+                <button id="btnOpenClaimModal" class="rounded-xl bg-white text-slate-950 px-4 py-2 text-sm font-semibold hover:bg-white/90">Open</button>
+              </div>
+            </div>
+            <div class="mt-3 text-xs text-white/60">Note: Jab tak active claim hai, aap dusra task claim nahi kar sakte.</div>
+          </div>
+
+          <div class="mt-4 flex items-center justify-between">
+            <div class="text-sm text-white/70">Available tasks</div>
+            <div id="tasksLoading" class="hidden items-center gap-2 text-xs text-white/60"><span class="spinner"></span><span>Loading...</span></div>
+          </div>
+
+          <div id="tasksEmpty" class="hidden mt-4 rounded-2xl border border-white/10 p-6 text-center text-white/70">
+            Abhi koi task available nahi hai.
+          </div>
+
+          <div id="tasksList" class="mt-4 grid gap-3"></div>
+
+          <div class="mt-10">
+            <div class="flex items-center justify-between">
+              <div>
+                <div class="text-lg font-semibold">My Submissions</div>
+                <div class="text-xs text-white/60">Aapke submitted proofs</div>
+              </div>
+              <div id="mineLoading" class="hidden items-center gap-2 text-xs text-white/60"><span class="spinner"></span><span>Loading...</span></div>
+            </div>
+            <div id="mineEmpty" class="hidden mt-4 rounded-2xl border border-white/10 p-6 text-center text-white/70">
+              Aapne abhi tak koi submission nahi kiya.
+            </div>
+            <div id="mineList" class="mt-4 grid gap-3"></div>
+          </div>
+        </div>
+
+        <!-- ADMIN PANEL -->
+        <div id="panelAdmin" class="hidden mt-4">
+          <div class="rounded-2xl border border-white/10 bg-slate-950/40 p-1 inline-flex">
+            <button data-admin-tab="create" class="adminTab rounded-xl px-4 py-2 text-sm font-semibold bg-white/10">Create Task</button>
+            <button data-admin-tab="tasks" class="adminTab rounded-xl px-4 py-2 text-sm font-semibold hover:bg-white/5">Manage Tasks</button>
+            <button data-admin-tab="users" class="adminTab rounded-xl px-4 py-2 text-sm font-semibold hover:bg-white/5">Users</button>
+            <button data-admin-tab="subs" class="adminTab rounded-xl px-4 py-2 text-sm font-semibold hover:bg-white/5">Submissions</button>
+          </div>
+
+          <!-- Admin: Create -->
+          <div id="adminCreate" class="mt-4">
+            <div class="grid lg:grid-cols-3 gap-4">
+              <div class="lg:col-span-2 rounded-2xl border border-white/10 glass p-5">
+                <div class="flex items-center justify-between">
+                  <h2 class="text-lg font-semibold">Create a Reddit Task (Admin)</h2>
+                  <div class="text-xs text-white/60">Firestore: tasks</div>
                 </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Reddit Profile Link</label>
-                    <input type="url" id="redditProfileLink" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent" placeholder="https://reddit.com/user/your_username">
+
+                <form id="createForm" class="mt-4 grid md:grid-cols-2 gap-3">
+                  <label class="block">
+                    <div class="text-xs text-white/60">Task Type</div>
+                    <select id="ctType" class="mt-1 w-full rounded-xl border border-white/10 bg-slate-950/40 px-3 py-2 text-sm outline-none" required>
+                      <option value="post">Post</option>
+                      <option value="comment">Comment</option>
+                    </select>
+                  </label>
+
+                  <label class="block">
+                    <div class="text-xs text-white/60">Subreddit</div>
+                    <input id="ctSubreddit" class="mt-1 w-full rounded-xl border border-white/10 bg-slate-950/40 px-3 py-2 text-sm outline-none" placeholder="e.g. AskReddit" required />
+                  </label>
+
+                  <label class="block md:col-span-2">
+                    <div class="text-xs text-white/60">Title</div>
+                    <input id="ctTitle" class="mt-1 w-full rounded-xl border border-white/10 bg-slate-950/40 px-3 py-2 text-sm outline-none" placeholder="Post title / Comment task title" required />
+                  </label>
+
+                  <!-- Post fields -->
+                  <div id="postFields" class="md:col-span-2 grid gap-3">
+                    <label class="block">
+                      <div class="text-xs text-white/60">Body (Post content)</div>
+                      <textarea id="ctBody" class="mt-1 w-full rounded-xl border border-white/10 bg-slate-950/40 px-3 py-2 text-sm outline-none" rows="5" placeholder="Post body..." required></textarea>
+                    </label>
+                    <label class="block">
+                      <div class="text-xs text-white/60">Image URL (optional)</div>
+                      <input id="ctImage" class="mt-1 w-full rounded-xl border border-white/10 bg-slate-950/40 px-3 py-2 text-sm outline-none" placeholder="https://..." />
+                      <div class="mt-1 text-[11px] text-white/45">Optional preview image. (Reddit pe post ke liye aap manually upload karoge; yeh sirf reference/preview ke liye)</div>
+                    </label>
+                  </div>
+
+                  <!-- Comment fields -->
+                  <div id="commentFields" class="md:col-span-2 hidden grid gap-3">
+                    <label class="block">
+                      <div class="text-xs text-white/60">Target Link (post URL)</div>
+                      <input id="ctTargetLink" class="mt-1 w-full rounded-xl border border-white/10 bg-slate-950/40 px-3 py-2 text-sm outline-none" placeholder="https://www.reddit.com/..." />
+                    </label>
+                    <label class="block">
+                      <div class="text-xs text-white/60">Comment Text / Instructions</div>
+                      <textarea id="ctInstructions" class="mt-1 w-full rounded-xl border border-white/10 bg-slate-950/40 px-3 py-2 text-sm outline-none" rows="4" placeholder="Comment me kya likhna hai / rules..." required></textarea>
+                    </label>
+                  </div>
+
+                  <label class="block">
+                    <div class="text-xs text-white/60">Reward (points)</div>
+                    <input id="ctReward" type="number" min="0" step="1" class="mt-1 w-full rounded-xl border border-white/10 bg-slate-950/40 px-3 py-2 text-sm outline-none" value="10" required />
+                  </label>
+
+                  <label class="block">
+                    <div class="text-xs text-white/60">Status</div>
+                    <select id="ctStatus" class="mt-1 w-full rounded-xl border border-white/10 bg-slate-950/40 px-3 py-2 text-sm outline-none" required>
+                      <option value="open">Open</option>
+                      <option value="closed">Closed</option>
+                    </select>
+                  </label>
+
+                  <label class="block">
+                    <div class="text-xs text-white/60">Claim window (minutes)</div>
+                    <input id="ctClaimMins" type="number" min="1" step="1" class="mt-1 w-full rounded-xl border border-white/10 bg-slate-950/40 px-3 py-2 text-sm outline-none" value="30" required />
+                    <div class="mt-1 text-[11px] text-white/45">Default 30 minutes (aap change kar sakte ho).</div>
+                  </label>
+
+                  <label class="block">
+                    <div class="text-xs text-white/60">Expire in (days)</div>
+                    <input id="ctExpireDays" type="number" min="0" step="1" class="mt-1 w-full rounded-xl border border-white/10 bg-slate-950/40 px-3 py-2 text-sm outline-none" value="0" />
+                    <div class="mt-1 text-[11px] text-white/45">0 = no expiry</div>
+                  </label>
+
+                  <div class="md:col-span-2 flex items-center justify-between gap-3 pt-2">
+                    <div id="createHint" class="text-xs text-white/60">Tip: Clear instructions do. User ko 30 min ke andar proof submit karna hoga.</div>
+                    <button id="btnCreateTask" class="inline-flex items-center gap-2 rounded-xl bg-emerald-500 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-emerald-400">
+                      <span id="createBtnText">Create Task</span>
+                      <span id="createSpinner" class="hidden spinner" aria-hidden="true"></span>
+                    </button>
+                  </div>
+                </form>
+              </div>
+
+              <aside class="rounded-2xl border border-white/10 bg-slate-950/40 p-5">
+                <div class="text-sm font-semibold">Admin Notes</div>
+                <ul class="mt-3 space-y-2 text-sm text-white/70">
+                  <li>Task claim hone ke baad 30 min lock rahega.</li>
+                  <li>Lock expired hone par task automatic available ho jayega (client-side visibility).</li>
+                  <li>Users list me Reddit profile + karma show hoga.</li>
+                </ul>
+                <div class="mt-5 rounded-xl border border-white/10 p-3 text-xs text-white/60">
+                  Collections:
+                  <div class="mt-2 font-mono text-[11px] text-white/70">users / tasks / submissions</div>
                 </div>
-                <button type="submit" class="w-full bg-gradient-to-r from-orange-500 to-red-500 text-white py-3 rounded-lg font-semibold hover:opacity-90 transition-all">
-                    Save Profile
+              </aside>
+            </div>
+          </div>
+
+          <!-- Admin: Tasks -->
+          <div id="adminTasks" class="hidden mt-4">
+            <div class="flex items-center justify-between">
+              <div>
+                <div class="text-lg font-semibold">Manage Tasks</div>
+                <div class="text-xs text-white/60">Open/Close, Force Unlock</div>
+              </div>
+              <div id="adminTasksLoading" class="hidden items-center gap-2 text-xs text-white/60"><span class="spinner"></span><span>Loading...</span></div>
+            </div>
+            <div id="adminTasksList" class="mt-4 grid gap-3"></div>
+          </div>
+
+          <!-- Admin: Users -->
+          <div id="adminUsers" class="hidden mt-4">
+            <div class="flex items-center justify-between">
+              <div>
+                <div class="text-lg font-semibold">Users</div>
+                <div class="text-xs text-white/60">Account + Reddit profile details</div>
+              </div>
+              <div id="usersLoading" class="hidden items-center gap-2 text-xs text-white/60"><span class="spinner"></span><span>Loading...</span></div>
+            </div>
+            <div id="usersList" class="mt-4 grid gap-3"></div>
+          </div>
+
+          <!-- Admin: Submissions -->
+          <div id="adminSubs" class="hidden mt-4">
+            <div class="flex items-center justify-between">
+              <div>
+                <div class="text-lg font-semibold">Submissions</div>
+                <div class="text-xs text-white/60">Latest proofs</div>
+              </div>
+              <div id="subsLoading" class="hidden items-center gap-2 text-xs text-white/60"><span class="spinner"></span><span>Loading...</span></div>
+            </div>
+            <div id="subsList" class="mt-4 grid gap-3"></div>
+          </div>
+        </div>
+      </section>
+
+      <footer class="mt-10 pb-10 text-center text-xs text-white/45">
+        Firebase Auth + Firestore. Production ke liye Firestore rules/indexes set karna zaroori hai.
+      </footer>
+    </main>
+  </div>
+
+  <!-- Task modal (details + claim/submit) -->
+  <div id="modalOverlay" class="fixed inset-0 z-50 hidden">
+    <div class="absolute inset-0 bg-black/70"></div>
+    <div class="relative mx-auto max-w-3xl px-4 py-10">
+      <div class="rounded-2xl border border-white/10 bg-slate-950/80 backdrop-blur p-5">
+        <div class="flex items-start justify-between gap-4">
+          <div class="min-w-0">
+            <div id="modalType" class="text-xs text-white/60">—</div>
+            <div id="modalTitle" class="mt-1 text-lg font-semibold break-words">—</div>
+            <div id="modalMeta" class="mt-1 text-xs text-white/60">—</div>
+          </div>
+          <button id="btnCloseModal" class="rounded-xl border border-white/10 px-3 py-2 text-sm hover:bg-white/5">Close</button>
+        </div>
+
+        <div class="mt-4 grid gap-3">
+          <div id="modalImageWrap" class="hidden rounded-xl border border-white/10 overflow-hidden bg-slate-950/40">
+            <img id="modalImage" alt="" class="w-full max-h-80 object-cover" />
+          </div>
+
+          <div class="rounded-xl border border-white/10 p-3">
+            <div class="text-xs text-white/60">Details</div>
+            <div id="modalDetails" class="mt-1 whitespace-pre-wrap text-sm text-white/80">—</div>
+          </div>
+
+          <div class="rounded-xl border border-white/10 p-3 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+            <div>
+              <div class="text-xs text-white/60">Target / Reference Link</div>
+              <a id="modalLink" href="#" target="_blank" rel="noreferrer" class="mt-1 text-sm text-indigo-300 hover:underline break-all">—</a>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="text-xs text-white/60">Reward:</span>
+              <span id="modalReward" class="text-sm font-semibold">—</span>
+              <span class="text-xs text-white/60">points</span>
+            </div>
+          </div>
+
+          <div class="rounded-xl border border-white/10 p-3">
+            <div class="flex items-center justify-between gap-3">
+              <div>
+                <div class="text-sm font-semibold">Claim / Submit</div>
+                <div id="modalLockInfo" class="text-xs text-white/60 mt-0.5">—</div>
+              </div>
+              <div class="flex items-center gap-2">
+                <button id="btnClaim" class="hidden rounded-xl bg-emerald-500 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-emerald-400">Claim</button>
+                <button id="btnForceUnlock" class="hidden rounded-xl border border-white/10 px-4 py-2 text-sm hover:bg-white/5">Force Unlock</button>
+              </div>
+            </div>
+
+            <form id="submitForm" class="mt-3 grid gap-3">
+              <label class="block">
+                <div class="text-xs text-white/60">Completion Proof Link (reddit post/comment URL)</div>
+                <input id="proofLink" class="mt-1 w-full rounded-xl border border-white/10 bg-slate-950/40 px-3 py-2 text-sm outline-none" placeholder="https://www.reddit.com/..." required />
+              </label>
+              <label class="block">
+                <div class="text-xs text-white/60">Note (optional)</div>
+                <textarea id="proofNote" class="mt-1 w-full rounded-xl border border-white/10 bg-slate-950/40 px-3 py-2 text-sm outline-none" rows="3" placeholder="Kuch extra info..."></textarea>
+              </label>
+              <div class="flex items-center justify-between gap-3">
+                <div id="submitHint" class="text-xs text-white/60"></div>
+                <button id="btnSubmitProof" class="inline-flex items-center gap-2 rounded-xl bg-indigo-500 px-4 py-2 text-sm font-semibold hover:bg-indigo-400">
+                  <span id="submitBtnText">Submit</span>
+                  <span id="submitSpinner" class="hidden spinner" aria-hidden="true"></span>
                 </button>
+              </div>
             </form>
-        </div>
-    </div>
+          </div>
 
-    <!-- Main App -->
-    <div id="mainApp" class="hidden">
-        <!-- Header -->
-        <header class="bg-white shadow-sm sticky top-0 z-40">
-            <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
-                <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 bg-gradient-to-r from-orange-500 to-red-500 rounded-full flex items-center justify-center">
-                        <i class="fab fa-reddit-alien text-xl text-white"></i>
-                    </div>
-                    <h1 class="text-xl font-bold text-gray-800 hidden sm:block">Reddit Task Hub</h1>
-                </div>
-                <div class="flex items-center gap-4">
-                    <div id="userPoints" class="bg-yellow-100 px-4 py-2 rounded-full flex items-center gap-2">
-                        <i class="fas fa-coins text-yellow-500"></i>
-                        <span class="font-semibold text-yellow-700">0 Points</span>
-                    </div>
-                    <div class="flex items-center gap-3">
-                        <img id="userAvatar" src="" alt="User" class="w-10 h-10 rounded-full border-2 border-purple-500">
-                        <span id="userName" class="font-medium text-gray-700 hidden sm:block"></span>
-                        <button id="logoutBtn" class="text-red-500 hover:text-red-700">
-                            <i class="fas fa-sign-out-alt"></i>
-                        </button>
-                    </div>
-                </div>
+          <div class="rounded-xl border border-white/10 p-3">
+            <div class="text-sm font-semibold">Recent Submissions (this task)</div>
+            <div id="taskSubs" class="mt-2 grid gap-2"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Profile modal -->
+  <div id="profileOverlay" class="fixed inset-0 z-[55] hidden">
+    <div class="absolute inset-0 bg-black/70"></div>
+    <div class="relative mx-auto max-w-xl px-4 py-10">
+      <div class="rounded-2xl border border-white/10 bg-slate-950/85 backdrop-blur p-5">
+        <div class="flex items-start justify-between gap-4">
+          <div>
+            <div class="text-xs text-white/60">User Profile</div>
+            <div class="mt-1 text-lg font-semibold">Reddit Profile (Manual)</div>
+            <div class="mt-1 text-xs text-white/60">Minimum karma: <b>200+</b></div>
+          </div>
+          <button id="btnCloseProfile" class="rounded-xl border border-white/10 px-3 py-2 text-sm hover:bg-white/5">Close</button>
+        </div>
+
+        <form id="profileForm" class="mt-4 grid gap-3">
+          <label class="block">
+            <div class="text-xs text-white/60">Reddit Username</div>
+            <input id="rpUsername" class="mt-1 w-full rounded-xl border border-white/10 bg-slate-950/40 px-3 py-2 text-sm outline-none" placeholder="e.g. someUser" required />
+          </label>
+          <label class="block">
+            <div class="text-xs text-white/60">Reddit Profile Link (optional)</div>
+            <input id="rpLink" class="mt-1 w-full rounded-xl border border-white/10 bg-slate-950/40 px-3 py-2 text-sm outline-none" placeholder="https://www.reddit.com/user/..." />
+          </label>
+          <label class="block">
+            <div class="text-xs text-white/60">Karma</div>
+            <input id="rpKarma" type="number" min="0" step="1" class="mt-1 w-full rounded-xl border border-white/10 bg-slate-950/40 px-3 py-2 text-sm outline-none" placeholder="200" required />
+          </label>
+          <div class="flex items-center justify-between gap-3 pt-2">
+            <div id="profileHint" class="text-xs text-white/60">Karma 200+ hona chahiye.</div>
+            <button id="btnSaveProfile" class="inline-flex items-center gap-2 rounded-xl bg-emerald-500 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-emerald-400">
+              <span id="profileBtnText">Save</span>
+              <span id="profileSpinner" class="hidden spinner" aria-hidden="true"></span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div id="toast" class="fixed bottom-4 left-1/2 -translate-x-1/2 z-[60] hidden">
+    <div class="rounded-2xl border border-white/10 bg-slate-950/80 backdrop-blur px-4 py-3 text-sm shadow-xl">
+      <div class="flex items-start gap-3">
+        <div id="toastDot" class="mt-1 h-2 w-2 rounded-full bg-emerald-400"></div>
+        <div>
+          <div id="toastTitle" class="font-semibold">—</div>
+          <div id="toastMsg" class="text-xs text-white/70 mt-0.5">—</div>
+        </div>
+        <button id="toastClose" class="ml-2 text-xs text-white/60 hover:text-white">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+    import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
+    import {
+      getFirestore,
+      collection,
+      addDoc,
+      doc,
+      setDoc,
+      getDoc,
+      updateDoc,
+      serverTimestamp,
+      query,
+      where,
+      orderBy,
+      limit,
+      onSnapshot,
+      getDocs,
+      runTransaction,
+      increment
+    } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+
+    // --- Firebase config (provided) ---
+    const firebaseConfig = {
+      apiKey: "AIzaSyBRJEmHXbHysb0weZfsVNTzUl0TDTjyuVI",
+      authDomain: "earnwithsimpletasks.firebaseapp.com",
+      projectId: "earnwithsimpletasks",
+      storageBucket: "earnwithsimpletasks.firebasestorage.app",
+      messagingSenderId: "942400388770",
+      appId: "1:942400388770:web:47475e0a0b60c1fb1b21fb",
+      measurementId: "G-132E8PF7LT"
+    };
+
+    // --- Admin allowlist (EDIT THIS) ---
+    // Aap yahan apna admin email/uid add kar do.
+    const ADMIN_EMAILS = [
+      // "youradmin@gmail.com"
+    ];
+    const ADMIN_UIDS = [
+      // "yourAdminUid"
+    ];
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    // --- DOM helpers ---
+    const el = (id) => document.getElementById(id);
+    const safe = (v) => (v ?? '').toString();
+
+    const hero = el('hero');
+    const appSection = el('app');
+
+    const btnLogin = el('btnLogin');
+    const btnLoginHero = el('btnLoginHero');
+    const btnLogout = el('btnLogout');
+
+    const userMenu = el('userMenu');
+    const userName = el('userName');
+    const userEmail = el('userEmail');
+    const userPhoto = el('userPhoto');
+
+    const netBadge = el('netBadge');
+    const netText = el('netText');
+    const netDot = el('netDot');
+
+    const btnPanelUser = el('btnPanelUser');
+    const btnPanelAdmin = el('btnPanelAdmin');
+    const panelUser = el('panelUser');
+    const panelAdmin = el('panelAdmin');
+
+    const typeFilter = el('typeFilter');
+    const searchInput = el('searchInput');
+    const btnClearSearch = el('btnClearSearch');
+    const adminStatusFilter = el('adminStatusFilter');
+
+    const tasksLoading = el('tasksLoading');
+    const tasksEmpty = el('tasksEmpty');
+    const tasksList = el('tasksList');
+
+    const mineLoading = el('mineLoading');
+    const mineEmpty = el('mineEmpty');
+    const mineList = el('mineList');
+
+    const profileStatus = el('profileStatus');
+    const profileDot = el('profileDot');
+    const profileText = el('profileText');
+    const btnEditProfile = el('btnEditProfile');
+
+    const userEligibilityBanner = el('userEligibilityBanner');
+    const btnOpenProfileFromBanner = el('btnOpenProfileFromBanner');
+
+    const activeClaimPill = el('activeClaimPill');
+    const activeClaimTime = el('activeClaimTime');
+    const btnOpenActiveClaim = el('btnOpenActiveClaim');
+
+    const activeClaimCard = el('activeClaimCard');
+    const activeClaimTitle = el('activeClaimTitle');
+    const activeClaimMeta = el('activeClaimMeta');
+    const activeClaimCountdown = el('activeClaimCountdown');
+    const btnOpenClaimModal = el('btnOpenClaimModal');
+
+    // Admin UI
+    const adminTabs = Array.from(document.querySelectorAll('.adminTab'));
+    const adminCreate = el('adminCreate');
+    const adminTasks = el('adminTasks');
+    const adminUsers = el('adminUsers');
+    const adminSubs = el('adminSubs');
+
+    const adminTasksLoading = el('adminTasksLoading');
+    const adminTasksList = el('adminTasksList');
+
+    const usersLoading = el('usersLoading');
+    const usersList = el('usersList');
+
+    const subsLoading = el('subsLoading');
+    const subsList = el('subsList');
+
+    // Create form
+    const createForm = el('createForm');
+    const ctType = el('ctType');
+    const postFields = el('postFields');
+    const commentFields = el('commentFields');
+
+    const btnCreateTask = el('btnCreateTask');
+    const createSpinner = el('createSpinner');
+    const createBtnText = el('createBtnText');
+
+    // Task modal
+    const modalOverlay = el('modalOverlay');
+    const btnCloseModal = el('btnCloseModal');
+    const modalType = el('modalType');
+    const modalTitle = el('modalTitle');
+    const modalMeta = el('modalMeta');
+    const modalImageWrap = el('modalImageWrap');
+    const modalImage = el('modalImage');
+    const modalDetails = el('modalDetails');
+    const modalLink = el('modalLink');
+    const modalReward = el('modalReward');
+    const modalLockInfo = el('modalLockInfo');
+    const btnClaim = el('btnClaim');
+    const btnForceUnlock = el('btnForceUnlock');
+
+    const submitForm = el('submitForm');
+    const proofLink = el('proofLink');
+    const proofNote = el('proofNote');
+    const btnSubmitProof = el('btnSubmitProof');
+    const submitSpinner = el('submitSpinner');
+    const submitBtnText = el('submitBtnText');
+    const submitHint = el('submitHint');
+    const taskSubs = el('taskSubs');
+
+    // Profile modal
+    const profileOverlay = el('profileOverlay');
+    const btnCloseProfile = el('btnCloseProfile');
+    const profileForm = el('profileForm');
+    const rpUsername = el('rpUsername');
+    const rpLink = el('rpLink');
+    const rpKarma = el('rpKarma');
+    const btnSaveProfile = el('btnSaveProfile');
+    const profileSpinner = el('profileSpinner');
+    const profileBtnText = el('profileBtnText');
+    const profileHint = el('profileHint');
+
+    // Toast
+    const toast = el('toast');
+    const toastTitle = el('toastTitle');
+    const toastMsg = el('toastMsg');
+    const toastDot = el('toastDot');
+    const toastClose = el('toastClose');
+
+    // --- State ---
+    let currentUser = null;
+    let currentUserDoc = null;
+    let isAdmin = false;
+
+    let tasksCache = [];
+    let openTask = null;
+
+    let unsubTasks = null;
+    let unsubMine = null;
+    let unsubUsers = null;
+    let unsubSubs = null;
+    let unsubTaskSubs = null;
+    let unsubUserDoc = null;
+
+    let uiPanel = 'user';
+    let adminTab = 'create';
+
+    // --- Utils ---
+    const fmtTime = (ts) => {
+      if (!ts) return '—';
+      const d = ts.toDate ? ts.toDate() : new Date(ts);
+      return d.toLocaleString(undefined, { year: 'numeric', month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+    };
+
+    const nowMs = () => Date.now();
+
+    const toMs = (ts) => {
+      if (!ts) return 0;
+      const d = ts.toDate ? ts.toDate() : new Date(ts);
+      return d.getTime();
+    };
+
+    const msToClock = (ms) => {
+      const s = Math.max(0, Math.floor(ms / 1000));
+      const mm = String(Math.floor(s / 60)).padStart(2, '0');
+      const ss = String(s % 60).padStart(2, '0');
+      return `${mm}:${ss}`;
+    };
+
+    const escapeHtml = (str) => {
+      return String(str)
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#039;');
+    };
+    const escapeAttr = (str) => escapeHtml(str).replaceAll('`', '&#096;');
+
+    function showToast({ title, message, type = 'success' }) {
+      toastTitle.textContent = title;
+      toastMsg.textContent = message;
+      toastDot.className = `mt-1 h-2 w-2 rounded-full ${type === 'error' ? 'bg-rose-400' : type === 'warn' ? 'bg-amber-300' : 'bg-emerald-400'}`;
+      toast.classList.remove('hidden');
+      clearTimeout(showToast._t);
+      showToast._t = setTimeout(() => toast.classList.add('hidden'), 3500);
+    }
+    toastClose.addEventListener('click', () => toast.classList.add('hidden'));
+
+    function setBusy(button, busy, spinnerEl, textEl, busyText) {
+      button.disabled = busy;
+      button.classList.toggle('opacity-60', busy);
+      button.classList.toggle('cursor-not-allowed', busy);
+      if (spinnerEl) spinnerEl.classList.toggle('hidden', !busy);
+      if (textEl) {
+        if (!textEl.dataset.orig) textEl.dataset.orig = textEl.textContent;
+        textEl.textContent = busy ? busyText : textEl.dataset.orig;
+      }
+    }
+
+    function setOnlineBadge() {
+      netBadge.classList.remove('hidden');
+      const online = navigator.onLine;
+      netText.textContent = online ? 'Online' : 'Offline';
+      netDot.className = `inline-block h-2 w-2 rounded-full ${online ? 'bg-emerald-400' : 'bg-rose-400'}`;
+    }
+    window.addEventListener('online', setOnlineBadge);
+    window.addEventListener('offline', setOnlineBadge);
+    setOnlineBadge();
+
+    // --- Panel switching ---
+    function setPanel(panel) {
+      uiPanel = panel;
+      const userActive = panel === 'user';
+      btnPanelUser.classList.toggle('bg-white/10', userActive);
+      btnPanelUser.classList.toggle('hover:bg-white/5', !userActive);
+      btnPanelAdmin.classList.toggle('bg-white/10', !userActive);
+      btnPanelAdmin.classList.toggle('hover:bg-white/5', userActive);
+
+      panelUser.classList.toggle('hidden', !userActive);
+      panelAdmin.classList.toggle('hidden', userActive);
+
+      adminStatusFilter.classList.toggle('hidden', userActive || !isAdmin);
+
+      renderAll();
+
+      if (!userActive && isAdmin) {
+        startUsersListener();
+        startAdminSubsListener();
+      }
+    }
+
+    btnPanelUser.addEventListener('click', () => setPanel('user'));
+    btnPanelAdmin.addEventListener('click', () => isAdmin && setPanel('admin'));
+
+    function setAdminTab(tab) {
+      adminTab = tab;
+      adminTabs.forEach(b => {
+        const active = b.dataset.adminTab === tab;
+        b.classList.toggle('bg-white/10', active);
+        b.classList.toggle('hover:bg-white/5', !active);
+      });
+      adminCreate.classList.toggle('hidden', tab !== 'create');
+      adminTasks.classList.toggle('hidden', tab !== 'tasks');
+      adminUsers.classList.toggle('hidden', tab !== 'users');
+      adminSubs.classList.toggle('hidden', tab !== 'subs');
+
+      adminStatusFilter.classList.toggle('hidden', tab !== 'tasks');
+      renderAll();
+    }
+    adminTabs.forEach(b => b.addEventListener('click', () => setAdminTab(b.dataset.adminTab)));
+
+    // --- Hero scroll ---
+    el('btnDemoScroll')?.addEventListener('click', (e) => {
+      e.preventDefault();
+      window.scrollTo({ top: hero.offsetTop + hero.offsetHeight + 8, behavior: 'smooth' });
+    });
+
+    // Filters
+    btnClearSearch.addEventListener('click', () => { searchInput.value = ''; renderAll(); });
+    searchInput.addEventListener('input', () => renderAll());
+    typeFilter.addEventListener('change', () => renderAll());
+    adminStatusFilter.addEventListener('change', () => renderAll());
+
+    // --- Auth ---
+    async function googleLogin() {
+      const provider = new GoogleAuthProvider();
+      provider.setCustomParameters({ prompt: 'select_account' });
+      try {
+        await signInWithPopup(auth, provider);
+      } catch (err) {
+        console.error(err);
+        showToast({ title: 'Login failed', message: err?.message || 'Unknown error', type: 'error' });
+      }
+    }
+    btnLogin.addEventListener('click', googleLogin);
+    btnLoginHero.addEventListener('click', googleLogin);
+
+    btnLogout.addEventListener('click', async () => {
+      try {
+        await signOut(auth);
+      } catch (err) {
+        showToast({ title: 'Logout failed', message: err?.message || 'Unknown error', type: 'error' });
+      }
+    });
+
+    onAuthStateChanged(auth, async (user) => {
+      currentUser = user;
+      currentUserDoc = null;
+      isAdmin = false;
+
+      stopAllListeners();
+      closeModal();
+
+      if (!user) {
+        hero.classList.remove('hidden');
+        appSection.classList.add('hidden');
+        btnLogin.classList.remove('hidden');
+        userMenu.classList.add('hidden');
+        return;
+      }
+
+      // UI basics
+      hero.classList.add('hidden');
+      appSection.classList.remove('hidden');
+      btnLogin.classList.add('hidden');
+      userMenu.classList.remove('hidden');
+
+      userName.textContent = user.displayName || 'User';
+      userEmail.textContent = user.email || '';
+      userPhoto.src = user.photoURL || 'https://www.gravatar.com/avatar/?d=mp';
+
+      // Ensure user doc exists
+      try {
+        const uref = doc(db, 'users', user.uid);
+        const snap = await getDoc(uref);
+        if (!snap.exists()) {
+          await setDoc(uref, {
+            uid: user.uid,
+            name: user.displayName || null,
+            email: user.email || null,
+            photoURL: user.photoURL || null,
+            redditUsername: null,
+            redditProfileLink: null,
+            redditKarma: null,
+            createdAt: serverTimestamp(),
+            lastLoginAt: serverTimestamp(),
+            activeClaimTaskId: null,
+            activeClaimUntil: null,
+            isAdmin: false
+          });
+        } else {
+          await updateDoc(uref, {
+            name: user.displayName || null,
+            email: user.email || null,
+            photoURL: user.photoURL || null,
+            lastLoginAt: serverTimestamp()
+          });
+        }
+      } catch (err) {
+        console.warn('User doc write failed', err);
+      }
+
+      // Listen user doc (for profile + active claim)
+      startUserDocListener();
+
+      // Start common listeners
+      startTasksListener();
+      startMineListener();
+
+      // Default view
+      setPanel('user');
+      setAdminTab('create');
+
+      showToast({ title: 'Logged in', message: `Welcome ${user.displayName || ''}`.trim() });
+    });
+
+    function stopAllListeners() {
+      if (unsubTasks) { unsubTasks(); unsubTasks = null; }
+      if (unsubMine) { unsubMine(); unsubMine = null; }
+      if (unsubUsers) { unsubUsers(); unsubUsers = null; }
+      if (unsubSubs) { unsubSubs(); unsubSubs = null; }
+      if (unsubTaskSubs) { unsubTaskSubs(); unsubTaskSubs = null; }
+      if (unsubUserDoc) { unsubUserDoc(); unsubUserDoc = null; }
+    }
+
+    // --- User doc listener ---
+    function startUserDocListener() {
+      if (!currentUser) return;
+      if (unsubUserDoc) { unsubUserDoc(); unsubUserDoc = null; }
+
+      const uref = doc(db, 'users', currentUser.uid);
+      unsubUserDoc = onSnapshot(uref, (snap) => {
+        currentUserDoc = snap.exists() ? snap.data() : null;
+
+        isAdmin = Boolean(
+          ADMIN_UIDS.includes(currentUser.uid) ||
+          (currentUser.email && ADMIN_EMAILS.includes(currentUser.email)) ||
+          currentUserDoc?.isAdmin === true
+        );
+
+        btnPanelAdmin.classList.toggle('hidden', !isAdmin);
+
+        // Update profile status UI
+        const karma = Number(currentUserDoc?.redditKarma ?? 0);
+        const hasUsername = !!safe(currentUserDoc?.redditUsername).trim();
+        const eligible = hasUsername && karma >= 200;
+
+        profileText.textContent = eligible
+          ? `Profile: OK (u/${safe(currentUserDoc.redditUsername)} • karma ${karma})`
+          : 'Profile: pending (fill reddit + karma 200+)';
+
+        profileDot.className = `inline-block h-2 w-2 rounded-full ${eligible ? 'bg-emerald-400' : 'bg-amber-300'}`;
+
+        userEligibilityBanner.classList.toggle('hidden', eligible);
+
+        // Active claim UI
+        const activeId = safe(currentUserDoc?.activeClaimTaskId).trim() || null;
+        const untilMs = toMs(currentUserDoc?.activeClaimUntil);
+        const active = activeId && untilMs > nowMs();
+
+        activeClaimPill.classList.toggle('hidden', !active);
+        activeClaimCard.classList.toggle('hidden', !active);
+
+        if (active) {
+          activeClaimTime.textContent = msToClock(untilMs - nowMs());
+        } else {
+          activeClaimTime.textContent = '—';
+        }
+
+        // cleanup expired claim fields if needed
+        maybeCleanupExpiredClaim();
+
+        renderAll();
+      }, (err) => {
+        console.error(err);
+        showToast({ title: 'Profile load failed', message: err?.message || 'Check Firestore rules', type: 'error' });
+      });
+    }
+
+    // --- Tasks listener ---
+    function startTasksListener() {
+      if (!currentUser) return;
+      if (unsubTasks) { unsubTasks(); unsubTasks = null; }
+
+      tasksLoading.classList.remove('hidden');
+      adminTasksLoading.classList.remove('hidden');
+
+      const q = query(collection(db, 'tasks'), orderBy('createdAt', 'desc'), limit(200));
+      unsubTasks = onSnapshot(q, (snap) => {
+        tasksCache = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        tasksLoading.classList.add('hidden');
+        adminTasksLoading.classList.add('hidden');
+        renderAll();
+      }, (err) => {
+        console.error(err);
+        tasksLoading.classList.add('hidden');
+        adminTasksLoading.classList.add('hidden');
+        showToast({ title: 'Tasks load failed', message: err?.message || 'Check Firestore rules/indexes', type: 'error' });
+      });
+    }
+
+    // --- My submissions ---
+    function startMineListener() {
+      if (!currentUser) return;
+      if (unsubMine) { unsubMine(); unsubMine = null; }
+
+      mineLoading.classList.remove('hidden');
+      mineEmpty.classList.add('hidden');
+
+      const q = query(collection(db, 'submissions'), where('uid', '==', currentUser.uid), orderBy('createdAt', 'desc'), limit(100));
+      unsubMine = onSnapshot(q, (snap) => {
+        const list = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        renderMine(list);
+        mineLoading.classList.add('hidden');
+      }, (err) => {
+        console.error(err);
+        mineLoading.classList.add('hidden');
+        showToast({ title: 'My submissions load failed', message: err?.message || 'Check Firestore rules/index', type: 'error' });
+      });
+    }
+
+    function renderMine(list) {
+      mineList.innerHTML = '';
+      if (!list.length) {
+        mineEmpty.classList.remove('hidden');
+        return;
+      }
+      mineEmpty.classList.add('hidden');
+
+      for (const s of list) {
+        const node = document.createElement('div');
+        node.className = 'rounded-2xl border border-white/10 bg-slate-950/40 p-4';
+        node.innerHTML = `
+          <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-3">
+            <div class="min-w-0">
+              <div class="flex flex-wrap items-center gap-2">
+                ${badgeForType(s.taskType)}
+                <span class="text-xs rounded-full border border-white/10 px-2 py-0.5 text-white/60">${escapeHtml(s.status || 'pending')}</span>
+                <span class="text-xs text-white/50">${fmtTime(s.createdAt)}</span>
+              </div>
+              <div class="mt-2 font-semibold break-words">${escapeHtml(s.taskTitle || 'Task')}</div>
+              <a class="mt-2 block text-sm text-indigo-300 hover:underline break-all" href="${escapeAttr(s.proofLink || '#')}" target="_blank" rel="noreferrer">${escapeHtml(s.proofLink || '')}</a>
+              ${s.note ? `<div class="mt-2 text-xs text-white/70 whitespace-pre-wrap">${escapeHtml(s.note)}</div>` : ''}
             </div>
-        </header>
+            <div class="shrink-0 rounded-xl border border-white/10 px-3 py-2 text-sm">
+              <span class="text-white/60">Reward</span>
+              <span class="ml-2 font-semibold">${Number(s.reward ?? 0)}</span>
+            </div>
+          </div>
+        `;
+        mineList.appendChild(node);
+      }
+    }
 
-        <!-- Admin Panel -->
-        <div id="adminPanel" class="hidden">
-            <!-- Admin Navigation -->
-            <div class="bg-white border-b">
-                <div class="max-w-7xl mx-auto px-4 py-3 flex gap-4 overflow-x-auto">
-                    <button id="adminTabTasks" class="px-4 py-2 bg-purple-500 text-white rounded-lg font-medium">Create Tasks</button>
-                    <button id="adminTabUsers" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-300">All Users</button>
-                    <button id="adminTabManage" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-300">Manage Tasks</button>
+    // --- Admin: users list ---
+    function startUsersListener() {
+      if (!currentUser || !isAdmin) return;
+      if (unsubUsers) return; // already running
+
+      usersLoading.classList.remove('hidden');
+      const q = query(collection(db, 'users'), orderBy('createdAt', 'desc'), limit(200));
+      unsubUsers = onSnapshot(q, (snap) => {
+        const list = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        renderUsers(list);
+        usersLoading.classList.add('hidden');
+      }, (err) => {
+        console.error(err);
+        usersLoading.classList.add('hidden');
+        showToast({ title: 'Users load failed', message: err?.message || 'Check rules/index', type: 'error' });
+      });
+    }
+
+    function renderUsers(list) {
+      usersList.innerHTML = '';
+      if (!list.length) {
+        usersList.innerHTML = `<div class="text-sm text-white/60">No users.</div>`;
+        return;
+      }
+
+      for (const u of list) {
+        const karma = Number(u.redditKarma ?? 0);
+        const ok = safe(u.redditUsername).trim() && karma >= 200;
+        const activeUntil = toMs(u.activeClaimUntil);
+        const hasActive = u.activeClaimTaskId && activeUntil > nowMs();
+
+        const node = document.createElement('div');
+        node.className = 'rounded-2xl border border-white/10 bg-slate-950/40 p-4';
+        node.innerHTML = `
+          <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-3">
+            <div class="min-w-0">
+              <div class="flex items-center gap-2">
+                <img class="h-9 w-9 rounded-full border border-white/10" src="${escapeAttr(u.photoURL || 'https://www.gravatar.com/avatar/?d=mp')}" alt="" />
+                <div class="min-w-0">
+                  <div class="font-semibold break-words">${escapeHtml(u.name || 'User')}</div>
+                  <div class="text-xs text-white/60 break-words">${escapeHtml(u.email || '')}</div>
                 </div>
+              </div>
+              <div class="mt-3 grid sm:grid-cols-2 gap-2 text-xs text-white/70">
+                <div class="rounded-xl border border-white/10 p-2">
+                  <div class="text-white/50">Created</div>
+                  <div>${fmtTime(u.createdAt)}</div>
+                </div>
+                <div class="rounded-xl border border-white/10 p-2">
+                  <div class="text-white/50">Last login</div>
+                  <div>${fmtTime(u.lastLoginAt)}</div>
+                </div>
+                <div class="rounded-xl border border-white/10 p-2">
+                  <div class="text-white/50">Reddit</div>
+                  <div>${ok ? `u/${escapeHtml(u.redditUsername)} • karma ${karma}` : 'Not eligible / not filled'}</div>
+                  ${u.redditProfileLink ? `<a class="mt-1 block text-indigo-300 hover:underline break-all" target="_blank" rel="noreferrer" href="${escapeAttr(u.redditProfileLink)}">${escapeHtml(u.redditProfileLink)}</a>` : ''}
+                </div>
+                <div class="rounded-xl border border-white/10 p-2">
+                  <div class="text-white/50">Active claim</div>
+                  <div>${hasActive ? `Task: ${escapeHtml(u.activeClaimTaskId)} • left ${msToClock(activeUntil - nowMs())}` : '—'}</div>
+                </div>
+              </div>
             </div>
 
-            <main class="max-w-7xl mx-auto px-4 py-6">
-                <!-- Create Tasks Tab -->
-                <div id="adminTasksTab" class="space-y-6">
-                    <div class="bg-white rounded-xl shadow-md p-6">
-                        <h2 class="text-xl font-bold text-gray-800 mb-6 flex items-center gap-2">
-                            <i class="fas fa-plus-circle text-purple-500"></i>
-                            Create New Task
-                        </h2>
-                        <form id="adminTaskForm" class="space-y-4">
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Task Type</label>
-                                <select id="taskType" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500">
-                                    <option value="post">📝 Post Task</option>
-                                    <option value="comment">💬 Comment Task</option>
-                                </select>
-                            </div>
-                            
-                            <!-- Post Task Fields -->
-                            <div id="postFields" class="space-y-4">
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">Post Title *</label>
-                                    <input type="text" id="postTitle" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500" placeholder="Enter post title...">
-                                </div>
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">Post Body *</label>
-                                    <textarea id="postBody" rows="4" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500" placeholder="Write your post content..."></textarea>
-                                </div>
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">Subreddit *</label>
-                                    <div class="flex items-center border border-gray-300 rounded-lg overflow-hidden">
-                                        <span class="bg-gray-100 px-3 py-2 text-gray-500">r/</span>
-                                        <input type="text" id="subreddit" class="flex-1 px-4 py-2 focus:outline-none" placeholder="subreddit_name">
-                                    </div>
-                                </div>
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">Image URL (Optional)</label>
-                                    <input type="url" id="postImage" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500" placeholder="https://example.com/image.jpg">
-                                </div>
-                            </div>
+            <div class="shrink-0 flex items-center gap-2">
+              <span class="text-[11px] rounded-full border ${ok ? 'border-emerald-400/20 bg-emerald-500/10 text-emerald-200' : 'border-amber-400/20 bg-amber-500/10 text-amber-200'} px-2 py-1">${ok ? 'ELIGIBLE' : 'PENDING'}</span>
+              <span class="text-[11px] rounded-full border border-white/10 px-2 py-1 text-white/60">${u.isAdmin ? 'ADMIN' : 'USER'}</span>
+            </div>
+          </div>
+        `;
+        usersList.appendChild(node);
+      }
+    }
 
-                            <!-- Comment Task Fields -->
-                            <div id="commentFields" class="space-y-4 hidden">
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">Reddit Post Link *</label>
-                                    <input type="url" id="commentPostLink" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500" placeholder="https://reddit.com/r/...">
-                                </div>
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">Comment Text *</label>
-                                    <textarea id="commentText" rows="4" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500" placeholder="What to comment..."></textarea>
-                                </div>
-                            </div>
+    // --- Admin: submissions list ---
+    function startAdminSubsListener() {
+      if (!currentUser || !isAdmin) return;
+      if (unsubSubs) return;
 
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Points Reward *</label>
-                                <input type="number" id="taskPoints" min="1" value="10" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500">
-                            </div>
+      subsLoading.classList.remove('hidden');
+      const q = query(collection(db, 'submissions'), orderBy('createdAt', 'desc'), limit(200));
+      unsubSubs = onSnapshot(q, (snap) => {
+        const list = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        renderAdminSubs(list);
+        subsLoading.classList.add('hidden');
+      }, (err) => {
+        console.error(err);
+        subsLoading.classList.add('hidden');
+        showToast({ title: 'Submissions load failed', message: err?.message || 'Check rules/index', type: 'error' });
+      });
+    }
 
-                            <button type="submit" class="w-full bg-gradient-to-r from-purple-500 to-indigo-600 text-white py-3 rounded-lg font-semibold hover:opacity-90 transition-all flex items-center justify-center gap-2">
-                                <i class="fas fa-paper-plane"></i>
-                                Create Task
-                            </button>
-                        </form>
-                    </div>
-                </div>
+    function renderAdminSubs(list) {
+      subsList.innerHTML = '';
+      if (!list.length) {
+        subsList.innerHTML = `<div class="text-sm text-white/60">No submissions.</div>`;
+        return;
+      }
 
-                <!-- All Users Tab -->
-                <div id="adminUsersTab" class="hidden">
-                    <div class="bg-white rounded-xl shadow-md p-6">
-                        <h2 class="text-xl font-bold text-gray-800 mb-6 flex items-center gap-2">
-                            <i class="fas fa-users text-purple-500"></i>
-                            All Registered Users
-                        </h2>
-                        <div id="usersList" class="space-y-3">
-                            <div class="flex justify-center py-8">
-                                <div class="loader"></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+      for (const s of list) {
+        const node = document.createElement('div');
+        node.className = 'rounded-2xl border border-white/10 bg-slate-950/40 p-4';
+        node.innerHTML = `
+          <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-3">
+            <div class="min-w-0">
+              <div class="flex flex-wrap items-center gap-2">
+                ${badgeForType(s.taskType)}
+                <span class="text-xs rounded-full border border-white/10 px-2 py-0.5 text-white/60">${escapeHtml(s.status || 'pending')}</span>
+                <span class="text-xs text-white/50">${fmtTime(s.createdAt)}</span>
+              </div>
+              <div class="mt-2 font-semibold break-words">${escapeHtml(s.taskTitle || 'Task')}</div>
+              <div class="mt-1 text-xs text-white/60">By: ${escapeHtml(s.userName || 'User')} • ${escapeHtml(s.userEmail || '')}</div>
+              <a class="mt-2 block text-sm text-indigo-300 hover:underline break-all" href="${escapeAttr(s.proofLink || '#')}" target="_blank" rel="noreferrer">${escapeHtml(s.proofLink || '')}</a>
+              ${s.note ? `<div class="mt-2 text-xs text-white/70 whitespace-pre-wrap">${escapeHtml(s.note)}</div>` : ''}
+            </div>
+            <div class="shrink-0 rounded-xl border border-white/10 px-3 py-2 text-sm">
+              <span class="text-white/60">Reward</span>
+              <span class="ml-2 font-semibold">${Number(s.reward ?? 0)}</span>
+            </div>
+          </div>
+        `;
+        subsList.appendChild(node);
+      }
+    }
 
-                <!-- Manage Tasks Tab -->
-                <div id="adminManageTab" class="hidden">
-                    <div class="bg-white rounded-xl shadow-md p-6">
-                        <h2 class="text-xl font-bold text-gray-800 mb-6 flex items-center gap-2">
-                            <i class="fas fa-tasks text-purple-500"></i>
-                            Manage Tasks
-                        </h2>
-                        <div id="manageTasksList" class="space-y-4">
-                            <div class="flex justify-center py-8">
-                                <div class="loader"></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </main>
-        </div>
+    // --- Create task (admin only) ---
+    function syncCreateFields() {
+      const type = ctType.value;
+      const post = type === 'post';
+      postFields.classList.toggle('hidden', !post);
+      commentFields.classList.toggle('hidden', post);
 
-        <!-- User Panel -->
-        <div id="userPanel" class="hidden">
-            <!-- User Navigation -->
-            <div class="bg-white border-b">
-                <div class="max-w-7xl mx-auto px-4 py-3 flex gap-4 overflow-x-auto">
-                    <button id="userTabAvailable" class="px-4 py-2 bg-green-500 text-white rounded-lg font-medium">Available Tasks</button>
-                    <button id="userTabClaimed" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-300">My Claimed Tasks</button>
-                    <button id="userTabCompleted" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-300">Completed</button>
-                </div>
+      // Required toggles
+      el('ctBody').required = post;
+      el('ctTargetLink').required = !post; // for comment tasks
+      el('ctInstructions').required = !post;
+    }
+    ctType.addEventListener('change', syncCreateFields);
+    syncCreateFields();
+
+    createForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!currentUser || !isAdmin) {
+        showToast({ title: 'Not allowed', message: 'Admin only', type: 'warn' });
+        return;
+      }
+
+      const type = el('ctType').value;
+      const subreddit = el('ctSubreddit').value.trim();
+      const title = el('ctTitle').value.trim();
+      const reward = Number(el('ctReward').value);
+      const status = el('ctStatus').value;
+      const claimMins = Number(el('ctClaimMins').value || 30);
+      const expireDays = Number(el('ctExpireDays').value || 0);
+
+      const body = el('ctBody').value.trim();
+      const imageUrl = el('ctImage').value.trim();
+      const targetLink = el('ctTargetLink').value.trim();
+      const instructions = el('ctInstructions').value.trim();
+
+      if (!subreddit || !title) {
+        showToast({ title: 'Missing fields', message: 'Subreddit + Title required.', type: 'warn' });
+        return;
+      }
+      if (!Number.isFinite(reward) || reward < 0) {
+        showToast({ title: 'Invalid reward', message: 'Reward sahi do.', type: 'warn' });
+        return;
+      }
+      if (!Number.isFinite(claimMins) || claimMins < 1) {
+        showToast({ title: 'Invalid claim window', message: 'Minutes minimum 1.', type: 'warn' });
+        return;
+      }
+
+      if (type === 'post' && !body) {
+        showToast({ title: 'Missing body', message: 'Post task ke liye body required.', type: 'warn' });
+        return;
+      }
+      if (type === 'comment' && (!targetLink || !instructions)) {
+        showToast({ title: 'Missing fields', message: 'Comment task ke liye target link + instructions required.', type: 'warn' });
+        return;
+      }
+
+      setBusy(btnCreateTask, true, createSpinner, createBtnText, 'Creating...');
+      try {
+        const expiresAt = expireDays > 0 ? new Date(Date.now() + expireDays * 24 * 60 * 60 * 1000) : null;
+
+        await addDoc(collection(db, 'tasks'), {
+          type,
+          subreddit,
+          title,
+          reward,
+          status,
+          claimMins,
+          // post-specific
+          body: type === 'post' ? body : null,
+          imageUrl: type === 'post' ? (imageUrl || null) : null,
+          // comment-specific
+          targetLink: type === 'comment' ? targetLink : null,
+          instructions: type === 'comment' ? instructions : null,
+
+          // locking
+          lockedByUid: null,
+          lockedByName: null,
+          lockedUntil: null,
+          lockedAt: null,
+
+          // stats
+          submittedCount: 0,
+
+          createdByUid: currentUser.uid,
+          createdByName: currentUser.displayName || null,
+          createdByEmail: currentUser.email || null,
+          createdAt: serverTimestamp(),
+          expiresAt: expiresAt ? expiresAt : null
+        });
+
+        createForm.reset();
+        el('ctReward').value = 10;
+        el('ctClaimMins').value = 30;
+        el('ctExpireDays').value = 0;
+        syncCreateFields();
+
+        showToast({ title: 'Task created', message: 'Task Firestore me save ho gaya.' });
+        setAdminTab('tasks');
+        setPanel('admin');
+      } catch (err) {
+        console.error(err);
+        showToast({ title: 'Create failed', message: err?.message || 'Check Firestore rules', type: 'error' });
+      } finally {
+        setBusy(btnCreateTask, false, createSpinner, createBtnText, 'Create Task');
+      }
+    });
+
+    // --- Rendering ---
+    function badgeForType(type) {
+      if (type === 'post') return '<span class="inline-flex items-center rounded-full bg-indigo-500/15 text-indigo-200 border border-indigo-400/20 px-2 py-0.5 text-xs">POST</span>';
+      return '<span class="inline-flex items-center rounded-full bg-emerald-500/15 text-emerald-200 border border-emerald-400/20 px-2 py-0.5 text-xs">COMMENT</span>';
+    }
+
+    function isTaskExpired(t) {
+      const exp = toMs(t.expiresAt);
+      return exp ? exp <= nowMs() : false;
+    }
+
+    function lockInfo(t) {
+      const until = toMs(t.lockedUntil);
+      const locked = until && until > nowMs();
+      return { locked, until };
+    }
+
+    function userEligible() {
+      const karma = Number(currentUserDoc?.redditKarma ?? 0);
+      const hasUsername = !!safe(currentUserDoc?.redditUsername).trim();
+      return hasUsername && karma >= 200;
+    }
+
+    function getActiveClaim() {
+      const id = safe(currentUserDoc?.activeClaimTaskId).trim() || null;
+      const until = toMs(currentUserDoc?.activeClaimUntil);
+      if (!id || !until) return null;
+      if (until <= nowMs()) return null;
+      return { id, until };
+    }
+
+    function renderAll() {
+      if (!currentUser) return;
+
+      // Update active claim UI text countdown
+      const ac = getActiveClaim();
+      if (ac) {
+        const left = ac.until - nowMs();
+        activeClaimTime.textContent = msToClock(left);
+      }
+
+      if (uiPanel === 'user') {
+        renderUserTasks();
+        renderActiveClaimCard();
+      } else {
+        renderAdminTasks();
+      }
+    }
+
+    function renderActiveClaimCard() {
+      const ac = getActiveClaim();
+      if (!ac) {
+        activeClaimCard.classList.add('hidden');
+        activeClaimPill.classList.add('hidden');
+        return;
+      }
+      activeClaimCard.classList.remove('hidden');
+      activeClaimPill.classList.remove('hidden');
+
+      const t = tasksCache.find(x => x.id === ac.id);
+      activeClaimTitle.textContent = t?.title || ac.id;
+      const sub = t?.subreddit ? `r/${t.subreddit}` : '—';
+      activeClaimMeta.textContent = `${(t?.type || 'task').toUpperCase()} • ${sub} • Reward ${Number(t?.reward ?? 0)}`;
+      activeClaimCountdown.textContent = msToClock(ac.until - nowMs());
+    }
+
+    function applyCommonFilters(list) {
+      const t = typeFilter.value;
+      const s = searchInput.value.trim().toLowerCase();
+
+      let out = [...list];
+      if (t !== 'all') out = out.filter(x => x.type === t);
+      if (s) out = out.filter(x => safe(x.title).toLowerCase().includes(s) || safe(x.subreddit).toLowerCase().includes(s));
+      return out;
+    }
+
+    function renderUserTasks() {
+      tasksList.innerHTML = '';
+
+      const eligible = userEligible();
+      userEligibilityBanner.classList.toggle('hidden', eligible);
+
+      const activeClaim = getActiveClaim();
+      if (activeClaim) {
+        // If active claim exists, we hide available tasks list to enforce single claim.
+        tasksEmpty.classList.add('hidden');
+        tasksList.innerHTML = `<div class="rounded-2xl border border-white/10 bg-slate-950/40 p-6 text-white/70 text-center">Aapka active claim chal raha hai. Pehle usko complete karke submit karein.</div>`;
+        return;
+      }
+
+      const base = tasksCache
+        .filter(t => !isTaskExpired(t))
+        .filter(t => (t.status || 'open') === 'open');
+
+      // hide tasks locked by other users
+      const visible = base.filter(t => {
+        const { locked, until } = lockInfo(t);
+        if (!locked) return true;
+        // if locked, show only if it's mine (but mine will be shown via activeClaim anyway)
+        return t.lockedByUid === currentUser.uid;
+      });
+
+      const list = applyCommonFilters(visible);
+
+      if (!list.length) {
+        tasksEmpty.classList.remove('hidden');
+        return;
+      }
+      tasksEmpty.classList.add('hidden');
+
+      for (const t of list) {
+        const { locked, until } = lockInfo(t);
+        const lockedByMe = locked && t.lockedByUid === currentUser.uid;
+
+        const canClaim = eligible && !locked;
+
+        const node = document.createElement('div');
+        node.className = 'rounded-2xl border border-white/10 bg-slate-950/40 p-4 hover:bg-white/[0.04] transition';
+
+        const extra = t.type === 'post'
+          ? `<div class="mt-2 text-xs text-white/60 line-clamp-2">${escapeHtml(safe(t.body))}</div>`
+          : `<div class="mt-2 text-xs text-white/60 line-clamp-2">${escapeHtml(safe(t.instructions))}</div>`;
+
+        node.innerHTML = `
+          <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-3">
+            <div class="min-w-0">
+              <div class="flex flex-wrap items-center gap-2">
+                ${badgeForType(t.type)}
+                <span class="text-xs text-white/60">r/${escapeHtml(safe(t.subreddit))}</span>
+                ${t.expiresAt ? `<span class="text-xs text-white/50">Exp: ${fmtTime(t.expiresAt)}</span>` : ''}
+              </div>
+              <div class="mt-2 font-semibold leading-snug break-words">${escapeHtml(safe(t.title))}</div>
+              ${extra}
+              <div class="mt-2 text-xs text-white/60">Created: ${fmtTime(t.createdAt)} • By: ${escapeHtml(safe(t.createdByName || '—'))}</div>
+              ${locked ? `<div class="mt-2 text-xs text-amber-200">Locked ${lockedByMe ? '(you)' : ''} until: ${new Date(until).toLocaleTimeString()}</div>` : ''}
             </div>
 
-            <main class="max-w-7xl mx-auto px-4 py-6">
-                <!-- User Profile Card -->
-                <div id="userProfileCard" class="bg-white rounded-xl shadow-md p-6 mb-6">
-                    <div class="flex items-center gap-4">
-                        <img id="userRedditAvatar" src="" alt="Reddit" class="w-16 h-16 rounded-full border-2 border-orange-500">
-                        <div class="flex-1">
-                            <h3 class="font-bold text-gray-800" id="userRedditName">-</h3>
-                            <p class="text-gray-500" id="userRedditLink">-</p>
-                        </div>
-                        <div class="text-center">
-                            <div class="text-2xl font-bold text-orange-500" id="userKarma">0</div>
-                            <div class="text-sm text-gray-500">Karma</div>
-                        </div>
-                    </div>
-                </div>
+            <div class="flex flex-col sm:flex-row items-start sm:items-center gap-2 shrink-0">
+              <div class="rounded-xl border border-white/10 px-3 py-2 text-sm">
+                <span class="text-white/60">Reward</span>
+                <span class="ml-2 font-semibold">${Number(t.reward ?? 0)}</span>
+              </div>
+              <button class="btnDetails rounded-xl border border-white/10 px-3 py-2 text-sm hover:bg-white/5" data-task-id="${t.id}">
+                Details
+              </button>
+              <button class="btnClaim rounded-xl bg-emerald-500 px-3 py-2 text-sm font-semibold text-slate-950 hover:bg-emerald-400 ${canClaim ? '' : 'opacity-50 cursor-not-allowed'}" data-task-id="${t.id}" ${canClaim ? '' : 'disabled'}>
+                Claim
+              </button>
+            </div>
+          </div>
+        `;
+        tasksList.appendChild(node);
+      }
 
-                <!-- Available Tasks -->
-                <div id="userAvailableTab" class="space-y-4">
-                    <div id="availableTasks" class="space-y-4">
-                        <div class="flex justify-center py-8">
-                            <div class="loader"></div>
-                        </div>
-                    </div>
-                    <div id="noAvailableTasks" class="hidden text-center py-12">
-                        <i class="fas fa-inbox text-6xl text-gray-300 mb-4"></i>
-                        <p class="text-gray-500">No tasks available right now. Check back later!</p>
-                    </div>
-                </div>
+      tasksList.querySelectorAll('.btnDetails').forEach(b => b.addEventListener('click', () => openTaskModal(b.dataset.taskId)));
+      tasksList.querySelectorAll('.btnClaim').forEach(b => b.addEventListener('click', () => claimTask(b.dataset.taskId)));
+    }
 
-                <!-- Claimed Tasks -->
-                <div id="userClaimedTab" class="hidden space-y-4">
-                    <div id="claimedTasks" class="space-y-4">
-                        <div class="flex justify-center py-8">
-                            <div class="loader"></div>
-                        </div>
-                    </div>
-                    <div id="noClaimedTasks" class="hidden text-center py-12">
-                        <i class="fas fa-hand-paper text-6xl text-gray-300 mb-4"></i>
-                        <p class="text-gray-500">You haven't claimed any tasks yet.</p>
-                    </div>
-                </div>
+    function renderAdminTasks() {
+      if (!isAdmin) return;
+      adminTasksList.innerHTML = '';
 
-                <!-- Completed Tasks -->
-                <div id="userCompletedTab" class="hidden space-y-4">
-                    <div id="completedTasks" class="space-y-4">
-                        <div class="flex justify-center py-8">
-                            <div class="loader"></div>
-                        </div>
-                    </div>
-                    <div id="noCompletedTasks" class="hidden text-center py-12">
-                        <i class="fas fa-check-circle text-6xl text-gray-300 mb-4"></i>
-                        <p class="text-gray-500">No completed tasks yet.</p>
-                    </div>
-                </div>
-            </main>
-        </div>
-    </div>
+      let list = [...tasksCache].filter(t => !isTaskExpired(t));
+      const st = adminStatusFilter.value;
+      if (st !== 'all') list = list.filter(t => (t.status || 'open') === st);
+      list = applyCommonFilters(list);
 
-    <!-- Task Completion Modal -->
-    <div id="completionModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden p-4">
-        <div class="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md">
-            <h2 class="text-xl font-bold text-gray-800 mb-4">Submit Task Completion</h2>
-            <p class="text-gray-500 text-sm mb-4">Provide the link to your completed task</p>
-            <form id="completionForm" class="space-y-4">
-                <input type="hidden" id="completionTaskId">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Completion Link *</label>
-                    <input type="url" id="completionLink" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500" placeholder="https://reddit.com/...">
-                </div>
-                <div class="flex gap-3">
-                    <button type="button" id="cancelCompletion" class="flex-1 bg-gray-200 text-gray-700 py-3 rounded-lg font-semibold hover:bg-gray-300 transition-all">Cancel</button>
-                    <button type="submit" class="flex-1 bg-gradient-to-r from-green-500 to-emerald-600 text-white py-3 rounded-lg font-semibold hover:opacity-90 transition-all">Submit</button>
-                </div>
-            </form>
-        </div>
-    </div>
+      if (!list.length) {
+        adminTasksList.innerHTML = `<div class="rounded-2xl border border-white/10 bg-slate-950/40 p-6 text-white/70 text-center">No tasks.</div>`;
+        return;
+      }
 
-    <!-- Toast Notification -->
-    <div id="toast" class="fixed bottom-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg transform translate-y-20 opacity-0 transition-all duration-300 flex items-center gap-2 z-50">
-        <i class="fas fa-check-circle"></i>
-        <span id="toastMessage">Success!</span>
-    </div>
+      for (const t of list) {
+        const { locked, until } = lockInfo(t);
+        const lockedText = locked
+          ? `Locked by: ${escapeHtml(safe(t.lockedByName || t.lockedByUid || '—'))} • left ${msToClock(until - nowMs())}`
+          : 'Not locked';
 
-    <!-- Firebase SDKs -->
-    <script type="module">
-        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
-        import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
-        import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, doc, updateDoc, arrayUnion, increment, setDoc, getDoc, deleteDoc, where } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+        const node = document.createElement('div');
+        node.className = 'rounded-2xl border border-white/10 bg-slate-950/40 p-4';
+        node.innerHTML = `
+          <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-3">
+            <div class="min-w-0">
+              <div class="flex flex-wrap items-center gap-2">
+                ${badgeForType(t.type)}
+                <span class="text-xs text-white/60">r/${escapeHtml(safe(t.subreddit))}</span>
+                <span class="text-xs rounded-full border border-white/10 px-2 py-0.5 text-white/60">${escapeHtml(safe(t.status || 'open'))}</span>
+                ${t.expiresAt ? `<span class="text-xs text-white/50">Exp: ${fmtTime(t.expiresAt)}</span>` : ''}
+              </div>
+              <div class="mt-2 font-semibold leading-snug break-words">${escapeHtml(safe(t.title))}</div>
+              <div class="mt-2 text-xs text-white/60">Created: ${fmtTime(t.createdAt)} • By: ${escapeHtml(safe(t.createdByName || '—'))}</div>
+              <div class="mt-2 text-xs ${locked ? 'text-amber-200' : 'text-white/60'}">${lockedText}</div>
+            </div>
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyBRJEmHXbHysb0weZfsVNTzUl0TDTjyuVI",
-            authDomain: "earnwithsimpletasks.firebaseapp.com",
-            projectId: "earnwithsimpletasks",
-            storageBucket: "earnwithsimpletasks.firebasestorage.app",
-            messagingSenderId: "942400388770",
-            appId: "1:942400388770:web:47475e0a0b60c1fb1b21fb",
-            measurementId: "G-132E8PF7LT"
-        };
+            <div class="shrink-0 flex flex-wrap items-center gap-2">
+              <button class="btnAdminOpen rounded-xl border border-white/10 px-3 py-2 text-sm hover:bg-white/5" data-task-id="${t.id}">Open</button>
+              <button class="btnAdminToggle rounded-xl border border-white/10 px-3 py-2 text-sm hover:bg-white/5" data-task-id="${t.id}" data-next="${(t.status || 'open') === 'open' ? 'closed' : 'open'}">${(t.status || 'open') === 'open' ? 'Close' : 'Re-open'}</button>
+              <button class="btnAdminUnlock rounded-xl border border-white/10 px-3 py-2 text-sm hover:bg-white/5 ${locked ? '' : 'opacity-50 cursor-not-allowed'}" data-task-id="${t.id}" ${locked ? '' : 'disabled'}>Force Unlock</button>
+            </div>
+          </div>
+        `;
+        adminTasksList.appendChild(node);
+      }
 
-        // Admin emails - Add your admin emails here
-        const ADMIN_EMAILS = ['axel197193@gmail.com'];
+      adminTasksList.querySelectorAll('.btnAdminOpen').forEach(b => b.addEventListener('click', () => openTaskModal(b.dataset.taskId)));
+      adminTasksList.querySelectorAll('.btnAdminToggle').forEach(b => b.addEventListener('click', () => toggleTaskStatus(b.dataset.taskId, b.dataset.next)));
+      adminTasksList.querySelectorAll('.btnAdminUnlock').forEach(b => b.addEventListener('click', () => forceUnlockTask(b.dataset.taskId)));
+    }
 
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
-        const provider = new GoogleAuthProvider();
+    // --- Claim logic ---
+    async function claimTask(taskId) {
+      if (!currentUser) return;
+      if (!userEligible()) {
+        showToast({ title: 'Not eligible', message: 'Reddit profile + karma 200+ required.', type: 'warn' });
+        openProfile();
+        return;
+      }
 
-        let currentUser = null;
-        let isAdmin = false;
-        let userData = null;
+      const existing = getActiveClaim();
+      if (existing) {
+        showToast({ title: 'Already claimed', message: 'Aapke paas already active claim hai.', type: 'warn' });
+        return;
+      }
 
-        // DOM Elements
-        const loginPage = document.getElementById('loginPage');
-        const mainApp = document.getElementById('mainApp');
-        const googleLoginBtn = document.getElementById('googleLoginBtn');
-        const logoutBtn = document.getElementById('logoutBtn');
-        const loginError = document.getElementById('loginError');
-        const userAvatar = document.getElementById('userAvatar');
-        const userName = document.getElementById('userName');
-        const userPoints = document.getElementById('userPoints');
-        const profileModal = document.getElementById('profileModal');
-        const profileForm = document.getElementById('profileForm');
-        const adminPanel = document.getElementById('adminPanel');
-        const userPanel = document.getElementById('userPanel');
-        const toast = document.getElementById('toast');
-        const toastMessage = document.getElementById('toastMessage');
-        const completionModal = document.getElementById('completionModal');
-        const completionForm = document.getElementById('completionForm');
+      try {
+        await runTransaction(db, async (tx) => {
+          const taskRef = doc(db, 'tasks', taskId);
+          const userRef = doc(db, 'users', currentUser.uid);
 
-        // Show toast notification
-        function showToast(message, isError = false) {
-            toastMessage.textContent = message;
-            toast.className = `fixed bottom-4 right-4 ${isError ? 'bg-red-500' : 'bg-green-500'} text-white px-6 py-3 rounded-lg shadow-lg transform translate-y-0 opacity-100 transition-all duration-300 flex items-center gap-2 z-50`;
-            setTimeout(() => {
-                toast.className = `fixed bottom-4 right-4 ${isError ? 'bg-red-500' : 'bg-green-500'} text-white px-6 py-3 rounded-lg shadow-lg transform translate-y-20 opacity-0 transition-all duration-300 flex items-center gap-2 z-50`;
-            }, 3000);
+          const [tSnap, uSnap] = await Promise.all([tx.get(taskRef), tx.get(userRef)]);
+          if (!tSnap.exists()) throw new Error('Task not found');
+          if (!uSnap.exists()) throw new Error('User doc missing');
+
+          const t = tSnap.data();
+          const u = uSnap.data();
+
+          if ((t.status || 'open') !== 'open') throw new Error('Task is not open');
+          if (t.expiresAt && toMs(t.expiresAt) <= nowMs()) throw new Error('Task expired');
+
+          const karma = Number(u.redditKarma ?? 0);
+          const hasUsername = !!safe(u.redditUsername).trim();
+          if (!hasUsername || karma < 200) throw new Error('Reddit profile/karma not eligible');
+
+          const uUntil = toMs(u.activeClaimUntil);
+          if (u.activeClaimTaskId && uUntil > nowMs()) throw new Error('User already has active claim');
+
+          const tUntil = toMs(t.lockedUntil);
+          const tLocked = tUntil && tUntil > nowMs();
+          if (tLocked) throw new Error('Task already locked');
+
+          const claimMins = Number(t.claimMins ?? 30);
+          const lockUntil = new Date(Date.now() + claimMins * 60 * 1000);
+
+          tx.update(taskRef, {
+            lockedByUid: currentUser.uid,
+            lockedByName: currentUser.displayName || null,
+            lockedAt: serverTimestamp(),
+            lockedUntil: lockUntil
+          });
+
+          tx.update(userRef, {
+            activeClaimTaskId: taskId,
+            activeClaimUntil: lockUntil
+          });
+        });
+
+        showToast({ title: 'Claimed', message: 'Task aapke liye lock ho gaya. 30 min me submit karna hoga.' });
+        // Open modal for quick submit
+        await openTaskModal(taskId);
+      } catch (err) {
+        console.error(err);
+        showToast({ title: 'Claim failed', message: err?.message || 'Unknown error', type: 'error' });
+      }
+    }
+
+    async function toggleTaskStatus(taskId, next) {
+      if (!currentUser || !isAdmin) return;
+      try {
+        await updateDoc(doc(db, 'tasks', taskId), { status: next });
+        showToast({ title: 'Updated', message: `Task status: ${next}` });
+      } catch (err) {
+        console.error(err);
+        showToast({ title: 'Update failed', message: err?.message || 'Unknown error', type: 'error' });
+      }
+    }
+
+    async function forceUnlockTask(taskId) {
+      if (!currentUser || !isAdmin) return;
+      try {
+        await updateDoc(doc(db, 'tasks', taskId), {
+          lockedByUid: null,
+          lockedByName: null,
+          lockedAt: null,
+          lockedUntil: null
+        });
+        showToast({ title: 'Unlocked', message: 'Task force unlock ho gaya.' });
+      } catch (err) {
+        console.error(err);
+        showToast({ title: 'Unlock failed', message: err?.message || 'Unknown error', type: 'error' });
+      }
+    }
+
+    // --- Modal open/close ---
+    function openModal() {
+      modalOverlay.classList.remove('hidden');
+      document.body.style.overflow = 'hidden';
+    }
+    function closeModal() {
+      modalOverlay.classList.add('hidden');
+      document.body.style.overflow = '';
+      openTask = null;
+      submitForm.reset();
+      submitHint.textContent = '';
+      taskSubs.innerHTML = '';
+      if (unsubTaskSubs) { unsubTaskSubs(); unsubTaskSubs = null; }
+    }
+
+    btnCloseModal.addEventListener('click', closeModal);
+    modalOverlay.addEventListener('click', (e) => {
+      if (e.target === modalOverlay) closeModal();
+    });
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && !modalOverlay.classList.contains('hidden')) closeModal();
+    });
+
+    async function openTaskModal(taskId) {
+      if (!currentUser) return;
+      try {
+        const ref = doc(db, 'tasks', taskId);
+        const snap = await getDoc(ref);
+        if (!snap.exists()) {
+          showToast({ title: 'Not found', message: 'Task delete ho gaya.', type: 'warn' });
+          return;
         }
 
-        // Check or create user document
-        async function checkOrCreateUser(user) {
-            const userRef = doc(db, 'users', user.uid);
-            const userDoc = await getDoc(userRef);
-            
-            if (!userDoc.exists()) {
-                await setDoc(userRef, {
-                    uid: user.uid,
-                    displayName: user.displayName,
-                    email: user.email,
-                    photoURL: user.photoURL,
-                    points: 0,
-                    redditUsername: null,
-                    redditKarma: null,
-                    redditProfileLink: null,
-                    isAdmin: ADMIN_EMAILS.includes(user.email),
-                    createdAt: new Date().toISOString()
-                });
-                return { isNew: true, isAdmin: ADMIN_EMAILS.includes(user.email) };
+        openTask = { id: taskId, ...snap.data() };
+        const t = openTask;
+
+        // Basic
+        modalType.textContent = `${(t.type || 'task').toUpperCase()} • ${t.status || 'open'}`;
+        modalTitle.textContent = t.title || '—';
+        modalMeta.textContent = `Created: ${fmtTime(t.createdAt)} • r/${t.subreddit || '—'} • By: ${t.createdByName || '—'}`;
+
+        // image
+        if (t.imageUrl) {
+          modalImageWrap.classList.remove('hidden');
+          modalImage.src = t.imageUrl;
+        } else {
+          modalImageWrap.classList.add('hidden');
+          modalImage.src = '';
+        }
+
+        // details
+        if (t.type === 'post') {
+          modalDetails.textContent = `POST BODY:\n${t.body || ''}`;
+          modalLink.textContent = `https://www.reddit.com/r/${t.subreddit}/submit`;
+          modalLink.href = `https://www.reddit.com/r/${t.subreddit}/submit`;
+        } else {
+          modalDetails.textContent = `INSTRUCTIONS:\n${t.instructions || ''}`;
+          modalLink.textContent = t.targetLink || '—';
+          modalLink.href = t.targetLink || '#';
+        }
+
+        modalReward.textContent = String(Number(t.reward ?? 0));
+
+        // Lock state
+        const { locked, until } = lockInfo(t);
+        const lockedByMe = locked && t.lockedByUid === currentUser.uid;
+        const canClaim = (t.status !== 'closed') && (t.status !== 'submitted') && !locked && userEligible() && !getActiveClaim();
+
+        // Admin actions
+        btnForceUnlock.classList.toggle('hidden', !(isAdmin && locked));
+        btnForceUnlock.onclick = () => forceUnlockTask(t.id);
+
+        btnClaim.classList.toggle('hidden', !canClaim);
+        btnClaim.onclick = () => claimTask(t.id);
+
+        if (locked) {
+          modalLockInfo.textContent = lockedByMe
+            ? `Locked by you • time left ${msToClock(until - nowMs())}`
+            : `Locked by ${t.lockedByName || t.lockedByUid || 'someone'} • available in ${msToClock(until - nowMs())}`;
+        } else {
+          modalLockInfo.textContent = (t.status === 'closed')
+            ? 'Task is closed.'
+            : (t.status === 'submitted')
+              ? 'Already submitted by a user.'
+              : 'Not locked. You can claim if eligible.';
+        }
+
+        // Submit form visibility/enable
+        const canSubmit = lockedByMe && (until > nowMs());
+        submitHint.textContent = canSubmit
+          ? `Submit within ${msToClock(until - nowMs())}`
+          : (lockedByMe ? 'Lock expired. Claim reset ho gaya hoga.' : 'Claim required to submit.');
+
+        submitForm.classList.toggle('opacity-60', !canSubmit);
+        proofLink.disabled = !canSubmit;
+        proofNote.disabled = !canSubmit;
+        btnSubmitProof.disabled = !canSubmit;
+        btnSubmitProof.classList.toggle('opacity-50', !canSubmit);
+        btnSubmitProof.classList.toggle('cursor-not-allowed', !canSubmit);
+
+        listenTaskSubmissions(taskId);
+        openModal();
+      } catch (err) {
+        console.error(err);
+        showToast({ title: 'Open failed', message: err?.message || 'Unknown error', type: 'error' });
+      }
+    }
+
+    // Recent submissions for modal
+    function listenTaskSubmissions(taskId) {
+      if (unsubTaskSubs) { unsubTaskSubs(); unsubTaskSubs = null; }
+      const q = query(collection(db, 'submissions'), where('taskId', '==', taskId), orderBy('createdAt', 'desc'), limit(10));
+      unsubTaskSubs = onSnapshot(q, (snap) => {
+        const items = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        renderTaskSubmissions(items);
+      }, (err) => {
+        console.error(err);
+        taskSubs.innerHTML = `<div class="text-xs text-rose-200">Submissions load failed: ${escapeHtml(err?.message || 'error')}</div>`;
+      });
+    }
+
+    function renderTaskSubmissions(items) {
+      taskSubs.innerHTML = '';
+      if (!items.length) {
+        taskSubs.innerHTML = `<div class="text-xs text-white/60">No submissions yet.</div>`;
+        return;
+      }
+      for (const s of items) {
+        const mine = currentUser && s.uid === currentUser.uid;
+        const node = document.createElement('div');
+        node.className = 'rounded-xl border border-white/10 bg-slate-950/40 p-3';
+        node.innerHTML = `
+          <div class="flex items-center justify-between gap-3">
+            <div class="min-w-0">
+              <div class="text-xs text-white/60">${escapeHtml(s.userName || 'User')} ${mine ? '<span class="ml-1 text-[11px] text-indigo-200">(you)</span>' : ''} • ${fmtTime(s.createdAt)}</div>
+              <a class="mt-1 block text-sm text-indigo-300 hover:underline break-all" href="${escapeAttr(s.proofLink || '#')}" target="_blank" rel="noreferrer">${escapeHtml(s.proofLink || '')}</a>
+              ${s.note ? `<div class="mt-1 text-xs text-white/70 whitespace-pre-wrap">${escapeHtml(s.note)}</div>` : ''}
+            </div>
+            <div class="text-[11px] rounded-full border border-white/10 px-2 py-1 text-white/60">${escapeHtml(s.status || 'pending')}</div>
+          </div>
+        `;
+        taskSubs.appendChild(node);
+      }
+    }
+
+    // Submit proof
+    submitForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!currentUser || !openTask) return;
+
+      const link = proofLink.value.trim();
+      const note = proofNote.value.trim();
+      if (!link) return;
+
+      setBusy(btnSubmitProof, true, submitSpinner, submitBtnText, 'Submitting...');
+      try {
+        await runTransaction(db, async (tx) => {
+          const taskRef = doc(db, 'tasks', openTask.id);
+          const userRef = doc(db, 'users', currentUser.uid);
+
+          const [tSnap, uSnap] = await Promise.all([tx.get(taskRef), tx.get(userRef)]);
+          if (!tSnap.exists()) throw new Error('Task not found');
+          if (!uSnap.exists()) throw new Error('User doc missing');
+
+          const t = tSnap.data();
+          const u = uSnap.data();
+
+          const until = toMs(t.lockedUntil);
+          if (!t.lockedByUid || t.lockedByUid !== currentUser.uid) throw new Error('You did not claim this task');
+          if (!until || until <= nowMs()) throw new Error('Claim time expired');
+
+          // Ensure user claim matches
+          const uUntil = toMs(u.activeClaimUntil);
+          if (u.activeClaimTaskId !== openTask.id || !uUntil || uUntil <= nowMs()) throw new Error('Your active claim is not valid');
+
+          // Avoid duplicate submission by same user for same task
+          const dupQ = query(collection(db, 'submissions'), where('taskId', '==', openTask.id), where('uid', '==', currentUser.uid), limit(1));
+          const dupSnap = await getDocs(dupQ);
+          if (!dupSnap.empty) throw new Error('Already submitted for this task');
+
+          const subRef = doc(collection(db, 'submissions'));
+          tx.set(subRef, {
+            taskId: openTask.id,
+            taskTitle: t.title || null,
+            taskType: t.type || null,
+            reward: Number(t.reward ?? 0),
+            uid: currentUser.uid,
+            userName: currentUser.displayName || null,
+            userEmail: currentUser.email || null,
+            proofLink: link,
+            note: note || null,
+            status: 'pending',
+            createdAt: serverTimestamp()
+          });
+
+          // Mark task as submitted (single-use) and clear lock
+          tx.update(taskRef, {
+            status: 'submitted',
+            lockedByUid: null,
+            lockedByName: null,
+            lockedAt: null,
+            lockedUntil: null,
+            submittedCount: increment(1)
+          });
+
+          // Clear user active claim
+          tx.update(userRef, {
+            activeClaimTaskId: null,
+            activeClaimUntil: null
+          });
+        });
+
+        submitForm.reset();
+        showToast({ title: 'Submitted', message: 'Proof submit ho gaya (pending review).' });
+        closeModal();
+      } catch (err) {
+        console.error(err);
+        showToast({ title: 'Submit failed', message: err?.message || 'Unknown error', type: 'error' });
+      } finally {
+        setBusy(btnSubmitProof, false, submitSpinner, submitBtnText, 'Submit');
+      }
+    });
+
+    // --- Profile modal ---
+    function openProfile() {
+      if (!currentUser) return;
+      const u = currentUserDoc || {};
+      rpUsername.value = u.redditUsername || '';
+      rpLink.value = u.redditProfileLink || '';
+      rpKarma.value = (u.redditKarma ?? '') === null ? '' : (u.redditKarma ?? '');
+
+      profileOverlay.classList.remove('hidden');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeProfile() {
+      profileOverlay.classList.add('hidden');
+      document.body.style.overflow = '';
+      profileForm.reset();
+      profileHint.textContent = 'Karma 200+ hona chahiye.';
+    }
+
+    btnEditProfile.addEventListener('click', openProfile);
+    btnOpenProfileFromBanner.addEventListener('click', openProfile);
+    btnCloseProfile.addEventListener('click', closeProfile);
+    profileOverlay.addEventListener('click', (e) => {
+      if (e.target === profileOverlay) closeProfile();
+    });
+
+    profileForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!currentUser) return;
+
+      const username = rpUsername.value.trim();
+      const link = rpLink.value.trim();
+      const karma = Number(rpKarma.value);
+
+      if (!username) {
+        profileHint.textContent = 'Reddit username required.';
+        showToast({ title: 'Invalid', message: 'Reddit username required.', type: 'warn' });
+        return;
+      }
+      if (!Number.isFinite(karma) || karma < 0) {
+        profileHint.textContent = 'Karma number sahi do.';
+        showToast({ title: 'Invalid', message: 'Karma number sahi do.', type: 'warn' });
+        return;
+      }
+      if (karma < 200) {
+        profileHint.textContent = 'Minimum karma 200+ required.';
+        showToast({ title: 'Not eligible', message: 'Minimum karma 200+ required.', type: 'warn' });
+        return;
+      }
+
+      setBusy(btnSaveProfile, true, profileSpinner, profileBtnText, 'Saving...');
+      try {
+        await updateDoc(doc(db, 'users', currentUser.uid), {
+          redditUsername: username,
+          redditProfileLink: link || null,
+          redditKarma: karma
+        });
+        showToast({ title: 'Saved', message: 'Profile update ho gaya.' });
+        closeProfile();
+      } catch (err) {
+        console.error(err);
+        showToast({ title: 'Save failed', message: err?.message || 'Unknown error', type: 'error' });
+      } finally {
+        setBusy(btnSaveProfile, false, profileSpinner, profileBtnText, 'Save');
+      }
+    });
+
+    // Active claim open
+    btnOpenActiveClaim.addEventListener('click', async () => {
+      const ac = getActiveClaim();
+      if (!ac) return;
+      await openTaskModal(ac.id);
+    });
+
+    btnOpenClaimModal.addEventListener('click', async () => {
+      const ac = getActiveClaim();
+      if (!ac) return;
+      await openTaskModal(ac.id);
+    });
+
+    // Cleanup expired claims: clear user fields and unlock task if it was locked by user
+    async function maybeCleanupExpiredClaim() {
+      if (!currentUser || !currentUserDoc) return;
+      const id = safe(currentUserDoc.activeClaimTaskId).trim();
+      const until = toMs(currentUserDoc.activeClaimUntil);
+      if (!id || !until) return;
+      if (until > nowMs()) return;
+
+      try {
+        await runTransaction(db, async (tx) => {
+          const userRef = doc(db, 'users', currentUser.uid);
+          const taskRef = doc(db, 'tasks', id);
+
+          const [uSnap, tSnap] = await Promise.all([tx.get(userRef), tx.get(taskRef)]);
+          if (uSnap.exists()) {
+            tx.update(userRef, { activeClaimTaskId: null, activeClaimUntil: null });
+          }
+
+          if (tSnap.exists()) {
+            const t = tSnap.data();
+            const tUntil = toMs(t.lockedUntil);
+            const stillLockedByMe = t.lockedByUid === currentUser.uid;
+            if (stillLockedByMe && tUntil && tUntil <= nowMs()) {
+              tx.update(taskRef, { lockedByUid: null, lockedByName: null, lockedAt: null, lockedUntil: null });
             }
-            return { isNew: false, ...userDoc.data(), isAdmin: userDoc.data().isAdmin || ADMIN_EMAILS.includes(user.email) };
-        }
-
-        // Update user points display
-        async function updatePointsDisplay() {
-            if (!currentUser) return;
-            const userRef = doc(db, 'users', currentUser.uid);
-            const userDoc = await getDoc(userRef);
-            if (userDoc.exists()) {
-                const data = userDoc.data();
-                userData = data;
-                const points = data.points || 0;
-                userPoints.innerHTML = `<i class="fas fa-coins text-yellow-500"></i><span class="font-semibold text-yellow-700">${points} Points</span>`;
-            }
-        }
-
-        // Format date
-        function formatDate(dateString) {
-            const date = new Date(dateString);
-            const now = new Date();
-            const diff = now - date;
-            
-            const minutes = Math.floor(diff / 60000);
-            const hours = Math.floor(diff / 3600000);
-            const days = Math.floor(diff / 86400000);
-            
-            if (minutes < 1) return 'Just now';
-            if (minutes < 60) return `${minutes}m ago`;
-            if (hours < 24) return `${hours}h ago`;
-            if (days < 7) return `${days}d ago`;
-            
-            return date.toLocaleDateString();
-        }
-
-        // Format time remaining
-        function formatTimeRemaining(claimedAt) {
-            const claimed = new Date(claimedAt);
-            const now = new Date();
-            const elapsed = now - claimed;
-            const remaining = 30 * 60 * 1000 - elapsed; // 30 minutes in ms
-            
-            if (remaining <= 0) return 'Expired';
-            
-            const minutes = Math.floor(remaining / 60000);
-            const seconds = Math.floor((remaining % 60000) / 1000);
-            
-            return `${minutes}m ${seconds}s`;
-        }
-
-        // Auth State Observer
-        onAuthStateChanged(auth, async (user) => {
-            if (user) {
-                currentUser = user;
-                loginPage.classList.add('hidden');
-                mainApp.classList.remove('hidden');
-                userAvatar.src = user.photoURL;
-                userName.textContent = user.displayName;
-                
-                const result = await checkOrCreateUser(user);
-                userData = result;
-                isAdmin = result.isAdmin;
-                
-                await updatePointsDisplay();
-                
-                // Check if user has Reddit profile
-                if (result.isNew || !result.redditUsername) {
-                    if (!isAdmin) {
-                        profileModal.classList.remove('hidden');
-                    }
-                }
-                
-                if (isAdmin) {
-                    adminPanel.classList.remove('hidden');
-                    userPanel.classList.add('hidden');
-                    loadAdminData();
-                } else {
-                    adminPanel.classList.add('hidden');
-                    userPanel.classList.remove('hidden');
-                    loadUserData();
-                }
-            } else {
-                currentUser = null;
-                userData = null;
-                isAdmin = false;
-                loginPage.classList.remove('hidden');
-                mainApp.classList.add('hidden');
-                profileModal.classList.add('hidden');
-            }
+          }
         });
+      } catch (err) {
+        // silent
+        console.warn('Cleanup failed', err);
+      }
+    }
 
-        // Google Login
-        googleLoginBtn.addEventListener('click', () => {
-            googleLoginBtn.disabled = true;
-            googleLoginBtn.innerHTML = '<div class="loader mx-auto"></div>';
-            
-            signInWithPopup(auth, provider)
-                .then(() => {
-                    googleLoginBtn.innerHTML = `
-                        <svg class="w-6 h-6" viewBox="0 0 24 24">
-                            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-                            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-                        </svg>
-                        <span class="text-gray-700 font-medium">Continue with Google</span>
-                    `;
-                    googleLoginBtn.disabled = false;
-                })
-                .catch((error) => {
-                    console.error(error);
-                    loginError.textContent = error.message;
-                    loginError.classList.remove('hidden');
-                    googleLoginBtn.innerHTML = `
-                        <svg class="w-6 h-6" viewBox="0 0 24 24">
-                            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-                            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-                        </svg>
-                        <span class="text-gray-700 font-medium">Continue with Google</span>
-                    `;
-                    googleLoginBtn.disabled = false;
-                });
-        });
+    // periodic countdown refresh
+    setInterval(() => {
+      // update countdown text even without user doc changes
+      if (!currentUser) return;
+      renderAll();
 
-        // Logout
-        logoutBtn.addEventListener('click', () => {
-            signOut(auth);
-        });
-
-        // Profile Form Submit
-        profileForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            const karma = parseInt(document.getElementById('redditKarma').value);
-            if (karma < 200) {
-                showToast('Minimum 200 karma required!', true);
-                return;
-            }
-            
-            try {
-                const userRef = doc(db, 'users', currentUser.uid);
-                await updateDoc(userRef, {
-                    redditUsername: document.getElementById('redditUsername').value,
-                    redditKarma: karma,
-                    redditProfileLink: document.getElementById('redditProfileLink').value
-                });
-                
-                profileModal.classList.add('hidden');
-                showToast('Profile saved successfully!');
-                
-                // Reload user data
-                userData = await getDoc(userRef).then(doc => doc.data());
-                updateUserProfileCard();
-            } catch (error) {
-                console.error(error);
-                showToast('Error saving profile', true);
-            }
-        });
-
-        // Update User Profile Card
-        function updateUserProfileCard() {
-            if (!userData) return;
-            document.getElementById('userRedditName').textContent = userData.redditUsername ? `u/${userData.redditUsername}` : '-';
-            document.getElementById('userRedditLink').textContent = userData.redditProfileLink || '-';
-            document.getElementById('userRedditLink').innerHTML = userData.redditProfileLink ? `<a href="${userData.redditProfileLink}" target="_blank" class="text-blue-500 hover:underline">View Profile</a>` : '-';
-            document.getElementById('userKarma').textContent = userData.redditKarma || 0;
-            document.getElementById('userRedditAvatar').src = `https://www.redditstatic.com/avatars/defaults/v2/avatar_default_1.png`;
+      // If modal open and task locked by me, refresh lock info text and submit hint
+      if (!modalOverlay.classList.contains('hidden') && openTask) {
+        const { locked, until } = lockInfo(openTask);
+        if (locked && openTask.lockedByUid === currentUser.uid) {
+          modalLockInfo.textContent = `Locked by you • time left ${msToClock(until - nowMs())}`;
+          submitHint.textContent = `Submit within ${msToClock(until - nowMs())}`;
         }
+      }
+    }, 1000);
 
-        // Task Type Toggle
-        document.getElementById('taskType').addEventListener('change', (e) => {
-            const type = e.target.value;
-            if (type === 'post') {
-                document.getElementById('postFields').classList.remove('hidden');
-                document.getElementById('commentFields').classList.add('hidden');
-            } else {
-                document.getElementById('postFields').classList.add('hidden');
-                document.getElementById('commentFields').classList.remove('hidden');
-            }
-        });
-
-        // ==================== ADMIN FUNCTIONS ====================
-
-        // Admin Tab Navigation
-        document.getElementById('adminTabTasks').addEventListener('click', () => {
-            showAdminTab('tasks');
-        });
-        document.getElementById('adminTabUsers').addEventListener('click', () => {
-            showAdminTab('users');
-        });
-        document.getElementById('adminTabManage').addEventListener('click', () => {
-            showAdminTab('manage');
-        });
-
-        function showAdminTab(tab) {
-            document.getElementById('adminTasksTab').classList.toggle('hidden', tab !== 'tasks');
-            document.getElementById('adminUsersTab').classList.toggle('hidden', tab !== 'users');
-            document.getElementById('adminManageTab').classList.toggle('hidden', tab !== 'manage');
-            
-            document.getElementById('adminTabTasks').className = tab === 'tasks' ? 'px-4 py-2 bg-purple-500 text-white rounded-lg font-medium' : 'px-4 py-2 bg-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-300';
-            document.getElementById('adminTabUsers').className = tab === 'users' ? 'px-4 py-2 bg-purple-500 text-white rounded-lg font-medium' : 'px-4 py-2 bg-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-300';
-            document.getElementById('adminTabManage').className = tab === 'manage' ? 'px-4 py-2 bg-purple-500 text-white rounded-lg font-medium' : 'px-4 py-2 bg-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-300';
-            
-            if (tab === 'users') loadUsers();
-            if (tab === 'manage') loadManageTasks();
-        }
-
-        // Load Admin Data
-        function loadAdminData() {
-            showAdminTab('tasks');
-        }
-
-        // Create Task
-        document.getElementById('adminTaskForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            const submitBtn = e.target.querySelector('button[type="submit"]');
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = '<div class="loader mx-auto"></div>';
-
-            try {
-                const taskType = document.getElementById('taskType').value;
-                let taskData = {
-                    type: taskType,
-                    points: parseInt(document.getElementById('taskPoints').value),
-                    status: 'available',
-                    createdBy: {
-                        uid: currentUser.uid,
-                        displayName: currentUser.displayName,
-                        photoURL: currentUser.photoURL
-                    },
-                    createdAt: new Date().toISOString()
-                };
-
-                if (taskType === 'post') {
-                    taskData.title = document.getElementById('postTitle').value;
-                    taskData.body = document.getElementById('postBody').value;
-                    taskData.subreddit = document.getElementById('subreddit').value;
-                    taskData.image = document.getElementById('postImage').value || null;
-                } else {
-                    taskData.postLink = document.getElementById('commentPostLink').value;
-                    taskData.commentText = document.getElementById('commentText').value;
-                }
-
-                await addDoc(collection(db, 'tasks'), taskData);
-                e.target.reset();
-                document.getElementById('taskPoints').value = 10;
-                showToast('Task created successfully!');
-            } catch (error) {
-                console.error(error);
-                showToast('Error creating task', true);
-            }
-
-            submitBtn.disabled = false;
-            submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Create Task';
-        });
-
-        // Load All Users
-        function loadUsers() {
-            const usersList = document.getElementById('usersList');
-            const q = query(collection(db, 'users'), orderBy('createdAt', 'desc'));
-            
-            onSnapshot(q, (snapshot) => {
-                const users = [];
-                snapshot.forEach((doc) => {
-                    users.push({ id: doc.id, ...doc.data() });
-                });
-                
-                if (users.length === 0) {
-                    usersList.innerHTML = '<p class="text-center text-gray-500 py-8">No users found</p>';
-                    return;
-                }
-
-                usersList.innerHTML = users.map(user => `
-                    <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                        <div class="flex items-center gap-4">
-                            <img src="${user.photoURL}" alt="${user.displayName}" class="w-12 h-12 rounded-full">
-                            <div>
-                                <h4 class="font-semibold text-gray-800">${user.displayName}</h4>
-                                <p class="text-sm text-gray-500">${user.email}</p>
-                                <p class="text-sm text-gray-500">
-                                    <span class="text-orange-500"><i class="fab fa-reddit"></i></span> 
-                                    ${user.redditUsername ? `u/${user.redditUsername} (${user.redditKarma} karma)` : 'No Reddit profile'}
-                                </p>
-                            </div>
-                        </div>
-                        <div class="text-right">
-                            <div class="flex items-center gap-2 text-yellow-600 font-medium">
-                                <i class="fas fa-coins"></i>
-                                ${user.points || 0} pts
-                            </div>
-                            <p class="text-sm text-gray-400">${formatDate(user.createdAt)}</p>
-                            ${user.isAdmin ? '<span class="inline-block mt-1 px-2 py-1 bg-purple-100 text-purple-700 text-xs rounded-full">Admin</span>' : ''}
-                        </div>
-                    </div>
-                `).join('');
-            });
-        }
-
-        // Load Manage Tasks
-        function loadManageTasks() {
-            const manageTasksList = document.getElementById('manageTasksList');
-            const q = query(collection(db, 'tasks'), orderBy('createdAt', 'desc'));
-            
-            onSnapshot(q, (snapshot) => {
-                const tasks = [];
-                snapshot.forEach((doc) => {
-                    tasks.push({ id: doc.id, ...doc.data() });
-                });
-                
-                if (tasks.length === 0) {
-                    manageTasksList.innerHTML = '<p class="text-center text-gray-500 py-8">No tasks found</p>';
-                    return;
-                }
-
-                manageTasksList.innerHTML = tasks.map(task => {
-                    const statusColors = {
-                        available: 'bg-green-100 text-green-700',
-                        claimed: 'bg-yellow-100 text-yellow-700',
-                        completed: 'bg-blue-100 text-blue-700',
-                        expired: 'bg-red-100 text-red-700'
-                    };
-                    
-                    let taskDetails = '';
-                    if (task.type === 'post') {
-                        taskDetails = `<p class="text-sm text-gray-600 mt-1"><strong>Subreddit:</strong> r/${task.subreddit}</p>
-                                      <p class="text-sm text-gray-600"><strong>Title:</strong> ${task.title}</p>`;
-                    } else {
-                        taskDetails = `<p class="text-sm text-gray-600 mt-1"><strong>Comment on:</strong> ${task.postLink}</p>`;
-                    }
-
-                    return `
-                        <div class="p-4 bg-gray-50 rounded-lg">
-                            <div class="flex items-start justify-between">
-                                <div class="flex-1">
-                                    <div class="flex items-center gap-2 mb-2">
-                                        <span class="px-2 py-1 rounded-full text-xs font-medium ${task.type === 'post' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'}">
-                                            ${task.type === 'post' ? '📝 Post' : '💬 Comment'}
-                                        </span>
-                                        <span class="px-2 py-1 rounded-full text-xs font-medium ${statusColors[task.status] || 'bg-gray-100 text-gray-700'}">
-                                            ${task.status.toUpperCase()}
-                                        </span>
-                                        <span class="text-yellow-600 font-medium text-sm">
-                                            <i class="fas fa-coins"></i> ${task.points} pts
-                                        </span>
-                                    </div>
-                                    ${taskDetails}
-                                    ${task.claimedBy ? `<p class="text-sm text-gray-500 mt-2"><strong>Claimed by:</strong> ${task.claimedBy.displayName}</p>` : ''}
-                                    ${task.completedBy ? `<p class="text-sm text-green-600 mt-1"><strong>Completed by:</strong> ${task.completedBy.displayName}</p>` : ''}
-                                    <p class="text-xs text-gray-400 mt-2">${formatDate(task.createdAt)}</p>
-                                </div>
-                                <button onclick="deleteTask('${task.id}')" class="ml-4 text-red-500 hover:text-red-700">
-                                    <i class="fas fa-trash"></i>
-                                </button>
-                            </div>
-                        </div>
-                    `;
-                }).join('');
-            });
-        }
-
-        // Delete Task
-        window.deleteTask = async function(taskId) {
-            if (!confirm('Are you sure you want to delete this task?')) return;
-            
-            try {
-                await deleteDoc(doc(db, 'tasks', taskId));
-                showToast('Task deleted successfully!');
-            } catch (error) {
-                console.error(error);
-                showToast('Error deleting task', true);
-            }
-        };
-
-        // ==================== USER FUNCTIONS ====================
-
-        // Load User Data
-        function loadUserData() {
-            updateUserProfileCard();
-            loadAvailableTasks();
-            loadClaimedTasks();
-            loadCompletedTasks();
-        }
-
-        // User Tab Navigation
-        document.getElementById('userTabAvailable').addEventListener('click', () => {
-            showUserTab('available');
-        });
-        document.getElementById('userTabClaimed').addEventListener('click', () => {
-            showUserTab('claimed');
-        });
-        document.getElementById('userTabCompleted').addEventListener('click', () => {
-            showUserTab('completed');
-        });
-
-        function showUserTab(tab) {
-            document.getElementById('userAvailableTab').classList.toggle('hidden', tab !== 'available');
-            document.getElementById('userClaimedTab').classList.toggle('hidden', tab !== 'claimed');
-            document.getElementById('userCompletedTab').classList.toggle('hidden', tab !== 'completed');
-            
-            document.getElementById('userTabAvailable').className = tab === 'available' ? 'px-4 py-2 bg-green-500 text-white rounded-lg font-medium' : 'px-4 py-2 bg-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-300';
-            document.getElementById('userTabClaimed').className = tab === 'claimed' ? 'px-4 py-2 bg-green-500 text-white rounded-lg font-medium' : 'px-4 py-2 bg-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-300';
-            document.getElementById('userTabCompleted').className = tab === 'completed' ? 'px-4 py-2 bg-green-500 text-white rounded-lg font-medium' : 'px-4 py-2 bg-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-300';
-        }
-
-        // Load Available Tasks
-        function loadAvailableTasks() {
-            const availableTasks = document.getElementById('availableTasks');
-            const q = query(collection(db, 'tasks'), orderBy('createdAt', 'desc'));
-            
-            onSnapshot(q, (snapshot) => {
-                const tasks = [];
-                snapshot.forEach((doc) => {
-                    const task = doc.data();
-                    // Only show available tasks or tasks claimed by others that have expired
-                    if (task.status === 'available' || 
-                        (task.status === 'claimed' && isTaskExpired(task.claimedAt))) {
-                        tasks.push({ id: doc.id, ...task });
-                    }
-                });
-                
-                if (tasks.length === 0) {
-                    availableTasks.innerHTML = '';
-                    document.getElementById('noAvailableTasks').classList.remove('hidden');
-                    return;
-                }
-
-                document.getElementById('noAvailableTasks').classList.add('hidden');
-                availableTasks.innerHTML = tasks.map(task => renderTaskCard(task)).join('');
-            });
-        }
-
-        // Check if task is expired
-        function isTaskExpired(claimedAt) {
-            if (!claimedAt) return true;
-            const claimed = new Date(claimedAt);
-            const now = new Date();
-            const elapsed = now - claimed;
-            return elapsed > 30 * 60 * 1000; // 30 minutes
-        }
-
-        // Render Task Card
-        function renderTaskCard(task) {
-            const isExpired = task.status === 'claimed' && isTaskExpired(task.claimedAt);
-            
-            if (task.type === 'post') {
-                return `
-                    <div class="bg-white rounded-xl shadow-md p-6 card-hover transition-all duration-300 ${isExpired ? 'opacity-70' : ''}">
-                        <div class="flex items-start gap-2 mb-3">
-                            <span class="px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700">📝 Post Task</span>
-                            <span class="text-yellow-600 font-medium text-sm">
-                                <i class="fas fa-coins"></i> ${task.points} pts
-                            </span>
-                        </div>
-                        <h3 class="text-lg font-bold text-gray-800 mb-2">${task.title}</h3>
-                        ${task.image ? `<img src="${task.image}" alt="Task" class="w-full h-48 object-cover rounded-lg mb-3">` : ''}
-                        <p class="text-gray-600 mb-3">${task.body}</p>
-                        <div class="flex items-center gap-2 text-sm text-gray-500 mb-4">
-                            <span class="px-2 py-1 bg-orange-100 text-orange-700 rounded">
-                                <i class="fab fa-reddit"></i> r/${task.subreddit}
-                            </span>
-                        </div>
-                        <div class="flex items-center justify-between pt-3 border-t border-gray-100">
-                            <span class="text-sm text-gray-400">${formatDate(task.createdAt)}</span>
-                            <button onclick="claimTask('${task.id}')" 
-                                class="px-6 py-2 rounded-lg font-medium transition-all bg-gradient-to-r from-green-500 to-emerald-600 text-white hover:opacity-90"
-                                ${isExpired ? '' : ''}>
-                                <i class="fas fa-hand-paper mr-1"></i> Claim Task
-                            </button>
-                        </div>
-                    </div>
-                `;
-            } else {
-                return `
-                    <div class="bg-white rounded-xl shadow-md p-6 card-hover transition-all duration-300 ${isExpired ? 'opacity-70' : ''}">
-                        <div class="flex items-start gap-2 mb-3">
-                            <span class="px-3 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-700">💬 Comment Task</span>
-                            <span class="text-yellow-600 font-medium text-sm">
-                                <i class="fas fa-coins"></i> ${task.points} pts
-                            </span>
-                        </div>
-                        <p class="text-gray-600 mb-3">Comment on this post:</p>
-                        <a href="${task.postLink}" target="_blank" class="text-blue-500 hover:underline break-all mb-3 block">
-                            <i class="fab fa-reddit"></i> ${task.postLink}
-                        </a>
-                        <div class="bg-gray-50 p-3 rounded-lg mb-4">
-                            <p class="text-sm text-gray-600"><strong>Comment:</strong> ${task.commentText}</p>
-                        </div>
-                        <div class="flex items-center justify-between pt-3 border-t border-gray-100">
-                            <span class="text-sm text-gray-400">${formatDate(task.createdAt)}</span>
-                            <button onclick="claimTask('${task.id}')" 
-                                class="px-6 py-2 rounded-lg font-medium transition-all bg-gradient-to-r from-green-500 to-emerald-600 text-white hover:opacity-90">
-                                <i class="fas fa-hand-paper mr-1"></i> Claim Task
-                            </button>
-                        </div>
-                    </div>
-                `;
-            }
-        }
-
-        // Claim Task
-        window.claimTask = async function(taskId) {
-            if (!currentUser) return;
-            
-            try {
-                // Check if user has enough karma
-                if (!userData || !userData.redditUsername || userData.redditKarma < 200) {
-                    showToast('Minimum 200+ karma required!', true);
-                    return;
-                }
-                
-                const taskRef = doc(db, 'tasks', taskId);
-                await updateDoc(taskRef, {
-                    status: 'claimed',
-                    claimedBy: {
-                        uid: currentUser.uid,
-                        displayName: currentUser.displayName,
-                        photoURL: currentUser.photoURL
-                    },
-                    claimedAt: new Date().toISOString()
-                });
-                
-                showToast('Task claimed! Complete within 30 minutes');
-            } catch (error) {
-                console.error(error);
-                showToast('Error claiming task', true);
-            }
-        };
-
-        // Load Claimed Tasks
-        function loadClaimedTasks() {
-            const claimedTasks = document.getElementById('claimedTasks');
-            const q = query(collection(db, 'tasks'), orderBy('createdAt', 'desc'));
-            
-            onSnapshot(q, (snapshot) => {
-                const tasks = [];
-                snapshot.forEach((doc) => {
-                    const task = doc.data();
-                    // Show tasks claimed by current user that are not completed or expired
-                    if (task.status === 'claimed' && 
-                        task.claimedBy && 
-                        task.claimedBy.uid === currentUser.uid &&
-                        !isTaskExpired(task.claimedAt)) {
-                        tasks.push({ id: doc.id, ...task });
-                    }
-                });
-                
-                if (tasks.length === 0) {
-                    claimedTasks.innerHTML = '';
-                    document.getElementById('noClaimedTasks').classList.remove('hidden');
-                    return;
-                }
-
-                document.getElementById('noClaimedTasks').classList.add('hidden');
-                claimedTasks.innerHTML = tasks.map(task => {
-                    const timeRemaining = formatTimeRemaining(task.claimedAt);
-                    const isExpired = timeRemaining === 'Expired';
-                    
-                    if (task.type === 'post') {
-                        return `
-                            <div class="bg-white rounded-xl shadow-md p-6 border-2 ${isExpired ? 'border-red-300' : 'border-yellow-300'}">
-                                <div class="flex items-center justify-between mb-3">
-                                    <span class="px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700">📝 Post Task</span>
-                                    <span class="px-3 py-1 rounded-full text-xs font-medium ${isExpired ? 'bg-red-100 text-red-700 timer-warning' : 'bg-yellow-100 text-yellow-700'}">
-                                        <i class="fas fa-clock"></i> ${timeRemaining}
-                                    </span>
-                                </div>
-                                <h3 class="text-lg font-bold text-gray-800 mb-2">${task.title}</h3>
-                                <p class="text-gray-600 mb-3">${task.body}</p>
-                                <div class="flex items-center gap-2 text-sm text-gray-500 mb-4">
-                                    <span class="px-2 py-1 bg-orange-100 text-orange-700 rounded">
-                                        <i class="fab fa-reddit"></i> r/${task.subreddit}
-                                    </span>
-                                    <span class="text-yellow-600 font-medium">
-                                        <i class="fas fa-coins"></i> ${task.points} pts
-                                    </span>
-                                </div>
-                                ${!isExpired ? `
-                                    <button onclick="openCompletionModal('${task.id}')" class="w-full px-6 py-3 rounded-lg font-medium transition-all bg-gradient-to-r from-green-500 to-emerald-600 text-white hover:opacity-90">
-                                        <i class="fas fa-check-circle mr-1"></i> Submit Completion Link
-                                    </button>
-                                ` : `
-                                    <div class="text-center text-red-500 font-medium">Time expired! Task released back to pool.</div>
-                                `}
-                            </div>
-                        `;
-                    } else {
-                        return `
-                            <div class="bg-white rounded-xl shadow-md p-6 border-2 ${isExpired ? 'border-red-300' : 'border-yellow-300'}">
-                                <div class="flex items-center justify-between mb-3">
-                                    <span class="px-3 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-700">💬 Comment Task</span>
-                                    <span class="px-3 py-1 rounded-full text-xs font-medium ${isExpired ? 'bg-red-100 text-red-700 timer-warning' : 'bg-yellow-100 text-yellow-700'}">
-                                        <i class="fas fa-clock"></i> ${timeRemaining}
-                                    </span>
-                                </div>
-                                <a href="${task.postLink}" target="_blank" class="text-blue-500 hover:underline break-all mb-2 block">
-                                    <i class="fab fa-reddit"></i> ${task.postLink}
-                                </a>
-                                <div class="bg-gray-50 p-3 rounded-lg mb-3">
-                                    <p class="text-sm text-gray-600"><strong>Comment:</strong> ${task.commentText}</p>
-                                </div>
-                                <div class="text-sm text-gray-500 mb-4">
-                                    <span class="text-yellow-600 font-medium">
-                                        <i class="fas fa-coins"></i> ${task.points} pts
-                                    </span>
-                                </div>
-                                ${!isExpired ? `
-                                    <button onclick="openCompletionModal('${task.id}')" class="w-full px-6 py-3 rounded-lg font-medium transition-all bg-gradient-to-r from-green-500 to-emerald-600 text-white hover:opacity-90">
-                                        <i class="fas fa-check-circle mr-1"></i> Submit Completion Link
-                                    </button>
-                                ` : `
-                                    <div class="text-center text-red-500 font-medium">Time expired! Task released back to pool.</div>
-                                `}
-                            </div>
-                        `;
-                    }
-                }).join('');
-                
-                // Update timer every second
-                updateClaimedTimers();
-            });
-        }
-
-        // Update claimed task timers
-        function updateClaimedTimers() {
-            // This will be called periodically to update timers
-        }
-
-        // Open Completion Modal
-        window.openCompletionModal = function(taskId) {
-            document.getElementById('completionTaskId').value = taskId;
-            document.getElementById('completionLink').value = '';
-            completionModal.classList.remove('hidden');
-        };
-
-        // Close Completion Modal
-        document.getElementById('cancelCompletion').addEventListener('click', () => {
-            completionModal.classList.add('hidden');
-        });
-
-        // Submit Completion
-        completionForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            const taskId = document.getElementById('completionTaskId').value;
-            const completionLink = document.getElementById('completionLink').value;
-            
-            try {
-                const taskRef = doc(db, 'tasks', taskId);
-                const userRef = doc(db, 'users', currentUser.uid);
-                
-                // Get task points
-                const taskDoc = await getDoc(taskRef);
-                const points = taskDoc.data().points;
-                
-                // Update task status
-                await updateDoc(taskRef, {
-                    status: 'completed',
-                    completedBy: {
-                        uid: currentUser.uid,
-                        displayName: currentUser.displayName,
-                        photoURL: currentUser.photoURL
-                    },
-                    completedAt: new Date().toISOString(),
-                    completionLink: completionLink
-                });
-                
-                // Increment user points
-                await updateDoc(userRef, {
-                    points: increment(points)
-                });
-                
-                completionModal.classList.add('hidden');
-                await updatePointsDisplay();
-                showToast(`Task completed! +${points} Points earned! 🎉`);
-            } catch (error) {
-                console.error(error);
-                showToast('Error submitting completion', true);
-            }
-        });
-
-        // Load Completed Tasks
-        function loadCompletedTasks() {
-            const completedTasks = document.getElementById('completedTasks');
-            const q = query(collection(db, 'tasks'), orderBy('createdAt', 'desc'));
-            
-            onSnapshot(q, (snapshot) => {
-                const tasks = [];
-                snapshot.forEach((doc) => {
-                    const task = doc.data();
-                    // Show tasks completed by current user
-                    if (task.status === 'completed' && 
-                        task.completedBy && 
-                        task.completedBy.uid === currentUser.uid) {
-                        tasks.push({ id: doc.id, ...task });
-                    }
-                });
-                
-                if (tasks.length === 0) {
-                    completedTasks.innerHTML = '';
-                    document.getElementById('noCompletedTasks').classList.remove('hidden');
-                    return;
-                }
-
-                document.getElementById('noCompletedTasks').classList.add('hidden');
-                completedTasks.innerHTML = tasks.map(task => {
-                    if (task.type === 'post') {
-                        return `
-                            <div class="bg-white rounded-xl shadow-md p-6 border-2 border-green-300">
-                                <div class="flex items-center justify-between mb-3">
-                                    <span class="px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">
-                                        <i class="fas fa-check"></i> Completed
-                                    </span>
-                                    <span class="text-yellow-600 font-medium text-sm">
-                                        <i class="fas fa-coins"></i> ${task.points} pts earned
-                                    </span>
-                                </div>
-                                <h3 class="text-lg font-bold text-gray-800 mb-2">${task.title}</h3>
-                                <p class="text-gray-600 mb-3">${task.body}</p>
-                                <div class="flex items-center gap-2 text-sm text-gray-500 mb-3">
-                                    <span class="px-2 py-1 bg-orange-100 text-orange-700 rounded">
-                                        <i class="fab fa-reddit"></i> r/${task.subreddit}
-                                    </span>
-                                </div>
-                                <a href="${task.completionLink}" target="_blank" class="text-blue-500 hover:underline text-sm">
-                                    <i class="fas fa-external-link-alt"></i> View your post
-                                </a>
-                                <p class="text-xs text-gray-400 mt-3">Completed: ${formatDate(task.completedAt)}</p>
-                            </div>
-                        `;
-                    } else {
-                        return `
-                            <div class="bg-white rounded-xl shadow-md p-6 border-2 border-green-300">
-                                <div class="flex items-center justify-between mb-3">
-                                    <span class="px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">
-                                        <i class="fas fa-check"></i> Completed
-                                    </span>
-                                    <span class="text-yellow-600 font-medium text-sm">
-                                        <i class="fas fa-coins"></i> ${task.points} pts earned
-                                    </span>
-                                </div>
-                                <a href="${task.postLink}" target="_blank" class="text-blue-500 hover:underline break-all mb-2 block">
-                                    <i class="fab fa-reddit"></i> ${task.postLink}
-                                </a>
-                                <div class="bg-gray-50 p-3 rounded-lg mb-3">
-                                    <p class="text-sm text-gray-600"><strong>Comment:</strong> ${task.commentText}</p>
-                                </div>
-                                <a href="${task.completionLink}" target="_blank" class="text-blue-500 hover:underline text-sm">
-                                    <i class="fas fa-external-link-alt"></i> View your comment
-                                </a>
-                                <p class="text-xs text-gray-400 mt-3">Completed: ${formatDate(task.completedAt)}</p>
-                            </div>
-                        `;
-                    }
-                }).join('');
-            });
-        }
-
-        // Check for expired tasks periodically
-        setInterval(async () => {
-            if (!currentUser) return;
-            
-            const q = query(collection(db, 'tasks'), where('status', '==', 'claimed'));
-            const snapshot = await getDocs(q);
-            
-            snapshot.forEach(async (taskDoc) => {
-                const task = taskDoc.data();
-                if (isTaskExpired(task.claimedAt)) {
-                    await updateDoc(doc(db, 'tasks', taskDoc.id), {
-                        status: 'available',
-                        claimedBy: null,
-                        claimedAt: null
-                    });
-                }
-            });
-        }, 60000); // Check every minute
-    </script>
+    // --- Initial UI state ---
+    hero.classList.remove('hidden');
+    appSection.classList.add('hidden');
+  </script>
 </body>
 </html>
