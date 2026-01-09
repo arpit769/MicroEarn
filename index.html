@@ -48,7 +48,8 @@
             <span id="netText">Online</span>
           </div>
 
-          <button id="btnLogin" class="inline-flex items-center gap-2 rounded-xl bg-white text-slate-950 px-3 py-2 text-sm font-semibold hover:bg-white/90">
+          <!-- Hidden by default to avoid flash; shown only when logged out -->
+          <button id="btnLogin" class="hidden inline-flex items-center gap-2 rounded-xl bg-white text-slate-950 px-3 py-2 text-sm font-semibold hover:bg-white/90">
             <span class="hidden sm:inline">Login with Google</span>
             <span class="sm:hidden">Login</span>
           </button>
@@ -75,8 +76,8 @@
               <span class="block mt-2 text-white/80 text-lg font-semibold">User Panel + Admin Panel</span>
             </h1>
             <p class="mt-3 text-sm md:text-base text-white/70">
-              After Google login, a user can claim a task (30 min lock), and must submit a proof link within the time window.
-              Admin panel can create tasks and view users/submissions.
+              After Google login, a user can claim a task (lock window), and must submit a proof link within the time window.
+              Admin can create tasks and review submissions.
             </p>
             <div class="mt-5 flex flex-wrap gap-3">
               <button id="btnLoginHero" class="inline-flex items-center gap-2 rounded-xl bg-indigo-500 px-4 py-2 text-sm font-semibold hover:bg-indigo-400">
@@ -102,14 +103,14 @@
           <div class="rounded-2xl border border-white/10 p-5 bg-slate-950/40">
             <div class="flex items-center justify-between">
               <div class="text-sm font-semibold">Flow</div>
-              <div class="text-xs text-white/60">v2</div>
+              <div class="text-xs text-white/60">v3</div>
             </div>
             <ol class="mt-3 space-y-2 text-sm text-white/75 list-decimal list-inside">
               <li>Login</li>
               <li>Fill Reddit profile + karma (min 200)</li>
               <li>Claim a task (locked for claim window)</li>
               <li>Submit proof link within the claim window</li>
-              <li>Admin manages tasks and views users/submissions</li>
+              <li>Admin approves → wallet is credited</li>
             </ol>
             <div class="mt-4 rounded-xl border border-white/10 p-3 text-xs text-white/60">
               Note: Configure Firestore security rules for production.
@@ -164,7 +165,29 @@
 
         <!-- USER PANEL -->
         <div id="panelUser" class="mt-4">
-          <div id="userEligibilityBanner" class="hidden rounded-2xl border border-amber-400/20 bg-amber-500/10 p-4 text-sm text-amber-100">
+          <!-- Wallet -->
+          <div class="rounded-2xl border border-white/10 glass p-5">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div>
+                <div class="text-xs text-white/60">Wallet</div>
+                <div class="mt-1 text-2xl font-bold" id="walletBalance">$0.00</div>
+                <div class="mt-1 text-xs text-white/60">
+                  <span class="text-white/50">Approved:</span> <span class="font-semibold" id="walletApproved">$0.00</span>
+                  <span class="mx-2 text-white/30">•</span>
+                  <span class="text-white/50">Pending:</span> <span class="font-semibold" id="walletPending">$0.00</span>
+                </div>
+              </div>
+              <div class="flex flex-col sm:flex-row gap-2">
+                <button id="btnWalletInfo" class="rounded-xl border border-white/10 px-4 py-2 text-sm hover:bg-white/5">How it works</button>
+                <button id="btnWithdraw" class="rounded-xl bg-emerald-500 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-emerald-400 opacity-60 cursor-not-allowed" disabled>Withdraw (coming soon)</button>
+              </div>
+            </div>
+            <div class="mt-3 text-xs text-white/60">
+              Your wallet is updated when an admin approves your submission.
+            </div>
+          </div>
+
+          <div id="userEligibilityBanner" class="hidden mt-4 rounded-2xl border border-amber-400/20 bg-amber-500/10 p-4 text-sm text-amber-100">
             <div class="font-semibold">Reddit profile required</div>
             <div class="mt-1 text-amber-100/90">To claim tasks you must fill your Reddit username and have minimum karma <b>200+</b>.</div>
             <div class="mt-3">
@@ -187,7 +210,7 @@
                 <button id="btnOpenClaimModal" class="rounded-xl bg-white text-slate-950 px-4 py-2 text-sm font-semibold hover:bg-white/90">Open</button>
               </div>
             </div>
-            <div class="mt-3 text-xs text-white/60">Note: While you have an active claim, you cannot claim another task.</div>
+            <div class="mt-3 text-xs text-white/60">While you have an active claim, you cannot claim another task.</div>
           </div>
 
           <div class="mt-4 flex items-center justify-between">
@@ -251,7 +274,6 @@
                   <label id="ctTitleWrap" class="block md:col-span-2">
                     <div class="text-xs text-white/60">Title (Post only)</div>
                     <input id="ctTitle" class="mt-1 w-full rounded-xl border border-white/10 bg-slate-950/40 px-3 py-2 text-sm outline-none" placeholder="Post title..." />
-                    <div class="mt-1 text-[11px] text-white/45">For comment tasks, a title is auto-generated.</div>
                   </label>
 
                   <!-- Post fields -->
@@ -323,7 +345,7 @@
                 <ul class="mt-3 space-y-2 text-sm text-white/70">
                   <li>After a claim, the task is locked for the configured window.</li>
                   <li>When the lock expires, the task becomes available again (with client-side cleanup).</li>
-                  <li>Users list shows Reddit profile + karma.</li>
+                  <li>Wallet is credited only after admin approval.</li>
                 </ul>
                 <div class="mt-5 rounded-xl border border-white/10 p-3 text-xs text-white/60">
                   Collections:
@@ -363,7 +385,7 @@
             <div class="flex items-center justify-between">
               <div>
                 <div class="text-lg font-semibold">Submissions</div>
-                <div class="text-xs text-white/60">Latest proofs</div>
+                <div class="text-xs text-white/60">Approve to credit user wallet</div>
               </div>
               <div id="subsLoading" class="hidden items-center gap-2 text-xs text-white/60"><span class="spinner"></span><span>Loading...</span></div>
             </div>
@@ -449,6 +471,37 @@
             <div class="text-sm font-semibold">Recent Submissions (this task)</div>
             <div id="taskSubs" class="mt-2 grid gap-2"></div>
           </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Wallet modal -->
+  <div id="walletOverlay" class="fixed inset-0 z-[54] hidden overflow-y-auto">
+    <div class="absolute inset-0 bg-black/70"></div>
+    <div class="relative mx-auto max-w-xl px-4 py-6 sm:py-10">
+      <div class="rounded-2xl border border-white/10 bg-slate-950/85 backdrop-blur p-5">
+        <div class="flex items-start justify-between gap-4">
+          <div>
+            <div class="text-xs text-white/60">Wallet</div>
+            <div class="mt-1 text-lg font-semibold">How approvals work</div>
+          </div>
+          <button id="btnCloseWallet" class="rounded-xl border border-white/10 px-3 py-2 text-sm hover:bg-white/5">Close</button>
+        </div>
+        <div class="mt-4 space-y-3 text-sm text-white/75">
+          <div class="rounded-xl border border-white/10 bg-slate-950/40 p-3">
+            <div class="font-semibold text-white">Step 1 — Claim</div>
+            <div class="mt-1 text-white/70">Claim a task to lock it for the time window.</div>
+          </div>
+          <div class="rounded-xl border border-white/10 bg-slate-950/40 p-3">
+            <div class="font-semibold text-white">Step 2 — Submit proof</div>
+            <div class="mt-1 text-white/70">Submit your Reddit post/comment URL before the lock expires.</div>
+          </div>
+          <div class="rounded-xl border border-white/10 bg-slate-950/40 p-3">
+            <div class="font-semibold text-white">Step 3 — Admin review</div>
+            <div class="mt-1 text-white/70">Admin approves or rejects your submission. On approval, the task price is added to your wallet.</div>
+          </div>
+          <div class="text-xs text-white/50">Withdrawals are not implemented in this demo UI.</div>
         </div>
       </div>
     </div>
@@ -671,6 +724,14 @@
     const profileBtnText = el('profileBtnText');
     const profileHint = el('profileHint');
 
+    // Wallet
+    const walletBalance = el('walletBalance');
+    const walletApproved = el('walletApproved');
+    const walletPending = el('walletPending');
+    const btnWalletInfo = el('btnWalletInfo');
+    const walletOverlay = el('walletOverlay');
+    const btnCloseWallet = el('btnCloseWallet');
+
     // Toast
     const toast = el('toast');
     const toastTitle = el('toastTitle');
@@ -758,6 +819,21 @@
     window.addEventListener('online', setOnlineBadge);
     window.addEventListener('offline', setOnlineBadge);
     setOnlineBadge();
+
+    // --- Wallet modal ---
+    function openWallet() {
+      walletOverlay.classList.remove('hidden');
+      document.body.style.overflow = 'hidden';
+    }
+    function closeWallet() {
+      walletOverlay.classList.add('hidden');
+      document.body.style.overflow = '';
+    }
+    btnWalletInfo?.addEventListener('click', openWallet);
+    btnCloseWallet?.addEventListener('click', closeWallet);
+    walletOverlay?.addEventListener('click', (e) => {
+      if (e.target === walletOverlay) closeWallet();
+    });
 
     // --- Panel switching ---
     function setPanel(panel) {
@@ -848,6 +924,7 @@
 
       stopAllListeners();
       closeModal();
+      closeWallet();
 
       if (!user) {
         hero.classList.remove('hidden');
@@ -884,21 +961,30 @@
             lastLoginAt: serverTimestamp(),
             activeClaimTaskId: null,
             activeClaimUntil: null,
-            isAdmin: false
+            isAdmin: false,
+
+            // Wallet (USD)
+            walletBalance: 0,
+            walletApprovedTotal: 0
           });
         } else {
+          const d = snap.data() || {};
           await updateDoc(uref, {
             name: user.displayName || null,
             email: user.email || null,
             photoURL: user.photoURL || null,
-            lastLoginAt: serverTimestamp()
+            lastLoginAt: serverTimestamp(),
+
+            // Ensure wallet fields exist for older users
+            walletBalance: Number(d.walletBalance ?? 0),
+            walletApprovedTotal: Number(d.walletApprovedTotal ?? 0)
           });
         }
       } catch (err) {
         console.warn('User doc write failed', err);
       }
 
-      // Listen user doc (for profile + active claim)
+      // Listen user doc (for profile + active claim + wallet)
       startUserDocListener();
 
       // Start common listeners
@@ -938,7 +1024,13 @@
 
         btnPanelAdmin.classList.toggle('hidden', !isAdmin);
 
-        // Update profile status UI
+        // Wallet UI
+        const bal = Number(currentUserDoc?.walletBalance ?? 0);
+        const approvedTotal = Number(currentUserDoc?.walletApprovedTotal ?? 0);
+        if (walletBalance) walletBalance.textContent = `$${bal.toFixed(2)}`;
+        if (walletApproved) walletApproved.textContent = `$${approvedTotal.toFixed(2)}`;
+
+        // Profile status UI
         const karma = Number(currentUserDoc?.redditKarma ?? 0);
         const hasUsername = !!safe(currentUserDoc?.redditUsername).trim();
         const eligible = hasUsername && karma >= 200;
@@ -1018,6 +1110,13 @@
       const q = query(collection(db, 'submissions'), where('uid', '==', currentUser.uid), orderBy('createdAt', 'desc'), limit(200));
       unsubMine = onSnapshot(q, (snap) => {
         const list = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+        // Wallet pending = sum of pending submissions
+        const pendingSum = list
+          .filter(x => (x.status || 'pending') === 'pending')
+          .reduce((acc, x) => acc + Number(x.reward ?? 0), 0);
+        if (walletPending) walletPending.textContent = `$${pendingSum.toFixed(2)}`;
+
         renderMine(list);
         mineLoading.classList.add('hidden');
       }, (err) => {
@@ -1027,10 +1126,19 @@
       });
     }
 
+    function badgeForSubmissionStatus(status) {
+      const s = (status || 'pending').toLowerCase();
+      if (s === 'approved') return '<span class="text-xs rounded-full border border-emerald-400/20 bg-emerald-500/10 px-2 py-0.5 text-emerald-200">approved</span>';
+      if (s === 'rejected') return '<span class="text-xs rounded-full border border-rose-400/20 bg-rose-500/10 px-2 py-0.5 text-rose-200">rejected</span>';
+      return '<span class="text-xs rounded-full border border-amber-400/20 bg-amber-500/10 px-2 py-0.5 text-amber-200">pending</span>';
+    }
+
     function renderMine(list) {
       mineList.innerHTML = '';
       if (!list.length) {
         mineEmpty.classList.remove('hidden');
+        // if no items, pending should be 0
+        if (walletPending) walletPending.textContent = '$0.00';
         return;
       }
       mineEmpty.classList.add('hidden');
@@ -1043,7 +1151,7 @@
             <div class="min-w-0">
               <div class="flex flex-wrap items-center gap-2">
                 ${badgeForType(s.taskType)}
-                <span class="text-xs rounded-full border border-white/10 px-2 py-0.5 text-white/60">${escapeHtml(s.status || 'pending')}</span>
+                ${badgeForSubmissionStatus(s.status)}
                 <span class="text-xs text-white/50">${fmtTime(s.createdAt)}</span>
                 ${s.taskId ? `<span class="text-xs rounded-full border border-white/10 px-2 py-0.5 text-white/60">Task #${escapeHtml(s.taskId)}</span>` : ''}
               </div>
@@ -1064,7 +1172,7 @@
     // --- Admin: users list ---
     function startUsersListener() {
       if (!currentUser || !isAdmin) return;
-      if (unsubUsers) return; // already running
+      if (unsubUsers) return;
 
       usersLoading.classList.remove('hidden');
       const q = query(collection(db, 'users'), orderBy('createdAt', 'desc'), limit(300));
@@ -1091,6 +1199,9 @@
         const ok = safe(u.redditUsername).trim() && karma >= 200;
         const activeUntil = toMs(u.activeClaimUntil);
         const hasActive = u.activeClaimTaskId && activeUntil > nowMs();
+
+        const bal = Number(u.walletBalance ?? 0);
+        const approvedTotal = Number(u.walletApprovedTotal ?? 0);
 
         const node = document.createElement('div');
         node.className = 'rounded-2xl border border-white/10 bg-slate-950/40 p-4';
@@ -1121,6 +1232,10 @@
                 <div class="rounded-xl border border-white/10 p-2">
                   <div class="text-white/50">Active claim</div>
                   <div>${hasActive ? `Task #${escapeHtml(u.activeClaimTaskId)} • left ${msToClock(activeUntil - nowMs())}` : '—'}</div>
+                </div>
+                <div class="rounded-xl border border-white/10 p-2 sm:col-span-2">
+                  <div class="text-white/50">Wallet</div>
+                  <div>Balance: <b>$${bal.toFixed(2)}</b> • Approved total: <b>$${approvedTotal.toFixed(2)}</b></div>
                 </div>
               </div>
             </div>
@@ -1153,6 +1268,83 @@
       });
     }
 
+    async function approveSubmission(subId) {
+      if (!currentUser || !isAdmin) return;
+      if (!confirm('Approve this submission and credit the user wallet?')) return;
+
+      try {
+        await runTransaction(db, async (tx) => {
+          const subRef = doc(db, 'submissions', subId);
+          const subSnap = await tx.get(subRef);
+          if (!subSnap.exists()) throw new Error('Submission not found');
+          const s = subSnap.data();
+
+          const status = (s.status || 'pending').toLowerCase();
+          if (status !== 'pending') throw new Error('Submission is already processed');
+
+          const uid = s.uid;
+          if (!uid) throw new Error('Submission has no user uid');
+
+          const userRef = doc(db, 'users', uid);
+          const uSnap = await tx.get(userRef);
+          if (!uSnap.exists()) throw new Error('User document missing');
+
+          const reward = Number(s.reward ?? 0);
+          if (!Number.isFinite(reward) || reward < 0) throw new Error('Invalid reward amount');
+
+          const u = uSnap.data();
+          const prevBal = Number(u.walletBalance ?? 0);
+          const prevApproved = Number(u.walletApprovedTotal ?? 0);
+
+          tx.update(subRef, {
+            status: 'approved',
+            approvedAt: serverTimestamp(),
+            approvedByUid: currentUser.uid,
+            approvedByEmail: currentUser.email || null
+          });
+
+          tx.update(userRef, {
+            walletBalance: prevBal + reward,
+            walletApprovedTotal: prevApproved + reward
+          });
+        });
+
+        showToast({ title: 'Approved', message: 'Submission approved and wallet credited.' });
+      } catch (err) {
+        console.error(err);
+        showToast({ title: 'Approve failed', message: err?.message || 'Unknown error', type: 'error' });
+      }
+    }
+
+    async function rejectSubmission(subId) {
+      if (!currentUser || !isAdmin) return;
+      if (!confirm('Reject this submission?')) return;
+
+      try {
+        await runTransaction(db, async (tx) => {
+          const subRef = doc(db, 'submissions', subId);
+          const subSnap = await tx.get(subRef);
+          if (!subSnap.exists()) throw new Error('Submission not found');
+          const s = subSnap.data();
+
+          const status = (s.status || 'pending').toLowerCase();
+          if (status !== 'pending') throw new Error('Submission is already processed');
+
+          tx.update(subRef, {
+            status: 'rejected',
+            rejectedAt: serverTimestamp(),
+            rejectedByUid: currentUser.uid,
+            rejectedByEmail: currentUser.email || null
+          });
+        });
+
+        showToast({ title: 'Rejected', message: 'Submission rejected.' });
+      } catch (err) {
+        console.error(err);
+        showToast({ title: 'Reject failed', message: err?.message || 'Unknown error', type: 'error' });
+      }
+    }
+
     function renderAdminSubs(list) {
       subsList.innerHTML = '';
       if (!list.length) {
@@ -1161,14 +1353,17 @@
       }
 
       for (const s of list) {
+        const status = (s.status || 'pending').toLowerCase();
+        const canAct = status === 'pending';
+
         const node = document.createElement('div');
         node.className = 'rounded-2xl border border-white/10 bg-slate-950/40 p-4';
         node.innerHTML = `
-          <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-3">
+          <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-3">
             <div class="min-w-0">
               <div class="flex flex-wrap items-center gap-2">
                 ${badgeForType(s.taskType)}
-                <span class="text-xs rounded-full border border-white/10 px-2 py-0.5 text-white/60">${escapeHtml(s.status || 'pending')}</span>
+                ${badgeForSubmissionStatus(s.status)}
                 <span class="text-xs text-white/50">${fmtTime(s.createdAt)}</span>
                 ${s.taskId ? `<span class="text-xs rounded-full border border-white/10 px-2 py-0.5 text-white/60">Task #${escapeHtml(s.taskId)}</span>` : ''}
               </div>
@@ -1177,14 +1372,22 @@
               <a class="mt-2 block text-sm text-indigo-300 hover:underline break-all" href="${escapeAttr(s.proofLink || '#')}" target="_blank" rel="noreferrer">${escapeHtml(s.proofLink || '')}</a>
               ${s.note ? `<div class="mt-2 text-xs text-white/70 whitespace-pre-wrap">${escapeHtml(s.note)}</div>` : ''}
             </div>
-            <div class="shrink-0 rounded-xl border border-white/10 px-3 py-2 text-sm">
-              <span class="text-white/60">Price</span>
-              <span class="ml-2 font-semibold">$${Number(s.reward ?? 0).toFixed(2)}</span>
+
+            <div class="shrink-0 flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+              <div class="rounded-xl border border-white/10 px-3 py-2 text-sm">
+                <span class="text-white/60">Price</span>
+                <span class="ml-2 font-semibold">$${Number(s.reward ?? 0).toFixed(2)}</span>
+              </div>
+              <button class="btnSubApprove rounded-xl bg-emerald-500 px-3 py-2 text-sm font-semibold text-slate-950 hover:bg-emerald-400 ${canAct ? '' : 'opacity-50 cursor-not-allowed'}" data-sub-id="${escapeAttr(s.id)}" ${canAct ? '' : 'disabled'}>Approve</button>
+              <button class="btnSubReject rounded-xl border border-white/10 px-3 py-2 text-sm hover:bg-white/5 ${canAct ? '' : 'opacity-50 cursor-not-allowed'}" data-sub-id="${escapeAttr(s.id)}" ${canAct ? '' : 'disabled'}>Reject</button>
             </div>
           </div>
         `;
         subsList.appendChild(node);
       }
+
+      subsList.querySelectorAll('.btnSubApprove').forEach(b => b.addEventListener('click', () => approveSubmission(b.dataset.subId)));
+      subsList.querySelectorAll('.btnSubReject').forEach(b => b.addEventListener('click', () => rejectSubmission(b.dataset.subId)));
     }
 
     // --- Create task (admin only) ---
@@ -1203,7 +1406,7 @@
 
       // Required toggles
       el('ctBody').required = post;
-      el('ctTargetLink').required = !post; // for comment tasks
+      el('ctTargetLink').required = !post;
       el('ctInstructions').required = !post;
     }
     ctType.addEventListener('change', syncCreateFields);
@@ -1226,7 +1429,6 @@
         next = Number.isFinite(n) && n >= TASK_ID_START ? n : TASK_ID_START;
       }
 
-      // Persist next+1
       tx.set(counterRef, { [COUNTER_DOC.field]: next + 1 }, { merge: true });
       return next;
     }
@@ -1269,7 +1471,6 @@
         showToast({ title: 'Invalid claim window', message: 'Minutes must be at least 1.', type: 'warn' });
         return;
       }
-
       if (type === 'post' && !body) {
         showToast({ title: 'Missing body', message: 'Post tasks require a body.', type: 'warn' });
         return;
@@ -1286,7 +1487,7 @@
         let createdTaskId = null;
         await runTransaction(db, async (tx) => {
           const taskNo = await allocateNextTaskId(tx);
-          const taskId = String(taskNo); // integer-only doc id (as string)
+          const taskId = String(taskNo);
 
           const taskRef = doc(db, 'tasks', taskId);
           const existing = await tx.get(taskRef);
@@ -1431,7 +1632,7 @@
         .filter(t => !isTaskExpired(t))
         .filter(t => (t.status || 'open') === 'open');
 
-      // hide tasks locked by other users
+      // Hide tasks locked by other users
       const visible = base.filter(t => {
         const { locked } = lockInfo(t);
         if (!locked) return true;
@@ -1479,12 +1680,8 @@
                 <span class="text-white/60">Price</span>
                 <span class="ml-2 font-semibold">$${Number(t.reward ?? 0).toFixed(2)}</span>
               </div>
-              <button class="btnDetails rounded-xl border border-white/10 px-3 py-2 text-sm hover:bg-white/5" data-task-id="${t.id}">
-                Details
-              </button>
-              <button class="btnClaim rounded-xl bg-emerald-500 px-3 py-2 text-sm font-semibold text-slate-950 hover:bg-emerald-400 ${canClaim ? '' : 'opacity-50 cursor-not-allowed'}" data-task-id="${t.id}" ${canClaim ? '' : 'disabled'}>
-                Claim
-              </button>
+              <button class="btnDetails rounded-xl border border-white/10 px-3 py-2 text-sm hover:bg-white/5" data-task-id="${t.id}">Details</button>
+              <button class="btnClaim rounded-xl bg-emerald-500 px-3 py-2 text-sm font-semibold text-slate-950 hover:bg-emerald-400 ${canClaim ? '' : 'opacity-50 cursor-not-allowed'}" data-task-id="${t.id}" ${canClaim ? '' : 'disabled'}>Claim</button>
             </div>
           </div>
         `;
@@ -1660,8 +1857,12 @@
     modalOverlay.addEventListener('click', (e) => {
       if (e.target === modalOverlay) closeModal();
     });
+
     window.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && !modalOverlay.classList.contains('hidden')) closeModal();
+      if (e.key !== 'Escape') return;
+      if (!modalOverlay.classList.contains('hidden')) closeModal();
+      if (!walletOverlay.classList.contains('hidden')) closeWallet();
+      if (!profileOverlay.classList.contains('hidden')) closeProfile();
     });
 
     function updateModalDynamic(t) {
@@ -1687,11 +1888,11 @@
         modalLockInfo.textContent = (t.status === 'closed')
           ? 'Task is closed.'
           : (t.status === 'submitted')
-            ? 'Task is already submitted.'
+            ? 'Task has been submitted and is awaiting review.'
             : 'Not locked. You can claim if eligible.';
       }
 
-      // Submit form visibility/enable
+      // Submit form enable
       const canSubmit = lockedByMe && (until > nowMs());
       submitHint.textContent = canSubmit
         ? `Submit within ${msToClock(until - nowMs())}`
@@ -1725,12 +1926,10 @@
 
         openTask = t;
 
-        // Basic
         modalType.textContent = `${(t.type || 'task').toUpperCase()} • ${t.status || 'open'} • Task #${t.id}`;
         modalTitle.textContent = t.title || '—';
         modalMeta.textContent = `Created: ${fmtTime(t.createdAt)} • r/${t.subreddit || '—'} • By: ${t.createdByName || '—'}`;
 
-        // image
         if (t.imageUrl) {
           modalImageWrap.classList.remove('hidden');
           modalImage.src = t.imageUrl;
@@ -1739,7 +1938,6 @@
           modalImage.src = '';
         }
 
-        // details
         if (t.type === 'post') {
           modalDetails.textContent = `POST BODY:\n${t.body || ''}`;
           modalLink.textContent = `https://www.reddit.com/r/${t.subreddit}/submit`;
@@ -1752,7 +1950,6 @@
 
         modalReward.textContent = `$${Number(t.reward ?? 0).toFixed(2)}`;
 
-        // dynamic
         updateModalDynamic(t);
 
         listenTaskSubmissions(taskId);
@@ -1826,11 +2023,9 @@
           if (!t.lockedByUid || t.lockedByUid !== currentUser.uid) throw new Error('You did not claim this task');
           if (!until || until <= nowMs()) throw new Error('Claim time expired');
 
-          // Ensure user claim matches
           const uUntil = toMs(u.activeClaimUntil);
           if (u.activeClaimTaskId !== openTask.id || !uUntil || uUntil <= nowMs()) throw new Error('Your active claim is not valid');
 
-          // Prevent duplicates without query/index
           const subId = `${openTask.id}_${currentUser.uid}`;
           const subRef = doc(db, 'submissions', subId);
           const subSnap = await tx.get(subRef);
@@ -1958,7 +2153,7 @@
       await openTaskModal(ac.id);
     });
 
-    // Cleanup expired claims: clear user fields and unlock task if it was locked by user
+    // Cleanup expired claims
     async function maybeCleanupExpiredClaim() {
       if (!currentUser || !currentUserDoc) return;
       const id = safe(currentUserDoc.activeClaimTaskId).trim();
@@ -1990,7 +2185,7 @@
       }
     }
 
-    // Lightweight tick: update countdown-only UI (no full re-render)
+    // Lightweight tick: update countdown-only UI
     setInterval(() => {
       if (!currentUser) return;
 
@@ -2005,13 +2200,13 @@
         updateModalDynamic(openTask);
       }
 
-      // occasional cleanup if claim expired
       maybeCleanupExpiredClaim();
     }, 1000);
 
     // --- Initial UI state ---
     hero.classList.remove('hidden');
     appSection.classList.add('hidden');
+
   </script>
 </body>
 </html>
