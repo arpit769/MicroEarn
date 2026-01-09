@@ -139,7 +139,7 @@
             </div>
           </div>
 
-          <div class="flex flex-wrap items-center gap-2">
+          <div id="filtersBar" class="flex flex-wrap items-center gap-2">
             <div class="w-full sm:w-auto rounded-2xl border border-white/10 bg-slate-950/40 p-2 flex items-center gap-2">
               <input id="searchInput" class="min-w-0 w-full sm:w-56 bg-transparent outline-none text-sm placeholder:text-white/40" placeholder="Search title/subreddit/task id..." />
               <button id="btnClearSearch" class="shrink-0 text-xs text-white/60 hover:text-white">Clear</button>
@@ -162,27 +162,14 @@
 
         <!-- USER PANEL -->
         <div id="panelUser" class="mt-4">
-          <!-- Wallet -->
-          <div class="rounded-2xl border border-white/10 glass p-5">
-            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-              <div>
-                <div class="text-xs text-white/60">Wallet</div>
-                <div class="mt-1 text-2xl font-bold" id="walletBalance">$0.00</div>
-                <div class="mt-1 text-xs text-white/60">
-                  <span class="text-white/50">Approved:</span> <span class="font-semibold" id="walletApproved">$0.00</span>
-                  <span class="mx-2 text-white/30">•</span>
-                  <span class="text-white/50">Pending:</span> <span class="font-semibold" id="walletPending">$0.00</span>
-                </div>
-              </div>
-              <div class="flex flex-col sm:flex-row gap-2">
-                <button id="btnWalletInfo" class="rounded-xl border border-white/10 px-4 py-2 text-sm hover:bg-white/5">How it works</button>
-                <button id="btnWithdraw" class="rounded-xl bg-emerald-500 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-emerald-400 opacity-60 cursor-not-allowed" disabled>Withdraw (min $2)</button>
-              </div>
-            </div>
-            <div class="mt-3 text-xs text-white/60">
-              Your wallet is updated when an admin approves your submission.
-            </div>
+          <!-- User tabs (visible to all users) -->
+          <div id="userPanelSwitch" class="inline-flex w-full sm:w-auto rounded-2xl border border-white/10 bg-slate-950/40 p-1">
+            <button id="btnUserDashboard" class="flex-1 sm:flex-none rounded-xl px-4 py-2 text-sm font-semibold bg-white/10">Dashboard</button>
+            <button id="btnUserWallet" class="flex-1 sm:flex-none rounded-xl px-4 py-2 text-sm font-semibold hover:bg-white/5">Wallet</button>
           </div>
+
+          <!-- DASHBOARD VIEW -->
+          <div id="userDashboardView">
 
           <div id="userEligibilityBanner" class="hidden mt-4 rounded-2xl border border-amber-400/20 bg-amber-500/10 p-4 text-sm text-amber-100">
             <div class="font-semibold">Reddit profile required</div>
@@ -233,6 +220,81 @@
               You have not submitted any proof yet.
             </div>
             <div id="mineList" class="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3"></div>
+          </div>
+
+          </div> <!-- end dashboard view -->
+
+          <!-- WALLET VIEW (hidden by default) -->
+          <div id="userWalletView" class="hidden mt-4">
+            <div class="rounded-2xl border border-white/10 glass p-5">
+              <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <div>
+                  <div class="text-xs text-white/60">Wallet</div>
+                  <div class="mt-1 text-2xl font-bold" id="walletBalance">$0.00</div>
+                  <div class="mt-1 text-xs text-white/60">
+                    <span class="text-white/50">Approved:</span> <span class="font-semibold" id="walletApproved">$0.00</span>
+                    <span class="mx-2 text-white/30">•</span>
+                    <span class="text-white/50">Pending:</span> <span class="font-semibold" id="walletPending">$0.00</span>
+                  </div>
+                </div>
+                <div class="flex flex-col sm:flex-row gap-2">
+                  <button id="btnWalletInfo" class="rounded-xl border border-white/10 px-4 py-2 text-sm hover:bg-white/5">How it works</button>
+                  <button id="btnWithdraw" class="rounded-xl bg-emerald-500 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-emerald-400 opacity-60 cursor-not-allowed" disabled>Withdraw (min $2)</button>
+                </div>
+              </div>
+              <div class="mt-3 text-xs text-white/60">
+                Your wallet is updated when an admin approves your submission.
+              </div>
+            </div>
+
+            <div class="mt-4 rounded-2xl border border-white/10 bg-slate-950/40 p-5">
+              <div class="flex items-center justify-between gap-3">
+                <div>
+                  <div class="text-sm font-semibold">Payout methods</div>
+                  <div class="text-xs text-white/60">Add your details to receive payments after withdrawal is enabled.</div>
+                </div>
+              </div>
+
+              <form id="payoutForm" class="mt-4 grid gap-4">
+                <div class="grid md:grid-cols-2 gap-3">
+                  <div class="rounded-2xl border border-white/10 bg-slate-950/30 p-4">
+                    <div class="text-sm font-semibold">Binance</div>
+                    <div class="mt-2 grid gap-2">
+                      <label class="block">
+                        <div class="text-xs text-white/60">Binance UID / Email</div>
+                        <input id="binanceId" class="mt-1 w-full rounded-xl border border-white/10 bg-slate-950/40 px-3 py-2 text-sm outline-none" placeholder="e.g. UID or email" />
+                      </label>
+                      <label class="block">
+                        <div class="text-xs text-white/60">Network / Note (optional)</div>
+                        <input id="binanceNote" class="mt-1 w-full rounded-xl border border-white/10 bg-slate-950/40 px-3 py-2 text-sm outline-none" placeholder="e.g. USDT (TRC20)" />
+                      </label>
+                    </div>
+                  </div>
+
+                  <div class="rounded-2xl border border-white/10 bg-slate-950/30 p-4">
+                    <div class="text-sm font-semibold">UPI</div>
+                    <div class="mt-2 grid gap-2">
+                      <label class="block">
+                        <div class="text-xs text-white/60">UPI ID</div>
+                        <input id="upiId" class="mt-1 w-full rounded-xl border border-white/10 bg-slate-950/40 px-3 py-2 text-sm outline-none" placeholder="e.g. name@bank" />
+                      </label>
+                      <label class="block">
+                        <div class="text-xs text-white/60">Account holder name (optional)</div>
+                        <input id="upiName" class="mt-1 w-full rounded-xl border border-white/10 bg-slate-950/40 px-3 py-2 text-sm outline-none" placeholder="e.g. Rahul Kumar" />
+                      </label>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                  <div id="payoutHint" class="text-xs text-white/60">Your payout details are stored securely in your user profile.</div>
+                  <button id="btnSavePayout" class="inline-flex items-center gap-2 rounded-xl bg-indigo-500 px-4 py-2 text-sm font-semibold hover:bg-indigo-400">
+                    <span id="payoutBtnText">Save payout details</span>
+                    <span id="payoutSpinner" class="hidden spinner" aria-hidden="true"></span>
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
         </div>
 
@@ -639,6 +701,14 @@
     const panelUser = el('panelUser');
     const panelAdmin = el('panelAdmin');
 
+    // User panel tabs
+    const filtersBar = el('filtersBar');
+    const userPanelSwitch = el('userPanelSwitch');
+    const btnUserDashboard = el('btnUserDashboard');
+    const btnUserWallet = el('btnUserWallet');
+    const userDashboardView = el('userDashboardView');
+    const userWalletView = el('userWalletView');
+
     const typeFilter = el('typeFilter');
     const searchInput = el('searchInput');
     const btnClearSearch = el('btnClearSearch');
@@ -740,6 +810,17 @@
     const walletOverlay = el('walletOverlay');
     const btnCloseWallet = el('btnCloseWallet');
 
+    // Payout methods
+    const payoutForm = el('payoutForm');
+    const binanceId = el('binanceId');
+    const binanceNote = el('binanceNote');
+    const upiId = el('upiId');
+    const upiName = el('upiName');
+    const payoutHint = el('payoutHint');
+    const btnSavePayout = el('btnSavePayout');
+    const payoutSpinner = el('payoutSpinner');
+    const payoutBtnText = el('payoutBtnText');
+
     // Toast
     const toast = el('toast');
     const toastTitle = el('toastTitle');
@@ -764,6 +845,8 @@
 
     let uiPanel = 'user';
     let adminTab = 'create';
+
+    let userTab = 'dashboard'; // dashboard | wallet
 
     // --- Utils ---
     const fmtTime = (ts) => {
@@ -851,6 +934,25 @@
       }
       showToast({ title: 'Coming soon', message: 'Withdrawals are not implemented in this demo UI.' });
     });
+
+    // --- User tabs (Dashboard / Wallet) ---
+    function setUserTab(tab) {
+      userTab = tab;
+      const dash = tab === 'dashboard';
+      btnUserDashboard?.classList.toggle('bg-white/10', dash);
+      btnUserDashboard?.classList.toggle('hover:bg-white/5', !dash);
+      btnUserWallet?.classList.toggle('bg-white/10', !dash);
+      btnUserWallet?.classList.toggle('hover:bg-white/5', dash);
+
+      userDashboardView?.classList.toggle('hidden', !dash);
+      userWalletView?.classList.toggle('hidden', dash);
+
+      // Hide filters/search while in wallet view
+      filtersBar?.classList.toggle('hidden', !dash);
+    }
+
+    btnUserDashboard?.addEventListener('click', () => setUserTab('dashboard'));
+    btnUserWallet?.addEventListener('click', () => setUserTab('wallet'));
 
     // --- Panel switching ---
     function setPanel(panel) {
@@ -994,7 +1096,15 @@
 
             // Wallet (USD)
             walletBalance: 0,
-            walletApprovedTotal: 0
+            walletApprovedTotal: 0,
+
+            // Payout methods
+            payout: {
+              binanceId: null,
+              binanceNote: null,
+              upiId: null,
+              upiName: null
+            }
           });
         } else {
           const d = snap.data() || {};
@@ -1022,6 +1132,7 @@
 
       // Default view
       setPanel('user');
+      setUserTab('dashboard');
       setAdminTab('create');
 
       showToast({ title: 'Logged in', message: `Welcome ${user.displayName || ''}`.trim() });
