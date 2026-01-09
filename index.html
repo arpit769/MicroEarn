@@ -345,13 +345,13 @@
                     </select>
                   </label>
 
-                  <label class="block">
+                  <label id="ctSubredditWrap" class="block">
                     <div class="text-xs text-white/60">Subreddit</div>
                     <input id="ctSubreddit" class="mt-1 w-full rounded-xl border border-white/10 bg-slate-950/40 px-3 py-2 text-sm outline-none" placeholder="e.g. AskReddit" required />
                   </label>
 
                   <label id="ctTitleWrap" class="block md:col-span-2">
-                    <div class="text-xs text-white/60">Title (Post only)</div>
+                    <div class="text-xs text-white/60">Title</div>
                     <input id="ctTitle" class="mt-1 w-full rounded-xl border border-white/10 bg-slate-950/40 px-3 py-2 text-sm outline-none" placeholder="Post title..." />
                   </label>
 
@@ -1759,6 +1759,12 @@
       postFields.classList.toggle('hidden', !post);
       commentFields.classList.toggle('hidden', post);
 
+      // Subreddit is only needed for post tasks
+      const subredditWrap = el('ctSubredditWrap');
+      subredditWrap?.classList.toggle('hidden', !post);
+      el('ctSubreddit').required = post;
+      if (!post) el('ctSubreddit').value = '';
+
       // Title is only needed for post tasks
       const titleWrap = el('ctTitleWrap');
       titleWrap?.classList.toggle('hidden', !post);
@@ -1778,10 +1784,17 @@
     ctType.addEventListener('change', syncCreateFields);
     syncCreateFields();
 
+    function extractSubredditFromUrl(url) {
+      // Try to extract subreddit from Reddit URL like https://www.reddit.com/r/AskReddit/...
+      const match = safe(url).match(/reddit\.com\/r\/([^\/\?#]+)/i);
+      return match ? match[1] : null;
+    }
+
     function autoTitleForComment({ subreddit, instructions }) {
       const s = safe(instructions).trim().replace(/\s+/g, ' ');
       const short = s.length > 50 ? s.slice(0, 50).trim() + '…' : s;
-      return `Comment in r/${subreddit}${short ? ` — ${short}` : ''}`;
+      const sub = subreddit ? `r/${subreddit}` : 'Reddit';
+      return `Comment on ${sub}${short ? ` — ${short}` : ''}`;
     }
 
     async function allocateNextTaskId(tx) {
@@ -1807,7 +1820,7 @@
       }
 
       const type = el('ctType').value;
-      const subreddit = el('ctSubreddit').value.trim();
+      const rawSubreddit = el('ctSubreddit').value.trim();
       const rawTitle = el('ctTitle').value.trim();
       const reward = Number(el('ctReward').value);
       const status = el('ctStatus').value;
@@ -1820,9 +1833,14 @@
       const commentMode = (el('ctCommentMode')?.value || 'comment').trim();
       const instructions = el('ctInstructions').value.trim();
 
-      if (!subreddit) {
-        showToast({ title: 'Missing fields', message: 'Subreddit is required.', type: 'warn' });
+      // For post tasks, subreddit is required; for comment tasks, extract from target link
+      let subreddit = rawSubreddit;
+      if (type === 'post' && !subreddit) {
+        showToast({ title: 'Missing fields', message: 'Subreddit is required for post tasks.', type: 'warn' });
         return;
+      }
+      if (type === 'comment') {
+        subreddit = extractSubredditFromUrl(targetLink) || null;
       }
 
       const title = type === 'post' ? rawTitle : autoTitleForComment({ subreddit, instructions });
@@ -1975,8 +1993,11 @@
 
       const t = tasksCache.find(x => x.id === ac.id);
       activeClaimTitle.textContent = t?.title || `Task #${ac.id}`;
-      const sub = t?.subreddit ? `r/${t.subreddit}` : '—';
-      activeClaimMeta.textContent = `Task #${ac.id} • ${(t?.type || 'task').toUpperCase()} • ${sub} • Price $${Number(t?.reward ?? 0).toFixed(2)}`;
+      const sub = t?.subreddit ? `r/${t.subreddit}` : '';
+      const metaParts = [`Task #${ac.id}`, (t?.type || 'task').toUpperCase()];
+      if (sub) metaParts.push(sub);
+      metaParts.push(`Price $${Number(t?.reward ?? 0).toFixed(2)}`);
+      activeClaimMeta.textContent = metaParts.join(' • ');
       activeClaimCountdown.textContent = msToClock(ac.until - nowMs());
     }
 
@@ -2041,7 +2062,7 @@
               <div class="flex flex-wrap items-center gap-2">
                 ${badgeForType(t.type)}
                 <span class="text-xs rounded-full border border-white/10 px-2 py-0.5 text-white/60">Task #${escapeHtml(t.id)}</span>
-                <span class="text-xs text-white/60">r/${escapeHtml(safe(t.subreddit))}</span>
+                ${t.subreddit ? `<span class="text-xs text-white/60">r/${escapeHtml(safe(t.subreddit))}</span>` : ''}
                 ${t.expiresAt ? `<span class="text-xs text-white/50">Exp: ${fmtTime(t.expiresAt)}</span>` : ''}
               </div>
               <div class="mt-2 font-semibold leading-snug break-words">${escapeHtml(safe(t.title))}</div>
@@ -2095,7 +2116,7 @@
               <div class="flex flex-wrap items-center gap-2">
                 ${badgeForType(t.type)}
                 <span class="text-xs rounded-full border border-white/10 px-2 py-0.5 text-white/60">Task #${escapeHtml(t.id)}</span>
-                <span class="text-xs text-white/60">r/${escapeHtml(safe(t.subreddit))}</span>
+                ${t.subreddit ? `<span class="text-xs text-white/60">r/${escapeHtml(safe(t.subreddit))}</span>` : ''}
                 <span class="text-xs rounded-full border border-white/10 px-2 py-0.5 text-white/60">${escapeHtml(safe(t.status || 'open'))}</span>
                 <span class="text-xs rounded-full border border-white/10 px-2 py-0.5 text-white/60">Price: $${Number(t.reward ?? 0).toFixed(2)}</span>
                 ${t.expiresAt ? `<span class="text-xs text-white/50">Exp: ${fmtTime(t.expiresAt)}</span>` : ''}
@@ -2303,7 +2324,10 @@
 
         modalType.textContent = `${(t.type || 'task').toUpperCase()} • ${t.status || 'open'} • Task #${t.id}`;
         modalTitle.textContent = t.title || '—';
-        modalMeta.textContent = `Created: ${fmtTime(t.createdAt)} • r/${t.subreddit || '—'} • By: ${t.createdByName || '—'}`;
+        const modalMetaParts = [`Created: ${fmtTime(t.createdAt)}`];
+        if (t.subreddit) modalMetaParts.push(`r/${t.subreddit}`);
+        modalMetaParts.push(`By: ${t.createdByName || '—'}`);
+        modalMeta.textContent = modalMetaParts.join(' • ');
 
         if (t.imageUrl) {
           modalImageWrap.classList.remove('hidden');
@@ -2315,8 +2339,9 @@
 
         if (t.type === 'post') {
           modalDetails.textContent = `POST BODY:\n${t.body || ''}`;
-          modalLink.textContent = `https://www.reddit.com/r/${t.subreddit}/submit`;
-          modalLink.href = `https://www.reddit.com/r/${t.subreddit}/submit`;
+          const postUrl = t.subreddit ? `https://www.reddit.com/r/${t.subreddit}/submit` : 'https://www.reddit.com/submit';
+          modalLink.textContent = postUrl;
+          modalLink.href = postUrl;
         } else {
           const mode = (t.commentMode || 'comment').toString().toUpperCase();
           modalDetails.textContent = `${mode} TEXT:\n${t.instructions || ''}`;
