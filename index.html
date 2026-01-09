@@ -528,19 +528,45 @@
           </div>
 
           <div class="rounded-xl border border-white/10 p-3">
-            <div class="text-xs text-white/60">Details</div>
-            <div id="modalDetails" class="mt-1 whitespace-pre-wrap text-sm text-white/80">—</div>
+            <div class="flex items-center justify-between gap-2">
+              <div class="text-xs text-white/60">Details</div>
+              <button type="button" id="btnCopyModalDetails" class="shrink-0 rounded-lg border border-white/10 bg-slate-950/30 px-2 py-1 text-[11px] text-white/70 hover:bg-white/5" title="Copy text">
+                <span class="inline-flex items-center gap-1">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-3 w-3">
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                  </svg>
+                  <span>Copy</span>
+                </span>
+              </button>
+            </div>
+            <div id="modalDetails" class="mt-1 whitespace-pre-wrap text-sm text-white/80 break-words" style="word-break: break-word;">—</div>
           </div>
 
-          <div class="rounded-xl border border-white/10 p-3 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-            <div>
-              <div class="text-xs text-white/60">Target / Reference Link</div>
-              <a id="modalLink" href="#" target="_blank" rel="noreferrer" class="mt-1 text-sm text-indigo-300 hover:underline break-all">—</a>
-            </div>
-            <div class="flex items-center gap-2">
-              <span class="text-xs text-white/60">Price:</span>
-              <span id="modalReward" class="text-sm font-semibold">—</span>
-              <span class="text-xs text-white/60">USD</span>
+          <div class="rounded-xl border border-white/10 p-3">
+            <div class="flex flex-col gap-3">
+              <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
+                <div class="min-w-0 flex-1">
+                  <div class="flex items-center justify-between gap-2">
+                    <div class="text-xs text-white/60">Target / Reference Link</div>
+                    <button type="button" id="btnCopyModalLink" class="shrink-0 rounded-lg border border-white/10 bg-slate-950/30 px-2 py-1 text-[11px] text-white/70 hover:bg-white/5" title="Copy link">
+                      <span class="inline-flex items-center gap-1">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-3 w-3">
+                          <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                        </svg>
+                        <span>Copy</span>
+                      </span>
+                    </button>
+                  </div>
+                  <a id="modalLink" href="#" target="_blank" rel="noreferrer" class="mt-1 block text-sm text-indigo-300 hover:underline break-words overflow-hidden" style="word-break: break-word;">—</a>
+                </div>
+                <div class="shrink-0 flex items-center gap-2 rounded-xl border border-white/10 px-3 py-2">
+                  <span class="text-xs text-white/60">Price:</span>
+                  <span id="modalReward" class="text-sm font-semibold">—</span>
+                  <span class="text-xs text-white/60">USD</span>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -998,6 +1024,33 @@
 
     btnCopyTargetLink?.addEventListener('click', () => copyTextFromInput(el('ctTargetLink'), 'Target link'));
     btnCopyCommentText?.addEventListener('click', () => copyTextFromInput(el('ctInstructions'), 'Comment text'));
+
+    // Modal copy buttons
+    async function copyText(text, label) {
+      if (!text || !text.trim()) {
+        showToast({ title: 'Nothing to copy', message: `${label} is empty.`, type: 'warn' });
+        return;
+      }
+      try {
+        await navigator.clipboard.writeText(text.trim());
+        showToast({ title: 'Copied', message: `${label} copied to clipboard.` });
+      } catch (err) {
+        showToast({ title: 'Copy failed', message: 'Your browser blocked clipboard access.', type: 'error' });
+      }
+    }
+
+    el('btnCopyModalLink')?.addEventListener('click', () => {
+      const link = el('modalLink')?.href || el('modalLink')?.textContent || '';
+      copyText(link, 'Link');
+    });
+
+    el('btnCopyModalDetails')?.addEventListener('click', () => {
+      const details = el('modalDetails')?.textContent || '';
+      // For comment tasks, extract just the comment text (after the label)
+      const lines = details.split('\n');
+      const textToCopy = lines.length > 1 ? lines.slice(1).join('\n').trim() : details.trim();
+      copyText(textToCopy, 'Text');
+    });
     window.addEventListener('online', setOnlineBadge);
     window.addEventListener('offline', setOnlineBadge);
     setOnlineBadge();
