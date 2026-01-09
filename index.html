@@ -353,13 +353,48 @@
                     <div class="rounded-xl border border-white/10 bg-slate-950/30 p-3 text-xs text-white/60">
                       Comment tasks do not require a title. A title will be generated automatically.
                     </div>
+
+                    <div class="grid md:grid-cols-3 gap-3">
+                      <label class="block md:col-span-2">
+                        <div class="flex items-center justify-between gap-2">
+                          <div class="text-xs text-white/60">Target Link (post URL)</div>
+                          <button type="button" id="btnCopyTargetLink" class="shrink-0 rounded-lg border border-white/10 bg-slate-950/30 px-2 py-1 text-[11px] text-white/70 hover:bg-white/5" title="Copy target link">
+                            <span class="inline-flex items-center gap-1">
+                              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-4 w-4">
+                                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                              </svg>
+                              <span>Copy</span>
+                            </span>
+                          </button>
+                        </div>
+                        <input id="ctTargetLink" class="mt-1 w-full rounded-xl border border-white/10 bg-slate-950/40 px-3 py-2 text-sm outline-none" placeholder="https://www.reddit.com/..." />
+                      </label>
+
+                      <label class="block">
+                        <div class="text-xs text-white/60">Action</div>
+                        <select id="ctCommentMode" class="mt-1 w-full rounded-xl border border-white/10 bg-slate-950/40 px-3 py-2 text-sm outline-none">
+                          <option value="comment">Comment</option>
+                          <option value="reply">Reply</option>
+                        </select>
+                      </label>
+                    </div>
+
                     <label class="block">
-                      <div class="text-xs text-white/60">Target Link (post URL)</div>
-                      <input id="ctTargetLink" class="mt-1 w-full rounded-xl border border-white/10 bg-slate-950/40 px-3 py-2 text-sm outline-none" placeholder="https://www.reddit.com/..." />
-                    </label>
-                    <label class="block">
-                      <div class="text-xs text-white/60">Comment Text / Instructions</div>
-                      <textarea id="ctInstructions" class="mt-1 w-full rounded-xl border border-white/10 bg-slate-950/40 px-3 py-2 text-sm outline-none" rows="4" placeholder="What to comment / rules..." required></textarea>
+                      <div class="flex items-center justify-between gap-2">
+                        <div class="text-xs text-white/60">Comment Text</div>
+                        <button type="button" id="btnCopyCommentText" class="shrink-0 rounded-lg border border-white/10 bg-slate-950/30 px-2 py-1 text-[11px] text-white/70 hover:bg-white/5" title="Copy comment text">
+                          <span class="inline-flex items-center gap-1">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-4 w-4">
+                              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                            </svg>
+                            <span>Copy</span>
+                          </span>
+                        </button>
+                      </div>
+                      <textarea id="ctInstructions" class="mt-1 w-full rounded-xl border border-white/10 bg-slate-950/40 px-3 py-2 text-sm outline-none" rows="4" placeholder="Write the exact comment/reply text..." required></textarea>
+                      <div class="mt-1 text-[11px] text-white/45">Users should post exactly this text unless specified otherwise.</div>
                     </label>
                   </div>
 
@@ -760,6 +795,9 @@
     const ctType = el('ctType');
     const postFields = el('postFields');
     const commentFields = el('commentFields');
+    const ctCommentMode = el('ctCommentMode');
+    const btnCopyTargetLink = el('btnCopyTargetLink');
+    const btnCopyCommentText = el('btnCopyCommentText');
 
     const btnCreateTask = el('btnCreateTask');
     const createSpinner = el('createSpinner');
@@ -907,6 +945,31 @@
       netText.textContent = online ? 'Online' : 'Offline';
       netDot.className = `inline-block h-2 w-2 rounded-full ${online ? 'bg-emerald-400' : 'bg-rose-400'}`;
     }
+
+    async function copyTextFromInput(inputEl, label) {
+      const text = (inputEl?.value ?? '').trim();
+      if (!text) {
+        showToast({ title: 'Nothing to copy', message: `${label} is empty.`, type: 'warn' });
+        return;
+      }
+      try {
+        await navigator.clipboard.writeText(text);
+        showToast({ title: 'Copied', message: `${label} copied to clipboard.` });
+      } catch (err) {
+        // Fallback
+        try {
+          inputEl.focus();
+          inputEl.select();
+          document.execCommand('copy');
+          showToast({ title: 'Copied', message: `${label} copied to clipboard.` });
+        } catch (e2) {
+          showToast({ title: 'Copy failed', message: 'Your browser blocked clipboard access.', type: 'error' });
+        }
+      }
+    }
+
+    btnCopyTargetLink?.addEventListener('click', () => copyTextFromInput(el('ctTargetLink'), 'Target link'));
+    btnCopyCommentText?.addEventListener('click', () => copyTextFromInput(el('ctInstructions'), 'Comment text'));
     window.addEventListener('online', setOnlineBadge);
     window.addEventListener('offline', setOnlineBadge);
     setOnlineBadge();
@@ -1559,6 +1622,11 @@
       el('ctBody').required = post;
       el('ctTargetLink').required = !post;
       el('ctInstructions').required = !post;
+
+      if (ctCommentMode) {
+        ctCommentMode.required = !post;
+        if (post) ctCommentMode.value = 'comment';
+      }
     }
     ctType.addEventListener('change', syncCreateFields);
     syncCreateFields();
@@ -1602,6 +1670,7 @@
       const body = el('ctBody').value.trim();
       const imageUrl = el('ctImage').value.trim();
       const targetLink = el('ctTargetLink').value.trim();
+      const commentMode = (el('ctCommentMode')?.value || 'comment').trim();
       const instructions = el('ctInstructions').value.trim();
 
       if (!subreddit) {
@@ -1626,9 +1695,16 @@
         showToast({ title: 'Missing body', message: 'Post tasks require a body.', type: 'warn' });
         return;
       }
-      if (type === 'comment' && (!targetLink || !instructions)) {
-        showToast({ title: 'Missing fields', message: 'Comment tasks require target link + instructions.', type: 'warn' });
-        return;
+      if (type === 'comment') {
+        const cm = (commentMode || 'comment').toLowerCase();
+        if (!['comment', 'reply'].includes(cm)) {
+          showToast({ title: 'Invalid action', message: 'Please select Comment or Reply.', type: 'warn' });
+          return;
+        }
+        if (!targetLink || !instructions) {
+          showToast({ title: 'Missing fields', message: 'Comment tasks require target link + comment text.', type: 'warn' });
+          return;
+        }
       }
 
       setBusy(btnCreateTask, true, createSpinner, createBtnText, 'Creating...');
@@ -1659,6 +1735,7 @@
 
             // comment-specific
             targetLink: type === 'comment' ? targetLink : null,
+            commentMode: type === 'comment' ? (commentMode || 'comment') : null,
             instructions: type === 'comment' ? instructions : null,
 
             // locking
@@ -2094,7 +2171,8 @@
           modalLink.textContent = `https://www.reddit.com/r/${t.subreddit}/submit`;
           modalLink.href = `https://www.reddit.com/r/${t.subreddit}/submit`;
         } else {
-          modalDetails.textContent = `INSTRUCTIONS:\n${t.instructions || ''}`;
+          const mode = (t.commentMode || 'comment').toString().toUpperCase();
+          modalDetails.textContent = `${mode} TEXT:\n${t.instructions || ''}`;
           modalLink.textContent = t.targetLink || '—';
           modalLink.href = t.targetLink || '#';
         }
