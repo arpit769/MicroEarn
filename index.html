@@ -25,6 +25,26 @@
       animation: spin 800ms linear infinite;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
+    /* Modal box helper to keep text constrained and wrapped */
+    .modal-box { overflow: hidden; word-break: break-word; overflow-wrap: anywhere; }
+    .modal-box a { word-break: break-word; overflow-wrap: anywhere; }
+    /* Keep modal content boxed and non-overflowing */
+    #modalOverlay .modal-card {
+      overflow: hidden;
+      word-break: break-word;
+      overflow-wrap: anywhere;
+    }
+    #modalOverlay a {
+      word-break: break-word;
+      overflow-wrap: anywhere;
+    }
+    #modalOverlay .modal-card .heading {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
   </style>
 </head>
 <body class="min-h-full gridbg text-slate-100">
@@ -512,8 +532,8 @@
   <div id="modalOverlay" class="fixed inset-0 z-50 hidden overflow-y-auto">
     <div class="absolute inset-0 bg-black/70"></div>
     <div class="relative mx-auto max-w-3xl px-4 py-6 sm:py-10">
-      <div class="rounded-2xl border border-white/10 bg-slate-950/80 backdrop-blur p-5">
-        <div class="flex items-start justify-between gap-4">
+      <div class="modal-card rounded-2xl border border-white/10 bg-slate-950/80 backdrop-blur p-5 overflow-hidden">
+        <div class="heading flex items-start justify-between gap-4">
           <div class="min-w-0">
             <div id="modalType" class="text-xs text-white/60">—</div>
             <div id="modalTitle" class="mt-1 text-lg font-semibold break-words">—</div>
@@ -543,7 +563,7 @@
             <div id="modalDetails" class="mt-1 whitespace-pre-wrap text-sm text-white/80 break-words" style="word-break: break-word;">—</div>
           </div>
 
-          <div class="rounded-xl border border-white/10 p-3">
+          <div class="rounded-xl border border-white/10 p-3 overflow-hidden">
             <div class="flex flex-col gap-3">
               <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
                 <div class="min-w-0 flex-1">
@@ -559,7 +579,7 @@
                       </span>
                     </button>
                   </div>
-                  <a id="modalLink" href="#" target="_blank" rel="noreferrer" class="mt-1 block text-sm text-indigo-300 hover:underline break-words overflow-hidden" style="word-break: break-word;">—</a>
+                  <a id="modalLink" href="#" target="_blank" rel="noreferrer" class="mt-1 block text-sm text-indigo-300 hover:underline break-words overflow-hidden" style="word-break: break-word; overflow-wrap: anywhere;">—</a>
                 </div>
                 <div class="shrink-0 flex items-center gap-2 rounded-xl border border-white/10 px-3 py-2">
                   <span class="text-xs text-white/60">Price:</span>
@@ -570,13 +590,13 @@
             </div>
           </div>
 
-          <div class="rounded-xl border border-white/10 p-3">
-            <div class="flex items-center justify-between gap-3">
+          <div class="rounded-xl border border-white/10 p-3 overflow-hidden">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <div>
                 <div class="text-sm font-semibold">Claim / Submit</div>
                 <div id="modalLockInfo" class="text-xs text-white/60 mt-0.5">—</div>
               </div>
-              <div class="flex items-center gap-2">
+              <div class="flex flex-wrap items-center gap-2">
                 <button id="btnClaim" class="hidden rounded-xl bg-emerald-500 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-emerald-400">Claim</button>
                 <button id="btnForceUnlock" class="hidden rounded-xl border border-white/10 px-4 py-2 text-sm hover:bg-white/5">Force Unlock</button>
               </div>
@@ -591,7 +611,7 @@
                 <div class="text-xs text-white/60">Note (optional)</div>
                 <textarea id="proofNote" class="mt-1 w-full rounded-xl border border-white/10 bg-slate-950/40 px-3 py-2 text-sm outline-none" rows="3" placeholder="Any extra info..."></textarea>
               </label>
-              <div class="flex items-center justify-between gap-3">
+              <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <div id="submitHint" class="text-xs text-white/60"></div>
                 <button id="btnSubmitProof" class="inline-flex items-center gap-2 rounded-xl bg-indigo-500 px-4 py-2 text-sm font-semibold hover:bg-indigo-400">
                   <span id="submitBtnText">Submit</span>
