@@ -618,6 +618,14 @@
     const btnLoginHero = el('btnLoginHero');
     const btnLogout = el('btnLogout');
 
+    // Prevent any initial flash of the header login button before auth state resolves
+    if (btnLogin) {
+      btnLogin.classList.add('hidden');
+      btnLogin.style.display = 'none';
+      btnLogin.setAttribute('aria-hidden', 'true');
+      btnLogin.tabIndex = -1;
+    }
+
     const userMenu = el('userMenu');
     const userName = el('userName');
     const userEmail = el('userEmail');
@@ -929,7 +937,13 @@
       if (!user) {
         hero.classList.remove('hidden');
         appSection.classList.add('hidden');
+
+        // Show header login button only when logged out
         btnLogin.classList.remove('hidden');
+        btnLogin.style.display = '';
+        btnLogin.setAttribute('aria-hidden', 'false');
+        btnLogin.tabIndex = 0;
+
         userMenu.classList.add('hidden');
         return;
       }
@@ -937,7 +951,13 @@
       // UI basics
       hero.classList.add('hidden');
       appSection.classList.remove('hidden');
+
+      // Force-remove header login button when logged in (no flash / no layout)
       btnLogin.classList.add('hidden');
+      btnLogin.style.display = 'none';
+      btnLogin.setAttribute('aria-hidden', 'true');
+      btnLogin.tabIndex = -1;
+
       userMenu.classList.remove('hidden');
 
       userName.textContent = user.displayName || 'User';
