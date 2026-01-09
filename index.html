@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Reddit Tasks — Admin & User Panel</title>
+  <title>Reddit Tasks</title>
   <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
   <style>
     :root { color-scheme: dark; }
@@ -73,7 +73,7 @@
           <div>
             <h1 class="text-2xl md:text-3xl font-bold leading-tight">
               Reddit <span class="text-indigo-300">Post</span> / <span class="text-emerald-300">Comment</span> tasks.
-              <span class="block mt-2 text-white/80 text-lg font-semibold">User Panel + Admin Panel</span>
+              <span class="block mt-2 text-white/80 text-lg font-semibold">Task Dashboard</span>
             </h1>
             <p class="mt-3 text-sm md:text-base text-white/70">
               After Google login, a user can claim a task (lock window), and must submit a proof link within the time window.
@@ -112,9 +112,6 @@
               <li>Submit proof link within the claim window</li>
               <li>Admin approves → wallet is credited</li>
             </ol>
-            <div class="mt-4 rounded-xl border border-white/10 p-3 text-xs text-white/60">
-              Note: Configure Firestore security rules for production.
-            </div>
           </div>
         </div>
       </section>
@@ -124,9 +121,9 @@
         <!-- Panel switch + quick status -->
         <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
           <div class="flex flex-col md:flex-row md:items-center gap-3">
-            <div class="inline-flex rounded-2xl border border-white/10 bg-slate-950/40 p-1">
-              <button id="btnPanelUser" class="rounded-xl px-4 py-2 text-sm font-semibold bg-white/10">User Panel</button>
-              <button id="btnPanelAdmin" class="hidden rounded-xl px-4 py-2 text-sm font-semibold hover:bg-white/5">Admin Panel</button>
+            <div id="panelSwitch" class="hidden inline-flex rounded-2xl border border-white/10 bg-slate-950/40 p-1">
+              <button id="btnPanelUser" class="rounded-xl px-4 py-2 text-sm font-semibold bg-white/10">Dashboard</button>
+              <button id="btnPanelAdmin" class="hidden rounded-xl px-4 py-2 text-sm font-semibold hover:bg-white/5">Admin</button>
             </div>
 
             <div id="profileStatus" class="rounded-2xl border border-white/10 bg-slate-950/40 px-3 py-2 text-sm text-white/70 flex items-center gap-2">
@@ -179,7 +176,7 @@
               </div>
               <div class="flex flex-col sm:flex-row gap-2">
                 <button id="btnWalletInfo" class="rounded-xl border border-white/10 px-4 py-2 text-sm hover:bg-white/5">How it works</button>
-                <button id="btnWithdraw" class="rounded-xl bg-emerald-500 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-emerald-400 opacity-60 cursor-not-allowed" disabled>Withdraw (coming soon)</button>
+                <button id="btnWithdraw" class="rounded-xl bg-emerald-500 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-emerald-400 opacity-60 cursor-not-allowed" disabled>Withdraw (min $2)</button>
               </div>
             </div>
             <div class="mt-3 text-xs text-white/60">
@@ -394,9 +391,7 @@
         </div>
       </section>
 
-      <footer class="mt-10 pb-10 text-center text-xs text-white/45">
-        Firebase Auth + Firestore. Configure Firestore rules/indexes for production.
-      </footer>
+      <footer class="mt-10 pb-10 text-center text-xs text-white/45"></footer>
     </main>
   </div>
 
@@ -501,7 +496,7 @@
             <div class="font-semibold text-white">Step 3 — Admin review</div>
             <div class="mt-1 text-white/70">Admin approves or rejects your submission. On approval, the task price is added to your wallet.</div>
           </div>
-          <div class="text-xs text-white/50">Withdrawals are not implemented in this demo UI.</div>
+          <div class="text-xs text-white/50">Minimum withdrawal: $2.00. Withdrawals are not implemented in this demo UI.</div>
         </div>
       </div>
     </div>
@@ -603,6 +598,9 @@
     const TASK_ID_START = 1010;
     const COUNTER_DOC = { col: 'meta', doc: 'counters', field: 'nextTaskId' };
 
+    // --- Wallet / withdrawal ---
+    const MIN_WITHDRAW_USD = 2;
+
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getFirestore(app);
@@ -635,6 +633,7 @@
     const netText = el('netText');
     const netDot = el('netDot');
 
+    const panelSwitch = el('panelSwitch');
     const btnPanelUser = el('btnPanelUser');
     const btnPanelAdmin = el('btnPanelAdmin');
     const panelUser = el('panelUser');
@@ -737,6 +736,7 @@
     const walletApproved = el('walletApproved');
     const walletPending = el('walletPending');
     const btnWalletInfo = el('btnWalletInfo');
+    const btnWithdraw = el('btnWithdraw');
     const walletOverlay = el('walletOverlay');
     const btnCloseWallet = el('btnCloseWallet');
 
@@ -841,6 +841,15 @@
     btnCloseWallet?.addEventListener('click', closeWallet);
     walletOverlay?.addEventListener('click', (e) => {
       if (e.target === walletOverlay) closeWallet();
+    });
+
+    btnWithdraw?.addEventListener('click', () => {
+      const bal = Number(currentUserDoc?.walletBalance ?? 0);
+      if (bal < MIN_WITHDRAW_USD) {
+        showToast({ title: 'Withdrawal not available', message: `Minimum balance is $${MIN_WITHDRAW_USD.toFixed(2)}.`, type: 'warn' });
+        return;
+      }
+      showToast({ title: 'Coming soon', message: 'Withdrawals are not implemented in this demo UI.' });
     });
 
     // --- Panel switching ---
@@ -1043,12 +1052,23 @@
         );
 
         btnPanelAdmin.classList.toggle('hidden', !isAdmin);
+        // Hide the panel switch completely for non-admin users
+        if (panelSwitch) panelSwitch.classList.toggle('hidden', !isAdmin);
 
         // Wallet UI
         const bal = Number(currentUserDoc?.walletBalance ?? 0);
         const approvedTotal = Number(currentUserDoc?.walletApprovedTotal ?? 0);
         if (walletBalance) walletBalance.textContent = `$${bal.toFixed(2)}`;
         if (walletApproved) walletApproved.textContent = `$${approvedTotal.toFixed(2)}`;
+
+        // Withdraw button (min balance)
+        if (btnWithdraw) {
+          const ok = bal >= MIN_WITHDRAW_USD;
+          btnWithdraw.disabled = !ok;
+          btnWithdraw.textContent = ok ? 'Withdraw (coming soon)' : `Withdraw (min $${MIN_WITHDRAW_USD.toFixed(0)})`;
+          btnWithdraw.classList.toggle('opacity-60', !ok);
+          btnWithdraw.classList.toggle('cursor-not-allowed', !ok);
+        }
 
         // Profile status UI
         const karma = Number(currentUserDoc?.redditKarma ?? 0);
