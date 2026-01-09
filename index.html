@@ -1806,8 +1806,8 @@
       return `Comment on ${sub}${short ? ` — ${short}` : ''}`;
     }
 
-    async function allocateNextTaskId(tx) {
-      const counterRef = doc(db, COUNTER_DOC.col, COUNTER_DOC.doc);
+    async function allocateNextTaskId(tx, counterRef) {
+      // Only READ here - no writes (writes happen after all reads)
       const snap = await tx.get(counterRef);
 
       let next = TASK_ID_START;
@@ -1817,7 +1817,6 @@
         next = Number.isFinite(n) && n >= TASK_ID_START ? n : TASK_ID_START;
       }
 
-      tx.set(counterRef, { [COUNTER_DOC.field]: next + 1 }, { merge: true });
       return next;
     }
 
@@ -1887,12 +1886,17 @@
 
         let createdTaskId = null;
         await runTransaction(db, async (tx) => {
-          const taskNo = await allocateNextTaskId(tx);
+          // Step 1: ALL READS FIRST
+          const counterRef = doc(db, COUNTER_DOC.col, COUNTER_DOC.doc);
+          const taskNo = await allocateNextTaskId(tx, counterRef);
           const taskId = String(taskNo);
 
           const taskRef = doc(db, 'tasks', taskId);
           const existing = await tx.get(taskRef);
           if (existing.exists()) throw new Error(`Task ID collision (#${taskId}). Try again.`);
+
+          // Step 2: ALL WRITES AFTER READS
+          tx.set(counterRef, { [COUNTER_DOC.field]: taskNo + 1 }, { merge: true });
 
           tx.set(taskRef, {
             taskNo,
