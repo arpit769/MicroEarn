@@ -369,7 +369,7 @@
                   </div>
 
                   <!-- Comment fields -->
-                  <div id="commentFields" class="md:col-span-2 hidden grid gap-3">
+                  <div id="commentFields" class="md:col-span-2 hidden gap-3" style="display: none;">
                     <div class="grid md:grid-cols-3 gap-3">
                       <label class="block md:col-span-2">
                         <div class="flex items-center justify-between gap-2">
@@ -1753,24 +1753,37 @@
       const post = type === 'post';
 
       postFields.classList.toggle('hidden', !post);
+      postFields.style.display = post ? 'grid' : 'none';
       commentFields.classList.toggle('hidden', post);
+      commentFields.style.display = post ? 'none' : 'grid';
 
       // Subreddit is only needed for post tasks
       const subredditWrap = el('ctSubredditWrap');
       subredditWrap?.classList.toggle('hidden', !post);
-      el('ctSubreddit').required = post;
-      if (!post) el('ctSubreddit').value = '';
+      const ctSubredditEl = el('ctSubreddit');
+      if (ctSubredditEl) {
+        ctSubredditEl.required = post;
+        if (!post) ctSubredditEl.value = '';
+      }
 
       // Title is only needed for post tasks
       const titleWrap = el('ctTitleWrap');
       titleWrap?.classList.toggle('hidden', !post);
-      el('ctTitle').required = post;
-      if (!post) el('ctTitle').value = '';
+      const ctTitleEl = el('ctTitle');
+      if (ctTitleEl) {
+        ctTitleEl.required = post;
+        if (!post) ctTitleEl.value = '';
+      }
 
-      // Required toggles
-      el('ctBody').required = post;
-      el('ctTargetLink').required = !post;
-      el('ctInstructions').required = !post;
+      // Required toggles for post fields
+      const ctBodyEl = el('ctBody');
+      if (ctBodyEl) ctBodyEl.required = post;
+
+      // Required toggles for comment fields
+      const ctTargetLinkEl = el('ctTargetLink');
+      const ctInstructionsEl = el('ctInstructions');
+      if (ctTargetLinkEl) ctTargetLinkEl.required = !post;
+      if (ctInstructionsEl) ctInstructionsEl.required = !post;
 
       if (ctCommentMode) {
         ctCommentMode.required = !post;
