@@ -242,6 +242,19 @@
                   <button id="btnWithdraw" class="rounded-xl bg-emerald-500 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-emerald-400 opacity-60 cursor-not-allowed" disabled>Withdraw (min $2)</button>
                 </div>
               </div>
+
+              <!-- Amount input appears after selecting a payment method -->
+              <div id="withdrawAmountWrap" class="hidden mt-4 rounded-2xl border border-white/10 bg-slate-950/30 p-4">
+                <div class="text-sm font-semibold">Withdrawal amount</div>
+                <div class="mt-2 grid gap-2">
+                  <label class="block">
+                    <div class="text-xs text-white/60">Amount (USD)</div>
+                    <input id="withdrawAmount" type="number" min="2" step="0.01" class="mt-1 w-full rounded-xl border border-white/10 bg-slate-950/40 px-3 py-2 text-sm outline-none" placeholder="2.00" />
+                    <div id="withdrawAmountHint" class="mt-1 text-[11px] text-white/50">Available: $0.00</div>
+                  </label>
+                </div>
+              </div>
+
               <div class="mt-3 text-xs text-white/60">
                 Your wallet is updated when an admin approves your submission.
               </div>
@@ -256,39 +269,46 @@
               </div>
 
               <form id="payoutForm" class="mt-4 grid gap-4">
-                <div class="grid md:grid-cols-2 gap-3">
-                  <div class="rounded-2xl border border-white/10 bg-slate-950/30 p-4">
-                    <div class="text-sm font-semibold">Binance</div>
-                    <div class="mt-2 grid gap-2">
-                      <label class="block">
-                        <div class="text-xs text-white/60">Binance UID / Email</div>
-                        <input id="binanceId" class="mt-1 w-full rounded-xl border border-white/10 bg-slate-950/40 px-3 py-2 text-sm outline-none" placeholder="e.g. UID or email" />
-                      </label>
-                      <label class="block">
-                        <div class="text-xs text-white/60">Network / Note (optional)</div>
-                        <input id="binanceNote" class="mt-1 w-full rounded-xl border border-white/10 bg-slate-950/40 px-3 py-2 text-sm outline-none" placeholder="e.g. USDT (TRC20)" />
-                      </label>
-                    </div>
-                  </div>
+                <label class="block">
+                  <div class="text-xs text-white/60">Payment method</div>
+                  <select id="payoutMethod" class="mt-1 w-full rounded-xl border border-white/10 bg-slate-950/40 px-3 py-2 text-sm outline-none" required>
+                    <option value="">Select a method...</option>
+                    <option value="binance">Binance</option>
+                    <option value="upi">UPI</option>
+                  </select>
+                </label>
 
-                  <div class="rounded-2xl border border-white/10 bg-slate-950/30 p-4">
-                    <div class="text-sm font-semibold">UPI</div>
-                    <div class="mt-2 grid gap-2">
-                      <label class="block">
-                        <div class="text-xs text-white/60">UPI ID</div>
-                        <input id="upiId" class="mt-1 w-full rounded-xl border border-white/10 bg-slate-950/40 px-3 py-2 text-sm outline-none" placeholder="e.g. name@bank" />
-                      </label>
-                      <label class="block">
-                        <div class="text-xs text-white/60">Account holder name (optional)</div>
-                        <input id="upiName" class="mt-1 w-full rounded-xl border border-white/10 bg-slate-950/40 px-3 py-2 text-sm outline-none" placeholder="e.g. Rahul Kumar" />
-                      </label>
-                    </div>
+                <div id="binanceFieldsWrap" class="hidden rounded-2xl border border-white/10 bg-slate-950/30 p-4">
+                  <div class="text-sm font-semibold">Binance details</div>
+                  <div class="mt-2 grid gap-2">
+                    <label class="block">
+                      <div class="text-xs text-white/60">Binance username</div>
+                      <input id="binanceUsername" class="mt-1 w-full rounded-xl border border-white/10 bg-slate-950/40 px-3 py-2 text-sm outline-none" placeholder="e.g. john_doe" />
+                    </label>
+                    <label class="block">
+                      <div class="text-xs text-white/60">Binance ID</div>
+                      <input id="binanceId" class="mt-1 w-full rounded-xl border border-white/10 bg-slate-950/40 px-3 py-2 text-sm outline-none" placeholder="e.g. Binance UID" />
+                    </label>
+                  </div>
+                </div>
+
+                <div id="upiFieldsWrap" class="hidden rounded-2xl border border-white/10 bg-slate-950/30 p-4">
+                  <div class="text-sm font-semibold">UPI details</div>
+                  <div class="mt-2 grid gap-2">
+                    <label class="block">
+                      <div class="text-xs text-white/60">UPI ID</div>
+                      <input id="upiId" class="mt-1 w-full rounded-xl border border-white/10 bg-slate-950/40 px-3 py-2 text-sm outline-none" placeholder="e.g. name@bank" />
+                    </label>
+                    <label class="block">
+                      <div class="text-xs text-white/60">Account holder name</div>
+                      <input id="upiName" class="mt-1 w-full rounded-xl border border-white/10 bg-slate-950/40 px-3 py-2 text-sm outline-none" placeholder="e.g. Rahul Kumar" />
+                    </label>
                   </div>
                 </div>
 
                 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                  <div id="payoutHint" class="text-xs text-white/60">Your payout details are stored securely in your user profile.</div>
-                  <button id="btnSavePayout" class="inline-flex items-center gap-2 rounded-xl bg-indigo-500 px-4 py-2 text-sm font-semibold hover:bg-indigo-400">
+                  <div id="payoutHint" class="text-xs text-white/60">Select a payment method and save your details to enable withdrawals.</div>
+                  <button id="btnSavePayout" type="submit" class="inline-flex items-center gap-2 rounded-xl bg-indigo-500 px-4 py-2 text-sm font-semibold hover:bg-indigo-400">
                     <span id="payoutBtnText">Save payout details</span>
                     <span id="payoutSpinner" class="hidden spinner" aria-hidden="true"></span>
                   </button>
@@ -845,15 +865,24 @@
     const walletPending = el('walletPending');
     const btnWalletInfo = el('btnWalletInfo');
     const btnWithdraw = el('btnWithdraw');
+    const withdrawAmountWrap = el('withdrawAmountWrap');
+    const withdrawAmount = el('withdrawAmount');
+    const withdrawAmountHint = el('withdrawAmountHint');
     const walletOverlay = el('walletOverlay');
     const btnCloseWallet = el('btnCloseWallet');
 
     // Payout methods
     const payoutForm = el('payoutForm');
+    const payoutMethod = el('payoutMethod');
+    const binanceFieldsWrap = el('binanceFieldsWrap');
+    const upiFieldsWrap = el('upiFieldsWrap');
+
+    const binanceUsername = el('binanceUsername');
     const binanceId = el('binanceId');
-    const binanceNote = el('binanceNote');
+
     const upiId = el('upiId');
     const upiName = el('upiName');
+
     const payoutHint = el('payoutHint');
     const btnSavePayout = el('btnSavePayout');
     const payoutSpinner = el('payoutSpinner');
@@ -885,6 +914,9 @@
     let adminTab = 'create';
 
     let userTab = 'dashboard'; // dashboard | wallet
+
+    // Prevent overwriting payout form while the user is editing
+    let payoutFormDirty = false;
 
     // --- Utils ---
     const fmtTime = (ts) => {
@@ -989,10 +1021,115 @@
       if (e.target === walletOverlay) closeWallet();
     });
 
+    function payoutIsComplete(u = currentUserDoc) {
+      const p = u?.payout || {};
+      const m = safe(p.method).trim();
+      if (!m) return false;
+      if (m === 'binance') {
+        return !!safe(p.binanceUsername).trim() && !!safe(p.binanceId).trim();
+      }
+      if (m === 'upi') {
+        return !!safe(p.upiId).trim() && !!safe(p.upiName).trim();
+      }
+      return false;
+    }
+
+    function syncPayoutUIFromSelection() {
+      const m = safe(payoutMethod?.value).trim();
+      binanceFieldsWrap?.classList.toggle('hidden', m !== 'binance');
+      upiFieldsWrap?.classList.toggle('hidden', m !== 'upi');
+
+      // Required toggles (HTML required only works when not hidden, but we enforce in JS as well)
+      if (binanceUsername) binanceUsername.required = m === 'binance';
+      if (binanceId) binanceId.required = m === 'binance';
+      if (upiId) upiId.required = m === 'upi';
+      if (upiName) upiName.required = m === 'upi';
+
+      // Hint
+      if (payoutHint) {
+        payoutHint.textContent = !m
+          ? 'Select a payment method and save your details to enable withdrawals.'
+          : (m === 'binance'
+              ? 'Binance requires username and Binance ID.'
+              : 'UPI requires UPI ID and account holder name.');
+      }
+    }
+
+    function populatePayoutFormFromUserDoc(u = currentUserDoc) {
+      const p = u?.payout || {};
+      if (payoutMethod) payoutMethod.value = p.method || '';
+      if (binanceUsername) binanceUsername.value = p.binanceUsername || '';
+      if (binanceId) binanceId.value = p.binanceId || '';
+      if (upiId) upiId.value = p.upiId || '';
+      if (upiName) upiName.value = p.upiName || '';
+      syncPayoutUIFromSelection();
+    }
+
+    payoutMethod?.addEventListener('change', () => {
+      syncPayoutUIFromSelection();
+    });
+
+    payoutForm?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!currentUser) return;
+
+      const method = safe(payoutMethod?.value).trim();
+      if (!method) {
+        showToast({ title: 'Select a method', message: 'Please choose Binance or UPI.', type: 'warn' });
+        return;
+      }
+
+      const payload = { method };
+      if (method === 'binance') {
+        const username = safe(binanceUsername?.value).trim();
+        const bid = safe(binanceId?.value).trim();
+        if (!username || !bid) {
+          showToast({ title: 'Missing details', message: 'Binance username and Binance ID are required.', type: 'warn' });
+          return;
+        }
+        payload.binanceUsername = username;
+        payload.binanceId = bid;
+        // Clear other method fields
+        payload.upiId = null;
+        payload.upiName = null;
+      }
+
+      if (method === 'upi') {
+        const uid = safe(upiId?.value).trim();
+        const uname = safe(upiName?.value).trim();
+        if (!uid || !uname) {
+          showToast({ title: 'Missing details', message: 'UPI ID and account holder name are required.', type: 'warn' });
+          return;
+        }
+        payload.upiId = uid;
+        payload.upiName = uname;
+        // Clear other method fields
+        payload.binanceUsername = null;
+        payload.binanceId = null;
+      }
+
+      setBusy(btnSavePayout, true, payoutSpinner, payoutBtnText, 'Saving...');
+      try {
+        await updateDoc(doc(db, 'users', currentUser.uid), {
+          payout: payload
+        });
+        showToast({ title: 'Saved', message: 'Payout details saved.' });
+      } catch (err) {
+        console.error(err);
+        showToast({ title: 'Save failed', message: err?.message || 'Unknown error', type: 'error' });
+      } finally {
+        setBusy(btnSavePayout, false, payoutSpinner, payoutBtnText, 'Save payout details');
+      }
+    });
+
     btnWithdraw?.addEventListener('click', () => {
       const bal = Number(currentUserDoc?.walletBalance ?? 0);
       if (bal < MIN_WITHDRAW_USD) {
         showToast({ title: 'Withdrawal not available', message: `Minimum balance is $${MIN_WITHDRAW_USD.toFixed(2)}.`, type: 'warn' });
+        return;
+      }
+      if (!payoutIsComplete()) {
+        showToast({ title: 'Payout details required', message: 'Please select a payment method and save your payout details first.', type: 'warn' });
         return;
       }
       showToast({ title: 'Coming soon', message: 'Withdrawals are not implemented in this demo UI.' });
@@ -1161,10 +1298,11 @@
             walletBalance: 0,
             walletApprovedTotal: 0,
 
-            // Payout methods
+            // Payout
             payout: {
+              method: null,
+              binanceUsername: null,
               binanceId: null,
-              binanceNote: null,
               upiId: null,
               upiName: null
             }
@@ -1235,11 +1373,20 @@
         if (walletBalance) walletBalance.textContent = `$${bal.toFixed(2)}`;
         if (walletApproved) walletApproved.textContent = `$${approvedTotal.toFixed(2)}`;
 
-        // Withdraw button (min balance)
+        // Payout form
+        populatePayoutFormFromUserDoc(currentUserDoc);
+
+        // Withdraw button (min balance + payout details)
         if (btnWithdraw) {
-          const ok = bal >= MIN_WITHDRAW_USD;
+          const okBal = bal >= MIN_WITHDRAW_USD;
+          const okPayout = payoutIsComplete(currentUserDoc);
+          const ok = okBal && okPayout;
+
           btnWithdraw.disabled = !ok;
-          btnWithdraw.textContent = ok ? 'Withdraw (coming soon)' : `Withdraw (min $${MIN_WITHDRAW_USD.toFixed(0)})`;
+          btnWithdraw.textContent = !okBal
+            ? `Withdraw (min $${MIN_WITHDRAW_USD.toFixed(0)})`
+            : (!okPayout ? 'Withdraw (add payout details)' : 'Withdraw (coming soon)');
+
           btnWithdraw.classList.toggle('opacity-60', !ok);
           btnWithdraw.classList.toggle('cursor-not-allowed', !ok);
         }
