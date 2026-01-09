@@ -115,8 +115,8 @@
                 <div class="mt-1 font-semibold">Karma 200+</div>
               </div>
               <div class="rounded-xl border border-white/10 p-3">
-                <div class="text-xs text-white/60">Backend</div>
-                <div class="mt-1 font-semibold">Firebase</div>
+                <div class="text-xs text-white/60">Payout</div>
+                <div class="mt-1 font-semibold">Wallet credit</div>
               </div>
             </div>
           </div>
@@ -352,8 +352,8 @@
             <div class="grid lg:grid-cols-3 gap-4">
               <div class="lg:col-span-2 rounded-2xl border border-white/10 glass p-5">
                 <div class="flex items-center justify-between">
-                  <h2 class="text-lg font-semibold">Create a Reddit Task (Admin)</h2>
-                  <div class="text-xs text-white/60">Firestore: tasks (ID starts from 1010)</div>
+                  <h2 class="text-lg font-semibold">Create a Reddit Task</h2>
+                  <div class="text-xs text-white/60">(Admin only)</div>
                 </div>
 
                 <form id="createForm" class="mt-4 grid md:grid-cols-2 gap-3">
@@ -477,11 +477,6 @@
                   <li>When the lock expires, the task becomes available again (with client-side cleanup).</li>
                   <li>Wallet is credited only after admin approval.</li>
                 </ul>
-                <div class="mt-5 rounded-xl border border-white/10 p-3 text-xs text-white/60">
-                  Collections:
-                  <div class="mt-2 font-mono text-[11px] text-white/70">users / tasks / submissions / meta</div>
-                  <div class="mt-2 text-[11px] text-white/45">Counter doc: meta/counters → nextTaskId (starts at 1010)</div>
-                </div>
               </aside>
             </div>
           </div>
