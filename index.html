@@ -4,276 +4,282 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Reddit Intelligence Agent</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,600;9..40,700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:opsz,wght@9..40,400;9..40,600;9..40,700&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#0d0d12;--surface:#13131a;--raised:#1a1a24;--card:#1e1e2c;--hover:#252535;--border:#2a2a3a;--blite:#1e1e2c;--acc:#ff4500;--acc2:#0079d3;--gold:#ffd635;--green:#46d369;--red:#ff585b;--t1:#f0f0f5;--t2:#9898b0;--t3:#5a5a72;--r:10px;--rs:6px;--sw:230px;--mono:'Space Mono',monospace;--main:'DM Sans',system-ui,sans-serif}
+:root{
+  --bg:#0d0d12;--sur:#13131a;--rai:#1a1a24;--car:#1e1e2c;--hov:#252535;
+  --bor:#2a2a3a;--bli:#1a1a24;--acc:#ff4500;--ac2:#0079d3;
+  --gol:#ffd635;--grn:#46d369;--red:#ff585b;
+  --t1:#f0f0f5;--t2:#9898b0;--t3:#5a5a72;
+  --r:10px;--rs:6px;--sw:230px;
+  --mono:'Space Mono',monospace;--font:'DM Sans',system-ui,sans-serif;
+}
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-html{font-size:15px}
-body{font-family:var(--main);background:var(--bg);color:var(--t1);height:100vh;overflow:hidden;display:flex}
-::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-track{background:var(--surface)}::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
-/* Sidebar */
-#sb{width:var(--sw);height:100vh;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;overflow-y:auto;z-index:10}
-.sb-brand{padding:18px 14px 14px;border-bottom:1px solid var(--border)}
-.brand-row{display:flex;align-items:center;gap:10px;margin-bottom:3px}
-.b-icon{width:32px;height:32px;background:var(--acc);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:17px;box-shadow:0 0 16px rgba(255,69,0,.2)}
-.b-name{font-family:var(--mono);font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;line-height:1.3}
-.b-sub{font-size:.62rem;color:var(--t3);font-family:var(--mono)}
-.sb-sec{padding:10px 8px 4px}
-.sb-lbl{font-size:.58rem;text-transform:uppercase;letter-spacing:.12em;color:var(--t3);font-family:var(--mono);padding:0 8px 6px}
-.ni{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:var(--rs);cursor:pointer;font-size:.83rem;color:var(--t2);transition:all .15s;margin-bottom:1px;position:relative;border:1px solid transparent}
-.ni:hover{background:var(--raised);color:var(--t1)}
-.ni.active{background:rgba(255,69,0,.12);color:var(--acc);border-color:rgba(255,69,0,.2)}
-.ni.active::before{content:'';position:absolute;left:0;top:22%;bottom:22%;width:3px;background:var(--acc);border-radius:0 3px 3px 0}
-.ni-ic{font-size:15px;width:18px;text-align:center;flex-shrink:0}
-.sb-ft{margin-top:auto;padding:10px 8px;border-top:1px solid var(--border)}
-/* Main */
+body{font-family:var(--font);background:var(--bg);color:var(--t1);height:100vh;overflow:hidden;display:flex;font-size:15px}
+::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:var(--sur)}::-webkit-scrollbar-thumb{background:var(--bor);border-radius:3px}
+
+/* SIDEBAR */
+#sb{width:var(--sw);height:100vh;background:var(--sur);border-right:1px solid var(--bor);display:flex;flex-direction:column;flex-shrink:0;overflow-y:auto}
+.sbrand{padding:16px 14px;border-bottom:1px solid var(--bor);display:flex;align-items:center;gap:10px}
+.bico{width:32px;height:32px;background:var(--acc);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;box-shadow:0 0 14px rgba(255,69,0,.25)}
+.bname{font-family:var(--mono);font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em}
+.bsub{font-size:.6rem;color:var(--t3);font-family:var(--mono);margin-top:2px}
+.ssec{padding:10px 8px 4px}
+.slbl{font-size:.58rem;text-transform:uppercase;letter-spacing:.12em;color:var(--t3);font-family:var(--mono);padding:0 8px 5px}
+.ni{display:flex;align-items:center;gap:9px;padding:8px 11px;border-radius:var(--rs);cursor:pointer;font-size:.82rem;color:var(--t2);transition:all .15s;margin-bottom:1px;border:1px solid transparent;position:relative}
+.ni:hover{background:var(--rai);color:var(--t1)}
+.ni.on{background:rgba(255,69,0,.1);color:var(--acc);border-color:rgba(255,69,0,.2)}
+.ni.on::before{content:'';position:absolute;left:0;top:20%;bottom:20%;width:3px;background:var(--acc);border-radius:0 3px 3px 0}
+.nic{font-size:14px;width:18px;text-align:center;flex-shrink:0}
+.sft{margin-top:auto;padding:10px 8px;border-top:1px solid var(--bor)}
+
+/* MAIN */
 #main{flex:1;display:flex;flex-direction:column;overflow:hidden}
-#topbar{height:54px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 22px;gap:14px;flex-shrink:0}
-#pt{font-size:.95rem;font-weight:700}
-#ps{font-size:.72rem;color:var(--t3);margin-top:1px}
-.tb-r{margin-left:auto;display:flex;align-items:center;gap:10px}
-.sdot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green)}
-.stxt{font-size:.68rem;color:var(--t3);font-family:var(--mono)}
-#content{flex:1;overflow-y:auto;padding:22px}
-.page{display:none}.page.active{display:block}
-/* Cards */
-.card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:18px;margin-bottom:14px}
-.ct{font-size:.75rem;font-family:var(--mono);text-transform:uppercase;letter-spacing:.08em;color:var(--t3);margin-bottom:13px;display:flex;align-items:center;gap:7px}
-.ct .acc{color:var(--acc)}
+#tbar{height:52px;background:var(--sur);border-bottom:1px solid var(--bor);display:flex;align-items:center;padding:0 20px;gap:12px;flex-shrink:0}
+#ptit{font-size:.93rem;font-weight:700}
+#psub{font-size:.7rem;color:var(--t3);margin-top:1px}
+.tbr{margin-left:auto;display:flex;align-items:center;gap:8px}
+.sdot{width:7px;height:7px;border-radius:50%;background:var(--grn);box-shadow:0 0 6px var(--grn);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.stxt{font-size:.66rem;color:var(--t3);font-family:var(--mono)}
+#con{flex:1;overflow-y:auto;padding:20px}
+.page{display:none}.page.on{display:block}
+
+/* CARDS */
+.card{background:var(--car);border:1px solid var(--bor);border-radius:var(--r);padding:16px;margin-bottom:14px}
+.ctit{font-size:.72rem;font-family:var(--mono);text-transform:uppercase;letter-spacing:.08em;color:var(--t3);margin-bottom:12px;display:flex;align-items:center;gap:6px}
 .g2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
-.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
-/* Stat */
-.sc{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:14px 18px;position:relative;overflow:hidden}
-.sc::after{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--acc);opacity:.4}
-.sl{font-size:.68rem;color:var(--t3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:7px}
-.sv{font-family:var(--mono);font-size:1.5rem;font-weight:700}
-.ss{font-size:.68rem;color:var(--t3);margin-top:3px}
-/* Form */
-.fg{margin-bottom:13px}
-.fl{display:block;font-size:.7rem;color:var(--t2);font-family:var(--mono);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px}
-input[type=text],input[type=password],textarea,select{width:100%;background:var(--raised);border:1px solid var(--border);border-radius:var(--rs);color:var(--t1);padding:8px 11px;font-family:var(--main);font-size:.85rem;outline:none;transition:border-color .15s}
-input:focus,textarea:focus,select:focus{border-color:var(--acc);box-shadow:0 0 0 3px rgba(255,69,0,.1)}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+
+/* STAT */
+.sc{background:var(--car);border:1px solid var(--bor);border-radius:var(--r);padding:14px 16px;position:relative;overflow:hidden}
+.sc::after{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--acc);opacity:.35}
+.sl{font-size:.65rem;color:var(--t3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px}
+.sv{font-family:var(--mono);font-size:1.4rem;font-weight:700;color:var(--t1)}
+.ss{font-size:.65rem;color:var(--t3);margin-top:3px}
+
+/* FORM */
+.fg{margin-bottom:12px}
+.fl{display:block;font-size:.68rem;color:var(--t2);font-family:var(--mono);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px}
+input,textarea,select{width:100%;background:var(--rai);border:1px solid var(--bor);border-radius:var(--rs);color:var(--t1);padding:8px 10px;font-family:var(--font);font-size:.83rem;outline:none;transition:border-color .15s}
+input:focus,textarea:focus,select:focus{border-color:var(--acc);box-shadow:0 0 0 3px rgba(255,69,0,.08)}
 textarea{resize:vertical;min-height:90px}
 select{cursor:pointer}
-select option{background:var(--raised)}
-/* Buttons */
-.btn{display:inline-flex;align-items:center;gap:7px;padding:8px 16px;border-radius:var(--rs);font-family:var(--main);font-size:.83rem;font-weight:600;cursor:pointer;border:none;transition:all .15s;white-space:nowrap}
-.bp{background:var(--acc);color:#fff}.bp:hover{background:#cc3700;transform:translateY(-1px);box-shadow:0 4px 16px rgba(255,69,0,.3)}
-.bs{background:var(--raised);color:var(--t1);border:1px solid var(--border)}.bs:hover{background:var(--hover)}
-.bb{background:var(--acc2);color:#fff}.bb:hover{background:#005fa3}
+select option{background:var(--rai)}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 15px;border-radius:var(--rs);font-family:var(--font);font-size:.82rem;font-weight:600;cursor:pointer;border:none;transition:all .15s;white-space:nowrap;text-decoration:none}
+.bp{background:var(--acc);color:#fff}.bp:hover{background:#cc3700;transform:translateY(-1px);box-shadow:0 4px 14px rgba(255,69,0,.3)}
+.bs{background:var(--rai);color:var(--t1);border:1px solid var(--bor)}.bs:hover{background:var(--hov)}
+.bb{background:var(--ac2);color:#fff}.bb:hover{background:#005fa3}
 .bd{background:transparent;color:var(--red);border:1px solid rgba(255,88,91,.3)}.bd:hover{background:rgba(255,88,91,.1)}
-.bsm{padding:5px 11px;font-size:.75rem}.bxs{padding:3px 8px;font-size:.68rem}
+.bsm{padding:5px 10px;font-size:.74rem}.bxs{padding:3px 7px;font-size:.67rem}
 .btn:disabled{opacity:.5;cursor:not-allowed;transform:none!important}
-/* Badge */
-.badge{display:inline-flex;align-items:center;padding:2px 7px;border-radius:20px;font-size:.65rem;font-family:var(--mono);font-weight:700;text-transform:uppercase}
-.bo{background:rgba(255,69,0,.15);color:var(--acc);border:1px solid rgba(255,69,0,.3)}
-.bb2{background:rgba(0,121,211,.15);color:var(--acc2);border:1px solid rgba(0,121,211,.3)}
-.bg{background:rgba(70,211,105,.12);color:var(--green);border:1px solid rgba(70,211,105,.3)}
-.br{background:rgba(255,88,91,.12);color:var(--red);border:1px solid rgba(255,88,91,.3)}
-.bgold{background:rgba(255,214,53,.12);color:var(--gold);border:1px solid rgba(255,214,53,.3)}
-.bgray{background:rgba(152,152,176,.1);color:var(--t2);border:1px solid var(--border)}
-/* Table */
+.wf{width:100%}
+
+/* BADGE */
+.bdg{display:inline-flex;align-items:center;padding:2px 7px;border-radius:20px;font-size:.63rem;font-family:var(--mono);font-weight:700;text-transform:uppercase}
+.bo{background:rgba(255,69,0,.12);color:var(--acc);border:1px solid rgba(255,69,0,.25)}
+.bb2{background:rgba(0,121,211,.12);color:var(--ac2);border:1px solid rgba(0,121,211,.25)}
+.bg2{background:rgba(70,211,105,.1);color:var(--grn);border:1px solid rgba(70,211,105,.25)}
+.bgold{background:rgba(255,214,53,.1);color:var(--gol);border:1px solid rgba(255,214,53,.25)}
+.bgr{background:rgba(152,152,176,.08);color:var(--t2);border:1px solid var(--bor)}
+
+/* TABLE */
 .dt{width:100%;border-collapse:collapse}
-.dt th{text-align:left;padding:7px 11px;font-size:.62rem;font-family:var(--mono);text-transform:uppercase;letter-spacing:.1em;color:var(--t3);border-bottom:1px solid var(--border)}
-.dt td{padding:9px 11px;font-size:.8rem;border-bottom:1px solid var(--blite);color:var(--t2)}
+.dt th{text-align:left;padding:7px 10px;font-size:.6rem;font-family:var(--mono);text-transform:uppercase;letter-spacing:.1em;color:var(--t3);border-bottom:1px solid var(--bor)}
+.dt td{padding:9px 10px;font-size:.79rem;border-bottom:1px solid var(--bli);color:var(--t2)}
 .dt tr:last-child td{border-bottom:none}
-.dt tr:hover td{background:var(--raised);color:var(--t1)}
-.dt td.pr{color:var(--t1);font-weight:600}
-.dt .mono{font-family:var(--mono);font-size:.75rem}
-/* Progress */
-.pb{height:4px;background:var(--raised);border-radius:2px;overflow:hidden;margin-top:5px}
-.pf{height:100%;background:var(--acc);border-radius:2px;transition:width .5s}
-.pf.blue{background:var(--acc2)}.pf.green{background:var(--green)}
-/* Trend score */
-.ts{display:inline-flex;align-items:center;justify-content:center;width:38px;height:38px;border-radius:50%;font-family:var(--mono);font-size:.68rem;font-weight:700}
-.tsh{background:rgba(70,211,105,.15);color:var(--green);border:2px solid var(--green)}
-.tsm{background:rgba(255,214,53,.15);color:var(--gold);border:2px solid var(--gold)}
-.tsl{background:rgba(255,88,91,.15);color:var(--red);border:2px solid var(--red)}
-/* AI output */
-.aio{background:var(--raised);border:1px solid var(--border);border-left:3px solid var(--acc);border-radius:var(--rs);padding:15px;font-size:.83rem;line-height:1.75;color:var(--t2)}
-.aio h1,.aio h2,.aio h3{color:var(--t1);margin:1em 0 .4em}
-.aio h1{font-size:1.05rem}.aio h2{font-size:.9rem;color:var(--acc)}.aio h3{font-size:.83rem;color:var(--acc2)}
-.aio strong{color:var(--t1)}.aio code{background:var(--card);padding:1px 5px;border-radius:3px;font-family:var(--mono);font-size:.76rem}
-.aio hr{border:none;border-top:1px solid var(--border);margin:12px 0}
-/* Loader */
-.loader{display:inline-block;width:15px;height:15px;border:2px solid var(--border);border-top-color:var(--acc);border-radius:50%;animation:spin .7s linear infinite}
+.dt tr:hover td{background:var(--rai);color:var(--t1)}
+.dt .pr{color:var(--t1);font-weight:600}
+.dt .mn{font-family:var(--mono);font-size:.74rem}
+
+/* TREND SCORE */
+.ts{display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:50%;font-family:var(--mono);font-size:.66rem;font-weight:700}
+.tsh{background:rgba(70,211,105,.12);color:var(--grn);border:2px solid var(--grn)}
+.tsm{background:rgba(255,214,53,.12);color:var(--gol);border:2px solid var(--gol)}
+.tsl{background:rgba(255,88,91,.12);color:var(--red);border:2px solid var(--red)}
+
+/* AI OUTPUT */
+.aio{background:var(--rai);border:1px solid var(--bor);border-left:3px solid var(--acc);border-radius:var(--rs);padding:14px;font-size:.82rem;line-height:1.75;color:var(--t2)}
+.aio h1,.aio h2,.aio h3{color:var(--t1);margin:.8em 0 .35em}
+.aio h1{font-size:1rem}.aio h2{font-size:.88rem;color:var(--acc)}.aio h3{font-size:.82rem;color:var(--ac2)}
+.aio strong{color:var(--t1)}.aio code{background:var(--car);padding:1px 5px;border-radius:3px;font-family:var(--mono);font-size:.75rem}
+.aio hr{border:none;border-top:1px solid var(--bor);margin:10px 0}
+.aio ul,.aio ol{padding-left:18px;margin:6px 0}
+.aio li{margin-bottom:3px}
+.aio blockquote{border-left:3px solid rgba(255,69,0,.4);margin:8px 0;padding:6px 12px;background:rgba(255,69,0,.04);border-radius:0 var(--rs) var(--rs) 0}
+
+/* LOADER */
+.ld{display:inline-block;width:15px;height:15px;border:2px solid var(--bor);border-top-color:var(--acc);border-radius:50%;animation:spin .7s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
-.ls{display:flex;align-items:center;gap:10px;color:var(--t3);font-size:.8rem;padding:18px}
-/* Bar chart */
-.bc{display:flex;flex-direction:column;gap:7px}
-.br2{display:flex;align-items:center;gap:9px}
-.bl{font-size:.7rem;color:var(--t2);width:90px;flex-shrink:0;text-align:right;font-family:var(--mono)}
-.bt{flex:1;height:7px;background:var(--raised);border-radius:4px;overflow:hidden}
-.bf{height:100%;background:var(--acc);border-radius:4px;transition:width .6s}
-.bf.blue{background:var(--acc2)}
-.bv{font-size:.65rem;color:var(--t3);width:36px;font-family:var(--mono)}
-/* Tag cloud */
-.tc{display:flex;flex-wrap:wrap;gap:6px}
-.tag{padding:3px 9px;border-radius:20px;font-size:.7rem;font-family:var(--mono);background:var(--raised);color:var(--t2);border:1px solid var(--border)}
-.tag.lg{font-size:.82rem;padding:4px 12px;color:var(--acc);border-color:rgba(255,69,0,.3);background:rgba(255,69,0,.08)}
-.tag.md{font-size:.76rem;color:var(--t1)}
-/* Compare */
-.cg{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-.cb{background:var(--raised);border:1px solid var(--border);border-radius:var(--rs);padding:13px}
-.cb.orig{border-left:3px solid var(--t3)}.cb.hum{border-left:3px solid var(--green)}
-.clbl{font-size:.62rem;font-family:var(--mono);text-transform:uppercase;letter-spacing:.1em;color:var(--t3);margin-bottom:7px}
-.ctxt{font-size:.81rem;line-height:1.7;color:var(--t2);white-space:pre-wrap}
-/* Mode pills */
-.mp{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:13px}
-.mpill{padding:5px 13px;border-radius:20px;border:1px solid var(--border);background:var(--raised);color:var(--t2);font-size:.76rem;cursor:pointer;transition:all .15s}
+.ls{display:flex;align-items:center;gap:10px;color:var(--t3);font-size:.79rem;padding:16px}
+
+/* BAR CHART */
+.bc{display:flex;flex-direction:column;gap:6px}
+.br2{display:flex;align-items:center;gap:8px}
+.blbl{font-size:.68rem;color:var(--t2);width:85px;flex-shrink:0;text-align:right;font-family:var(--mono);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.btrk{flex:1;height:7px;background:var(--rai);border-radius:4px;overflow:hidden}
+.bfil{height:100%;background:var(--acc);border-radius:4px;transition:width .6s}.bfil.bl{background:var(--ac2)}
+.bval{font-size:.64rem;color:var(--t3);width:34px;font-family:var(--mono)}
+
+/* TAG CLOUD */
+.tc{display:flex;flex-wrap:wrap;gap:5px}
+.tag{padding:3px 9px;border-radius:20px;font-size:.69rem;font-family:var(--mono);background:var(--rai);color:var(--t2);border:1px solid var(--bor)}
+.tag.lg{font-size:.8rem;padding:4px 11px;color:var(--acc);border-color:rgba(255,69,0,.3);background:rgba(255,69,0,.07)}
+.tag.md{font-size:.74rem;color:var(--t1)}
+
+/* COMPARE */
+.cg{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.cb{background:var(--rai);border:1px solid var(--bor);border-radius:var(--rs);padding:12px}
+.cb.orig{border-left:3px solid var(--t3)}.cb.hum{border-left:3px solid var(--grn)}
+.clbl{font-size:.6rem;font-family:var(--mono);text-transform:uppercase;letter-spacing:.1em;color:var(--t3);margin-bottom:6px}
+.ctxt{font-size:.8rem;line-height:1.7;color:var(--t2);white-space:pre-wrap;max-height:300px;overflow-y:auto}
+
+/* MODE PILLS */
+.mp{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.mpill{padding:5px 12px;border-radius:20px;border:1px solid var(--bor);background:var(--rai);color:var(--t2);font-size:.74rem;cursor:pointer;transition:all .15s}
 .mpill:hover{border-color:var(--acc);color:var(--t1)}
-.mpill.sel{background:rgba(255,69,0,.12);border-color:var(--acc);color:var(--acc)}
-/* Post */
-.pc{background:var(--raised);border:1px solid var(--border);border-radius:var(--r);padding:15px;margin-bottom:13px}
-.ptitle{font-weight:700;color:var(--t1);margin-bottom:7px;line-height:1.4}
-.pbody{font-size:.81rem;color:var(--t2);line-height:1.65;white-space:pre-wrap}
-.pmeta{display:flex;gap:8px;margin-top:9px;flex-wrap:wrap}
-/* Alert */
-.ai2{display:flex;gap:11px;padding:10px 0;border-bottom:1px solid var(--blite)}
+.mpill.sel{background:rgba(255,69,0,.1);border-color:var(--acc);color:var(--acc)}
+
+/* POST CARD */
+.pc{background:var(--rai);border:1px solid var(--bor);border-radius:var(--r);padding:14px;margin-bottom:12px}
+.ptit{font-weight:700;color:var(--t1);margin-bottom:7px;line-height:1.4;font-size:.93rem}
+.pbod{font-size:.8rem;color:var(--t2);line-height:1.65;min-height:20px}
+.pbp{margin-bottom:9px;color:var(--t2);font-size:.8rem;line-height:1.7}
+.pbp:last-child{margin-bottom:0}
+.pbb{display:flex;gap:9px;padding:3px 0;color:var(--t2);font-size:.8rem;line-height:1.6;align-items:flex-start}
+.pba{color:var(--acc);font-weight:700;flex-shrink:0;margin-top:1px}
+.pbn{display:flex;gap:9px;padding:3px 0;color:var(--t2);font-size:.8rem;line-height:1.6;align-items:flex-start}
+.pbna{color:var(--acc);font-family:var(--mono);font-size:.73rem;font-weight:700;flex-shrink:0;min-width:18px}
+.pmet{display:flex;gap:7px;margin-top:9px;flex-wrap:wrap}
+
+/* ALERT ITEM */
+.ai2{display:flex;gap:10px;padding:9px 0;border-bottom:1px solid var(--bli)}
 .ai2:last-child{border-bottom:none}
-.aico{font-size:18px;flex-shrink:0;margin-top:1px}
-.amsg{font-size:.8rem;color:var(--t2);line-height:1.5}
-.atm{font-size:.65rem;color:var(--t3);font-family:var(--mono);margin-top:2px}
-/* Toast */
-.toast{position:fixed;bottom:22px;right:22px;background:var(--card);border:1px solid var(--border);border-left:3px solid var(--acc);border-radius:var(--rs);padding:11px 15px;font-size:.81rem;color:var(--t1);z-index:9999;box-shadow:0 4px 24px rgba(0,0,0,.4);animation:sli .25s ease;max-width:300px}
-.toast.ok{border-left-color:var(--green)}.toast.er{border-left-color:var(--red)}
-@keyframes sli{from{transform:translateX(20px);opacity:0}to{transform:translateX(0);opacity:1}}
-/* Utils */
-.sh{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
-.stit{font-size:.95rem;font-weight:700}.ssub{font-size:.76rem;color:var(--t3);margin-top:2px}
-.div{border:none;border-top:1px solid var(--border);margin:14px 0}
-.es{text-align:center;padding:36px 18px;color:var(--t3)}.es .eic{font-size:36px;margin-bottom:10px}.es p{font-size:.8rem}
-.tm{color:var(--t3)}.tsm2{font-size:.76rem}.mn{font-family:var(--mono)}
+.aico{font-size:17px;flex-shrink:0;margin-top:1px}
+.amsg{font-size:.79rem;color:var(--t2);line-height:1.5}
+.atm{font-size:.63rem;color:var(--t3);font-family:var(--mono);margin-top:2px}
+
+/* TOAST */
+.toast{position:fixed;bottom:20px;right:20px;background:var(--car);border:1px solid var(--bor);border-left:3px solid var(--acc);border-radius:var(--rs);padding:10px 14px;font-size:.8rem;color:var(--t1);z-index:9999;box-shadow:0 4px 20px rgba(0,0,0,.4);animation:si .2s ease;max-width:300px}
+.toast.ok{border-left-color:var(--grn)}.toast.er{border-left-color:var(--red)}
+@keyframes si{from{transform:translateX(18px);opacity:0}to{transform:translateX(0);opacity:1}}
+
+/* NOTICE */
+.notice{background:rgba(255,214,53,.05);border:1px solid rgba(255,214,53,.2);border-radius:var(--rs);padding:9px 13px;font-size:.77rem;color:var(--gol);margin-bottom:12px;display:flex;gap:8px;align-items:flex-start}
+
+/* UTILS */
+.div{border:none;border-top:1px solid var(--bor);margin:12px 0}
+.mt12{margin-top:12px}.mt16{margin-top:16px}
+.es{text-align:center;padding:32px 16px;color:var(--t3)}
+.es .ei{font-size:32px;margin-bottom:9px}.es p{font-size:.78rem}
+.tm{color:var(--t3)}.tsm{font-size:.75rem}.mn{font-family:var(--mono)}
 .flex{display:flex}.aic{align-items:center}.jb{justify-content:space-between}.g8{gap:8px}
-.mt12{margin-top:12px}.mt16{margin-top:16px}.wf{width:100%}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}.pulse{animation:pulse 2s infinite}
-/* Sections headers */
-.sec-h{margin-bottom:16px}
-.sec-h .title{font-size:1rem;font-weight:700;color:var(--t1)}
-.sec-h .sub{font-size:.75rem;color:var(--t3);margin-top:3px}
-/* API key notice */
-.key-notice{background:rgba(255,214,53,.06);border:1px solid rgba(255,214,53,.2);border-radius:var(--rs);padding:10px 14px;font-size:.78rem;color:var(--gold);margin-bottom:14px;display:flex;gap:8px;align-items:flex-start}
-@media(max-width:900px){.g4{grid-template-columns:1fr 1fr}.g3{grid-template-columns:1fr 1fr}}
-@media(max-width:640px){#sb{display:none}.g2,.g3,.g4,.cg{grid-template-columns:1fr}}
+.sh{display:flex;align-items:center;justify-content:space-between;margin-bottom:13px}
+.stit{font-size:.93rem;font-weight:700}.ssub{font-size:.73rem;color:var(--t3);margin-top:2px}
+
+@media(max-width:860px){.g4{grid-template-columns:1fr 1fr}}
+@media(max-width:600px){#sb{display:none}.g2,.g4,.cg{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
 
 <!-- SIDEBAR -->
 <nav id="sb">
-  <div class="sb-brand">
-    <div class="brand-row">
-      <div class="b-icon">🤖</div>
-      <div><div class="b-name">RIA</div><div class="b-sub">Intelligence Agent</div></div>
-    </div>
+  <div class="sbrand">
+    <div class="bico">🤖</div>
+    <div><div class="bname">RIA</div><div class="bsub">Intelligence Agent</div></div>
   </div>
-  <div class="sb-sec">
-    <div class="sb-lbl">Core</div>
-    <div class="ni active" data-p="dashboard"><span class="ni-ic">⚡</span>Dashboard</div>
+  <div class="ssec">
+    <div class="slbl">Core</div>
+    <div class="ni on" data-p="dashboard"><span class="nic">⚡</span>Dashboard</div>
   </div>
-  <div class="sb-sec">
-    <div class="sb-lbl">Modules</div>
-    <div class="ni" data-p="analyzer"><span class="ni-ic">🔍</span>Subreddit Analyzer</div>
-    <div class="ni" data-p="trends"><span class="ni-ic">📈</span>Trend Finder</div>
-    <div class="ni" data-p="competitors"><span class="ni-ic">🎯</span>Competitor Tracker</div>
-    <div class="ni" data-p="humanizer"><span class="ni-ic">✍️</span>AI Humanizer</div>
-    <div class="ni" data-p="generator"><span class="ni-ic">✨</span>Post Generator</div>
-    <div class="ni" data-p="keywords"><span class="ni-ic">🔑</span>Keyword Discovery</div>
+  <div class="ssec">
+    <div class="slbl">Modules</div>
+    <div class="ni" data-p="analyzer"><span class="nic">🔍</span>Subreddit Analyzer</div>
+    <div class="ni" data-p="trends"><span class="nic">📈</span>Trend Finder</div>
+    <div class="ni" data-p="competitors"><span class="nic">🎯</span>Competitor Tracker</div>
+    <div class="ni" data-p="humanizer"><span class="nic">✍️</span>AI Humanizer</div>
+    <div class="ni" data-p="generator"><span class="nic">✨</span>Post Generator</div>
+    <div class="ni" data-p="keywords"><span class="nic">🔑</span>Keyword Discovery</div>
   </div>
-  <div class="sb-sec">
-    <div class="sb-lbl">System</div>
-    <div class="ni" data-p="automation"><span class="ni-ic">⚙️</span>Automation</div>
-    <div class="ni" data-p="settings"><span class="ni-ic">🔧</span>Settings</div>
+  <div class="ssec">
+    <div class="slbl">System</div>
+    <div class="ni" data-p="automation"><span class="nic">⚙️</span>Automation</div>
+    <div class="ni" data-p="settings"><span class="nic">🔧</span>Settings</div>
   </div>
-  <div class="sb-ft">
+  <div class="sft">
     <div class="ni" style="cursor:default">
-      <span class="ni-ic">🟢</span>
-      <span style="font-size:.72rem;color:var(--t3)" id="api-badge">No API Key</span>
+      <span class="nic">●</span>
+      <span id="api-badge" style="font-size:.7rem;color:var(--t3)">No API Key</span>
     </div>
   </div>
 </nav>
 
 <!-- MAIN -->
 <div id="main">
-  <div id="topbar">
-    <div><div id="pt">Dashboard</div><div id="ps">Overview & quick stats</div></div>
-    <div class="tb-r">
-      <div class="sdot pulse"></div>
-      <span class="stxt">RIA v1.0</span>
-    </div>
+  <div id="tbar">
+    <div><div id="ptit">Dashboard</div><div id="psub">Overview & quick actions</div></div>
+    <div class="tbr"><div class="sdot"></div><span class="stxt">RIA v1.0</span></div>
   </div>
-  <div id="content">
+  <div id="con">
 
     <!-- DASHBOARD -->
-    <div id="page-dashboard" class="page active">
-      <div class="g4" id="dash-stats">
-        <div class="sc"><div class="sl">Analyzed Subreddits</div><div class="sv" id="d-subs">0</div><div class="ss">in session</div></div>
-        <div class="sc"><div class="sl">Trends Detected</div><div class="sv" id="d-trends">0</div><div class="ss">keywords tracked</div></div>
-        <div class="sc"><div class="sl">Competitors</div><div class="sv" id="d-comps">0</div><div class="ss">subreddits</div></div>
-        <div class="sc"><div class="sl">Posts Generated</div><div class="sv" id="d-posts">0</div><div class="ss">this session</div></div>
+    <div id="page-dashboard" class="page on">
+      <div class="g4">
+        <div class="sc"><div class="sl">Subreddits Analyzed</div><div class="sv" id="d-s">0</div><div class="ss">this session</div></div>
+        <div class="sc"><div class="sl">Trends Found</div><div class="sv" id="d-t">0</div><div class="ss">keywords</div></div>
+        <div class="sc"><div class="sl">Competitors</div><div class="sv" id="d-c">0</div><div class="ss">tracked</div></div>
+        <div class="sc"><div class="sl">Posts Generated</div><div class="sv" id="d-p">0</div><div class="ss">this session</div></div>
       </div>
       <div class="g2 mt16">
         <div class="card">
-          <div class="ct">⚡ Quick Actions</div>
+          <div class="ctit">⚡ Quick Start</div>
           <div style="display:flex;flex-direction:column;gap:8px">
             <button class="btn bp wf" onclick="nav('analyzer')">🔍 Analyze a Subreddit</button>
-            <button class="btn bs wf" onclick="nav('trends')">📈 Scan for Trends</button>
+            <button class="btn bs wf" onclick="nav('trends')">📈 Scan Trends</button>
             <button class="btn bs wf" onclick="nav('humanizer')">✍️ Humanize AI Text</button>
-            <button class="btn bs wf" onclick="nav('generator')">✨ Generate a Post</button>
+            <button class="btn bs wf" onclick="nav('generator')">✨ Generate Post</button>
             <button class="btn bs wf" onclick="nav('keywords')">🔑 Discover Keywords</button>
           </div>
         </div>
         <div class="card">
-          <div class="ct">ℹ️ About RIA</div>
-          <p style="font-size:.8rem;color:var(--t2);line-height:1.8">
-            <strong style="color:var(--t1)">Reddit Intelligence Agent</strong> is an AI-powered platform for Reddit power users.<br><br>
-            <span style="color:var(--acc)">Modules:</span><br>
-            • Subreddit Analyzer — deep community intelligence<br>
-            • Trend Finder — emerging keywords & topics<br>
-            • Competitor Tracker — monitor rival communities<br>
-            • AI Humanizer — make AI text sound human<br>
-            • Post Generator — create authentic content<br>
-            • Keyword Discovery — find opportunities<br>
-            • Automation — background job scheduler<br><br>
-            <span style="color:var(--t3);font-size:.72rem">Add Anthropic API key in Settings for AI features. Reddit data fetched live.</span>
-          </p>
+          <div class="ctit">🔧 Setup Status</div>
+          <div id="dash-setup"></div>
         </div>
-      </div>
-      <div class="card mt16" id="dash-recent" style="display:none">
-        <div class="ct">📋 Recent Activity</div>
-        <div id="dash-activity"></div>
       </div>
     </div>
 
     <!-- SUBREDDIT ANALYZER -->
     <div id="page-analyzer" class="page">
       <div class="card">
-        <div class="sec-h"><div class="title">🔍 Subreddit Analyzer</div><div class="sub">Fetch live Reddit data + AI intelligence report</div></div>
-        <div id="key-warn-analyzer" class="key-notice" style="display:none">⚠️ Add Anthropic API key in Settings for AI analysis. Live Reddit data will still be fetched.</div>
+        <div class="sh"><div><div class="stit">🔍 Subreddit Analyzer</div><div class="ssub">Live Reddit data + AI intelligence report</div></div></div>
         <div style="display:flex;gap:10px;align-items:flex-end">
           <div class="fg" style="flex:1;margin:0">
             <label class="fl">Subreddit Name</label>
-            <input type="text" id="sub-in" placeholder="e.g. entrepreneur, marketing, AITools" onkeydown="if(event.key==='Enter')analyzeSubreddit()"/>
+            <input id="sub-in" placeholder="e.g. entrepreneur, marketing, startups" onkeydown="if(event.key==='Enter')doAnalyze()">
           </div>
-          <button class="btn bp" id="abtn" onclick="analyzeSubreddit()">🔍 Analyze</button>
+          <button class="btn bp" id="abtn" onclick="doAnalyze()">🔍 Analyze</button>
         </div>
       </div>
-      <div id="a-load" style="display:none"><div class="card"><div class="ls"><div class="loader"></div>Fetching Reddit data & generating AI report... (15-30s)</div></div></div>
+      <div id="a-load" style="display:none"><div class="card"><div class="ls"><div class="ld"></div><span id="a-load-msg">Fetching Reddit data...</span></div></div></div>
       <div id="a-res" style="display:none">
         <div class="g4" id="a-stats"></div>
         <div class="g2 mt16">
-          <div class="card"><div class="ct">🔑 Top Keywords</div><div id="a-kw"></div></div>
-          <div class="card"><div class="ct">📅 Posting Patterns</div><div id="a-pat"></div></div>
+          <div class="card"><div class="ctit">🔑 Top Keywords</div><div id="a-kw"></div></div>
+          <div class="card"><div class="ctit">📅 Activity by Day</div><div id="a-days"></div></div>
         </div>
-        <div class="card"><div class="ct">🏆 Top Posts</div><table class="dt"><thead><tr><th>#</th><th>Title</th><th>Score</th><th>Comments</th></tr></thead><tbody id="a-posts"></tbody></table></div>
         <div class="card">
-          <div class="ct"><span class="acc">🤖</span> AI Intelligence Report</div>
+          <div class="ctit">🏆 Top Posts This Month</div>
+          <table class="dt"><thead><tr><th>#</th><th>Title</th><th>Score</th><th>Comments</th></tr></thead><tbody id="a-posts"></tbody></table>
+        </div>
+        <div class="card">
+          <div class="ctit"><span style="color:var(--acc)">🤖</span> AI Intelligence Report</div>
           <div id="a-ai" class="aio"></div>
-          <div style="margin-top:11px;display:flex;gap:8px">
-            <button class="btn bs bsm" onclick="copyAIReport()">📋 Copy Report</button>
-            <button class="btn bs bsm" onclick="downloadReport()">⬇️ Download MD</button>
+          <div style="margin-top:10px;display:flex;gap:8px">
+            <button class="btn bs bsm" onclick="copyReport()">📋 Copy</button>
+            <button class="btn bs bsm" onclick="dlReport()">⬇️ Download .md</button>
           </div>
         </div>
       </div>
@@ -283,27 +289,28 @@ select option{background:var(--raised)}
     <div id="page-trends" class="page">
       <div class="g2">
         <div class="card">
-          <div class="sec-h"><div class="title">📈 Trend Finder</div><div class="sub">Scan multiple subreddits for rising keywords</div></div>
-          <div class="fg"><label class="fl">Subreddits to Scan (comma separated)</label><input type="text" id="tr-subs" value="marketing,socialmedia,entrepreneur,artificial,startups,business"/></div>
-          <button class="btn bp" onclick="scanTrends()" id="tr-btn">📡 Scan Now</button>
+          <div class="sh"><div><div class="stit">📈 Trend Finder</div><div class="ssub">Scan multiple subreddits for rising keywords</div></div></div>
+          <div class="fg"><label class="fl">Subreddits (comma separated)</label><input id="tr-subs" value="marketing,socialmedia,entrepreneur,artificial,startups"></div>
+          <button class="btn bp" id="trbtn" onclick="doTrends()">📡 Scan Now</button>
         </div>
         <div class="card">
-          <div class="ct">📋 Watchlists</div>
+          <div class="ctit">📋 Watchlists</div>
           <div id="wl-list"></div>
           <div class="div"></div>
-          <div style="display:flex;gap:7px;align-items:flex-end">
-            <div style="flex:.4"><label class="fl">Name</label><input type="text" id="wl-n" placeholder="My Watchlist"/></div>
-            <div style="flex:1"><label class="fl">Subreddits</label><input type="text" id="wl-s" placeholder="sub1, sub2, sub3"/></div>
-            <button class="btn bs bsm" onclick="addWL()">+ Add</button>
+          <div style="display:flex;gap:6px">
+            <input id="wl-n" placeholder="Name" style="flex:.4">
+            <input id="wl-s" placeholder="sub1,sub2,sub3" style="flex:1">
+            <button class="btn bs bsm" onclick="addWL()">+Add</button>
           </div>
         </div>
       </div>
-      <div id="tr-load" style="display:none"><div class="card"><div class="ls"><div class="loader"></div>Scanning subreddits for trends...</div></div></div>
+      <div id="tr-load" style="display:none"><div class="card"><div class="ls"><div class="ld"></div>Scanning subreddits...</div></div></div>
       <div id="tr-res" style="display:none">
-        <div class="card"><div class="ct"><span class="acc">🤖</span> AI Trend Briefing</div><div id="tr-ai" class="aio"></div></div>
+        <div class="card"><div class="ctit"><span style="color:var(--acc)">🤖</span> AI Trend Briefing</div><div id="tr-ai" class="aio"></div></div>
         <div class="card">
-          <div class="ct">🔥 Trending Keywords</div>
-          <table class="dt"><thead><tr><th>Rank</th><th>Keyword</th><th>Score</th><th>Mentions</th><th>Growth</th><th>Subreddits</th></tr></thead><tbody id="tr-kw"></tbody></table>
+          <div class="ctit">🔥 Top Trending Keywords</div>
+          <table class="dt"><thead><tr><th>Rank</th><th>Keyword</th><th>Score</th><th>Mentions</th><th>Growth</th><th>Found In</th></tr></thead>
+          <tbody id="tr-body"></tbody></table>
         </div>
       </div>
     </div>
@@ -312,53 +319,56 @@ select option{background:var(--raised)}
     <div id="page-competitors" class="page">
       <div class="g2">
         <div class="card">
-          <div class="sec-h"><div class="title">🎯 Add Competitor</div></div>
-          <div class="fg"><label class="fl">Subreddit</label><input type="text" id="cp-sub" placeholder="e.g. digital_marketing"/></div>
-          <div class="fg"><label class="fl">Label (optional)</label><input type="text" id="cp-lbl" placeholder="e.g. Main Competitor"/></div>
+          <div class="sh"><div><div class="stit">🎯 Track Competitor</div></div></div>
+          <div class="fg"><label class="fl">Subreddit</label><input id="cp-sub" placeholder="e.g. digital_marketing"></div>
+          <div class="fg"><label class="fl">Label (optional)</label><input id="cp-lbl" placeholder="Competitor A"></div>
           <div style="display:flex;gap:8px">
-            <button class="btn bp" onclick="addComp()">+ Track Competitor</button>
+            <button class="btn bp" onclick="addComp()">+ Add</button>
             <button class="btn bs" onclick="refreshComps()">🔄 Refresh All</button>
           </div>
         </div>
         <div class="card">
-          <div class="ct">🤖 AI Analysis</div>
-          <p class="tsm2" style="color:var(--t2);margin-bottom:11px">Run AI analysis on all tracked competitors to find content gaps and opportunities.</p>
-          <button class="btn bb" onclick="analyzeComps()">Run AI Analysis</button>
+          <div class="ctit">🤖 AI Analysis</div>
+          <p style="font-size:.79rem;color:var(--t2);margin-bottom:10px">AI comparison of all tracked competitors — find gaps and opportunities.</p>
+          <button class="btn bb" onclick="analyzeComps()">▶ Run AI Analysis</button>
         </div>
       </div>
-      <div class="card"><div class="ct">📊 Tracked Competitors</div><div id="cp-grid"></div></div>
-      <div id="cp-ai-wrap" style="display:none" class="card"><div class="ct"><span class="acc">🤖</span> Competitive Intelligence</div><div id="cp-ai" class="aio"></div></div>
+      <div class="card"><div class="ctit">📊 Tracked Competitors</div><div id="cp-list"></div></div>
+      <div id="cp-ai-wrap" style="display:none" class="card"><div class="ctit"><span style="color:var(--acc)">🤖</span> Competitive Intelligence</div><div id="cp-ai" class="aio"></div></div>
     </div>
 
     <!-- AI HUMANIZER -->
     <div id="page-humanizer" class="page">
       <div class="card">
-        <div class="sec-h"><div class="title">✍️ AI Text Humanizer</div><div class="sub">Transform robotic AI text into authentic human writing</div></div>
-        <div class="fg"><label class="fl">Mode</label>
+        <div class="sh"><div><div class="stit">✍️ AI Text Humanizer</div><div class="ssub">Transform robotic AI text into authentic human writing</div></div></div>
+        <div class="fg">
+          <label class="fl">Mode</label>
           <div class="mp">
             <div class="mpill sel" data-m="human" onclick="selMode(this)">🧑 Human</div>
-            <div class="mpill" data-m="casual_human" onclick="selMode(this)">😄 Casual</div>
-            <div class="mpill" data-m="reddit_human" onclick="selMode(this)">🔴 Reddit</div>
-            <div class="mpill" data-m="professional_human" onclick="selMode(this)">💼 Professional</div>
-            <div class="mpill" data-m="community_discussion" onclick="selMode(this)">💬 Community</div>
+            <div class="mpill" data-m="casual" onclick="selMode(this)">😄 Casual</div>
+            <div class="mpill" data-m="reddit" onclick="selMode(this)">🔴 Reddit</div>
+            <div class="mpill" data-m="pro" onclick="selMode(this)">💼 Professional</div>
+            <div class="mpill" data-m="community" onclick="selMode(this)">💬 Community</div>
           </div>
         </div>
         <div class="fg">
-          <label class="fl">AI-Generated Text</label>
-          <textarea id="hum-in" placeholder="Paste your AI-generated text here..." style="min-height:130px" oninput="document.getElementById('hcc').textContent=this.value.length+' / 5000'"></textarea>
-          <div style="font-size:.68rem;color:var(--t3);margin-top:3px" id="hcc">0 / 5000</div>
+          <label class="fl">AI-Generated Text <span id="hcc" style="color:var(--t3);font-weight:400;font-family:var(--font)">0/5000</span></label>
+          <textarea id="hum-in" placeholder="Paste your AI-generated text here..." oninput="document.getElementById('hcc').textContent=this.value.length+'/5000'"></textarea>
         </div>
-        <button class="btn bp" id="hbtn" onclick="humanize()">✨ Humanize Text</button>
+        <button class="btn bp" id="hbtn" onclick="doHumanize()">✨ Humanize Text</button>
       </div>
       <div id="h-res" style="display:none" class="card">
-        <div class="ct">Side-by-Side Comparison</div>
+        <div class="ctit">Side-by-Side Comparison</div>
         <div class="cg">
           <div class="cb orig"><div class="clbl">Original (AI)</div><div class="ctxt" id="h-orig"></div></div>
           <div class="cb hum"><div class="clbl">Humanized ✓</div><div class="ctxt" id="h-hum"></div></div>
         </div>
-        <div style="margin-top:11px;display:flex;gap:8px">
-          <button class="btn bs bsm" onclick="copyHum()">📋 Copy Humanized</button>
-          <button class="btn bs bsm" onclick="humanize()">🔄 Humanize Again</button>
+        <div id="h-stats-wrap" style="display:none;margin-top:10px" id="h-stats-wrap">
+          <div id="h-stats"></div>
+        </div>
+        <div style="margin-top:10px;display:flex;gap:8px">
+          <button class="btn bs bsm" onclick="copyHum()">📋 Copy</button>
+          <button class="btn bs bsm" onclick="doHumanize()">🔄 Again</button>
         </div>
       </div>
     </div>
@@ -367,8 +377,8 @@ select option{background:var(--raised)}
     <div id="page-generator" class="page">
       <div class="g2">
         <div class="card">
-          <div class="sec-h"><div class="title">✨ Post Generator</div><div class="sub">Create organic, community-driven Reddit posts</div></div>
-          <div class="fg"><label class="fl">Subreddit</label><input type="text" id="pg-sub" placeholder="e.g. entrepreneur"/></div>
+          <div class="sh"><div><div class="stit">✨ Post Generator</div><div class="ssub">Organic, community-driven Reddit posts</div></div></div>
+          <div class="fg"><label class="fl">Subreddit</label><input id="pg-sub" placeholder="e.g. entrepreneur"></div>
           <div class="fg"><label class="fl">Post Type</label>
             <select id="pg-type">
               <option value="discussion">💬 Discussion Post</option>
@@ -385,7 +395,6 @@ select option{background:var(--raised)}
               <option value="professional">Professional</option>
               <option value="enthusiastic">Enthusiastic</option>
               <option value="humble">Humble & Curious</option>
-              <option value="authoritative">Authoritative</option>
             </select>
           </div>
           <div class="fg"><label class="fl">Goal</label>
@@ -393,49 +402,50 @@ select option{background:var(--raised)}
               <option value="engagement">Drive Engagement</option>
               <option value="traffic">Drive Traffic</option>
               <option value="brand_awareness">Brand Awareness</option>
-              <option value="community_building">Community Building</option>
-              <option value="education">Educate Community</option>
+              <option value="community">Community Building</option>
+              <option value="education">Educate</option>
             </select>
           </div>
-          <button class="btn bp wf" onclick="genPost()" id="pgbtn">✨ Generate Post</button>
+          <button class="btn bp wf" id="pgbtn" onclick="doGenPost()">✨ Generate Post</button>
         </div>
         <div>
-          <div id="pg-load" style="display:none" class="card"><div class="ls"><div class="loader"></div>Generating post...</div></div>
-          <div id="pg-res" style="display:none">
+          <div id="pg-load" style="display:none" class="card"><div class="ls"><div class="ld"></div>Generating post...</div></div>
+          <div id="pg-out" style="display:none">
             <div class="pc">
-              <div class="ptitle" id="pg-title"></div>
-              <div class="pbody" id="pg-body"></div>
-              <div class="pmeta" id="pg-meta"></div>
+              <div class="ptit" id="pg-tit"></div>
+              <div class="pbod" id="pg-bod"></div>
+              <div class="pmet" id="pg-met"></div>
             </div>
-            <div class="card" id="pg-tips-card"><div class="ct">💡 Tips</div><div id="pg-tips"></div></div>
+            <div class="card"><div class="ctit">💡 Tips</div><div id="pg-tips"></div></div>
             <div style="display:flex;gap:8px;margin-top:8px">
-              <button class="btn bs bsm" onclick="copyPost()">📋 Copy Post</button>
-              <button class="btn bs bsm" onclick="genPost()">🔄 Regenerate</button>
+              <button class="btn bs bsm" onclick="copyPost()">📋 Copy</button>
+              <button class="btn bs bsm" onclick="doGenPost()">🔄 Regenerate</button>
             </div>
           </div>
-          <div class="card mt16"><div class="ct">📚 Generated Posts</div><div id="pg-hist"></div></div>
+          <div class="card mt16"><div class="ctit">📚 History</div><div id="pg-hist"></div></div>
         </div>
       </div>
     </div>
 
-    <!-- KEYWORD DISCOVERY -->
+    <!-- KEYWORDS -->
     <div id="page-keywords" class="page">
       <div class="card">
-        <div class="sec-h"><div class="title">🔑 Keyword Discovery</div><div class="sub">Mine trending & underserved keywords from Reddit</div></div>
+        <div class="sh"><div><div class="stit">🔑 Keyword Discovery</div><div class="ssub">Mine trending & underserved keywords</div></div></div>
         <div style="display:flex;gap:10px;align-items:flex-end">
-          <div class="fg" style="flex:1;margin:0"><label class="fl">Subreddits to Mine</label><input type="text" id="kw-subs" value="entrepreneur,startups,marketing,business,SEO"/></div>
-          <button class="btn bp" onclick="discoverKW()" id="kwbtn">🔑 Discover</button>
+          <div class="fg" style="flex:1;margin:0"><label class="fl">Subreddits to Mine</label><input id="kw-subs" value="entrepreneur,startups,marketing,business,SEO"></div>
+          <button class="btn bp" id="kwbtn" onclick="doKeywords()">🔑 Discover</button>
         </div>
       </div>
-      <div id="kw-load" style="display:none"><div class="card"><div class="ls"><div class="loader"></div>Mining keywords...</div></div></div>
+      <div id="kw-load" style="display:none"><div class="card"><div class="ls"><div class="ld"></div>Mining keywords...</div></div></div>
       <div id="kw-res" style="display:none">
-        <div class="card"><div class="ct"><span class="acc">🤖</span> AI Keyword Strategy</div><div id="kw-ai" class="aio"></div></div>
+        <div class="card"><div class="ctit"><span style="color:var(--acc)">🤖</span> AI Strategy</div><div id="kw-ai" class="aio"></div></div>
         <div class="g2">
-          <div class="card"><div class="ct">📊 Top Keywords by Trend Score</div><div id="kw-chart"></div></div>
-          <div class="card"><div class="ct">☁️ Keyword Cloud</div><div id="kw-cloud" class="tc" style="padding:6px 0"></div></div>
+          <div class="card"><div class="ctit">📊 Top 10 by Score</div><div id="kw-chart"></div></div>
+          <div class="card"><div class="ctit">☁️ Keyword Cloud</div><div id="kw-cloud" class="tc" style="padding:4px 0"></div></div>
         </div>
-        <div class="card"><div class="ct">📋 Full Keyword Table</div>
-          <table class="dt"><thead><tr><th>Keyword</th><th>Score</th><th>Mentions</th><th>Avg Score</th><th>Growth</th><th>Subreddits</th></tr></thead><tbody id="kw-tbl"></tbody></table>
+        <div class="card"><div class="ctit">📋 All Keywords</div>
+          <table class="dt"><thead><tr><th>Keyword</th><th>Score</th><th>Mentions</th><th>Avg Score</th><th>Growth</th><th>Subreddits</th></tr></thead>
+          <tbody id="kw-tbl"></tbody></table>
         </div>
       </div>
     </div>
@@ -444,8 +454,8 @@ select option{background:var(--raised)}
     <div id="page-automation" class="page">
       <div class="g2">
         <div class="card">
-          <div class="sec-h"><div class="title">⚙️ Create Monitoring Job</div></div>
-          <div class="fg"><label class="fl">Job Name</label><input type="text" id="jb-n" placeholder="e.g. Daily Marketing Scan"/></div>
+          <div class="sh"><div><div class="stit">⚙️ Create Job</div></div></div>
+          <div class="fg"><label class="fl">Job Name</label><input id="jb-n" placeholder="Daily Marketing Scan"></div>
           <div class="fg"><label class="fl">Type</label>
             <select id="jb-t">
               <option value="subreddit">Monitor Subreddit</option>
@@ -453,17 +463,13 @@ select option{background:var(--raised)}
               <option value="keyword">Watch Keyword</option>
             </select>
           </div>
-          <div class="fg"><label class="fl">Target</label><input type="text" id="jb-tg" placeholder="subreddit name or keyword"/></div>
+          <div class="fg"><label class="fl">Target</label><input id="jb-tg" placeholder="subreddit or keyword"></div>
           <div class="fg"><label class="fl">Schedule</label>
-            <select id="jb-s">
-              <option value="hourly">Hourly</option>
-              <option value="daily" selected>Daily</option>
-              <option value="weekly">Weekly</option>
-            </select>
+            <select id="jb-s"><option value="hourly">Hourly</option><option value="daily" selected>Daily</option><option value="weekly">Weekly</option></select>
           </div>
           <button class="btn bp" onclick="createJob()">+ Create Job</button>
         </div>
-        <div class="card"><div class="ct">⚙️ Active Jobs</div><div id="jb-list"></div></div>
+        <div class="card"><div class="ctit">⚙️ Jobs</div><div id="jb-list"></div></div>
       </div>
     </div>
 
@@ -471,805 +477,1111 @@ select option{background:var(--raised)}
     <div id="page-settings" class="page">
       <div class="g2">
         <div class="card">
-          <div class="sec-h"><div class="title">🔧 API Configuration</div></div>
+          <div class="sh"><div><div class="stit">🔧 API Settings</div></div></div>
+          <div class="notice">⚠️ Key sirf browser mein save hoti hai. Kisi ke saath share mat karo.</div>
           <div class="fg">
             <label class="fl">Anthropic API Key</label>
-            <input type="password" id="s-key" placeholder="sk-ant-api03-..."/>
-            <div style="font-size:.68rem;color:var(--t3);margin-top:3px">Required for all AI features. Get yours at <a href="https://console.anthropic.com" target="_blank" style="color:var(--acc2)">console.anthropic.com</a></div>
+            <input type="password" id="s-key" placeholder="sk-ant-...">
+            <div style="font-size:.66rem;color:var(--t3);margin-top:3px">Get at: <a href="https://console.anthropic.com" target="_blank" style="color:var(--ac2)">console.anthropic.com</a></div>
           </div>
-          <button class="btn bp" onclick="saveKey()">💾 Save & Activate</button>
-          <div id="key-saved" style="display:none;margin-top:10px" class="key-notice">✅ API key saved! AI features are now active.</div>
+          <button class="btn bp" onclick="saveKey()">💾 Save Key</button>
+          <div id="key-ok" style="display:none;margin-top:10px;font-size:.78rem;color:var(--grn)">✅ API key saved! AI features active.</div>
         </div>
         <div class="card">
-          <div class="ct">📖 How It Works</div>
-          <p style="font-size:.8rem;color:var(--t2);line-height:1.8">
-            <strong style="color:var(--t1)">Reddit Data</strong> — fetched live from Reddit's public JSON API. No Reddit account needed for public subreddits.<br><br>
-            <strong style="color:var(--t1)">AI Analysis</strong> — powered by Claude (Anthropic). Add your API key above to unlock all AI features.<br><br>
-            <strong style="color:var(--t1)">CORS Note</strong> — Reddit API calls go through a proxy to avoid browser CORS restrictions. Some subreddits may be rate-limited.<br><br>
-            <strong style="color:var(--t1)">Data Storage</strong> — all data stored in your browser's memory during the session. Nothing sent to external servers except Reddit API and Anthropic API.
-          </p>
+          <div class="ctit">📖 How It Works</div>
+          <div style="font-size:.79rem;color:var(--t2);line-height:1.8">
+            <p><strong style="color:var(--t1)">Reddit Data</strong> — live public API, no account needed.</p><br>
+            <p><strong style="color:var(--t1)">AI Features</strong> — Claude via Anthropic API. Add key above.</p><br>
+            <p><strong style="color:var(--t1)">CORS</strong> — Reddit calls via allorigins proxy. Anthropic via direct browser call.</p><br>
+            <p><strong style="color:var(--t1)">Storage</strong> — everything stays in your browser. Nothing sent to 3rd party servers except Reddit & Anthropic APIs.</p>
+          </div>
         </div>
       </div>
     </div>
 
-  </div>
-</div>
+  </div><!-- /con -->
+</div><!-- /main -->
 
 <script>
-// ═══════════════════════════════════════════════════════════
-// STATE
-// ═══════════════════════════════════════════════════════════
-const S = {
-  apiKey: localStorage.getItem('ria_key') || '',
+'use strict';
+
+// ─── STATE ───────────────────────────────────────────────────────────────────
+const ST = {
+  key: localStorage.getItem('ria_k') || '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',
   mode: 'human',
-  analyses: {},    // subreddit -> analysis data
-  competitors: {}, // subreddit -> snapshot
-  watchlists: [],
-  jobs: [],
-  postHistory: [],
-  trends: null,
-  stats: { subs:0, trends:0, comps:0, posts:0 }
+  analyses: {},
+  comps: {},
+  watchlists: [
+    {n:'Marketing Stack', s:['marketing','socialmedia','content_marketing']},
+    {n:'AI & Tech', s:['artificial','MachineLearning','singularity']},
+    {n:'Startup World', s:['startups','entrepreneur','SaaS']},
+  ],
+  jobs: [
+    {id:1,n:'Daily Entrepreneur Scan',t:'subreddit',tg:'entrepreneur',s:'daily',on:true},
+    {id:2,n:'Marketing Watch',t:'subreddit',tg:'marketing',s:'daily',on:true},
+  ],
+  posts: [],
+  stats: {s:0,t:0,c:0,p:0},
 };
 
-// ═══════════════════════════════════════════════════════════
-// NAV
-// ═══════════════════════════════════════════════════════════
+// ─── NAV ─────────────────────────────────────────────────────────────────────
 const PM = {
-  dashboard:   ['Dashboard','Overview & quick stats'],
+  dashboard:   ['Dashboard','Overview & quick actions'],
   analyzer:    ['Subreddit Analyzer','Deep intelligence on any subreddit'],
   trends:      ['Trend Finder','Emerging topics & rising discussions'],
   competitors: ['Competitor Tracker','Monitor rival communities'],
-  humanizer:   ['AI Humanizer','Transform AI text into authentic writing'],
-  generator:   ['Post Generator','Create organic, community-driven posts'],
-  keywords:    ['Keyword Discovery','Uncover trending & underserved keywords'],
+  humanizer:   ['AI Humanizer','Transform AI text into human writing'],
+  generator:   ['Post Generator','Create organic Reddit posts'],
+  keywords:    ['Keyword Discovery','Uncover trending keywords'],
   automation:  ['Automation System','Background monitoring jobs'],
   settings:    ['Settings','API keys & preferences'],
 };
 
 function nav(p) {
-  document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));
-  document.querySelectorAll('.ni[data-p]').forEach(x=>x.classList.remove('active'));
-  document.getElementById('page-'+p).classList.add('active');
+  document.querySelectorAll('.page').forEach(x => x.classList.remove('on'));
+  document.querySelectorAll('.ni[data-p]').forEach(x => x.classList.remove('on'));
+  document.getElementById('page-' + p).classList.add('on');
   const el = document.querySelector(`.ni[data-p="${p}"]`);
-  if(el) el.classList.add('active');
-  const m = PM[p]||['',''];
-  document.getElementById('pt').textContent = m[0];
-  document.getElementById('ps').textContent = m[1];
-  if(p==='trends') renderWatchlists();
-  if(p==='competitors') renderComps();
-  if(p==='automation') renderJobs();
-  if(p==='analyzer') checkKeyWarn('key-warn-analyzer');
+  if (el) el.classList.add('on');
+  const m = PM[p] || ['',''];
+  document.getElementById('ptit').textContent = m[0];
+  document.getElementById('psub').textContent = m[1];
+  if (p === 'trends')      renderWL();
+  if (p === 'competitors') renderComps();
+  if (p === 'automation')  renderJobs();
+  if (p === 'dashboard')   renderDash();
+  if (p === 'settings')    renderSettings();
 }
-document.querySelectorAll('.ni[data-p]').forEach(el=>{
-  el.addEventListener('click',()=>nav(el.dataset.p));
+document.querySelectorAll('.ni[data-p]').forEach(el => {
+  el.addEventListener('click', () => nav(el.dataset.p));
 });
 
-// ═══════════════════════════════════════════════════════════
-// HELPERS
-// ═══════════════════════════════════════════════════════════
-function toast(msg,type=''){
-  const el=document.createElement('div');
-  el.className=`toast ${type==='ok'?'ok':type==='er'?'er':''}`;
-  el.textContent=msg;
+// ─── UTILS ───────────────────────────────────────────────────────────────────
+function toast(msg, type = '') {
+  const el = document.createElement('div');
+  el.className = 'toast' + (type === 'ok' ? ' ok' : type === 'er' ? ' er' : '');
+  el.textContent = msg;
   document.body.appendChild(el);
-  setTimeout(()=>el.remove(),3500);
-}
-function fmtN(n){return Number(n||0).toLocaleString();}
-function fmtD(s){if(!s)return'—';return new Date(s).toLocaleString('en-US',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});}
-function tc(score){return score>=70?'tsh':score>=40?'tsm':'tsl';}
-function checkKeyWarn(id){
-  const el=document.getElementById(id);
-  if(el) el.style.display=S.apiKey?'none':'flex';
-}
-function updateApiBadge(){
-  document.getElementById('api-badge').textContent = S.apiKey ? '🟢 AI Active' : '⚪ No API Key';
-}
-function updateStats(){
-  document.getElementById('d-subs').textContent = S.stats.subs;
-  document.getElementById('d-trends').textContent = S.stats.trends;
-  document.getElementById('d-comps').textContent = S.stats.comps;
-  document.getElementById('d-posts').textContent = S.stats.posts;
+  setTimeout(() => el.remove(), 3500);
 }
 
-// Markdown → HTML (minimal)
-function md(text){
-  if(!text)return'';
-  return text
-    .replace(/^#### (.+)$/gm,'<h4>$1</h4>')
-    .replace(/^### (.+)$/gm,'<h3>$1</h3>')
-    .replace(/^## (.+)$/gm,'<h2>$1</h2>')
-    .replace(/^# (.+)$/gm,'<h1>$1</h1>')
-    .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
-    .replace(/\*(.+?)\*/g,'<em>$1</em>')
-    .replace(/`(.+?)`/g,'<code>$1</code>')
-    .replace(/^---$/gm,'<hr>')
-    .replace(/^> (.+)$/gm,'<blockquote style="border-left:3px solid var(--acc);margin:8px 0;padding:6px 12px;background:rgba(255,69,0,.05)">$1</blockquote>')
-    .replace(/^[\*\-] (.+)$/gm,'<li style="margin-left:16px;margin-bottom:3px">$1</li>')
-    .replace(/^\d+\. (.+)$/gm,'<li style="margin-left:16px;margin-bottom:3px">$1</li>')
-    .replace(/\n{2,}/g,'<br><br>')
-    .replace(/\n/g,'<br>');
+function N(n) { return Number(n || 0).toLocaleString(); }
+
+function tc(s) { return s >= 70 ? 'tsh' : s >= 40 ? 'tsm' : 'tsl'; }
+
+// Minimal Markdown → HTML
+function mdHTML(t) {
+  if (!t) return '';
+  return t
+    .replace(/^#### (.+)$/gm, '<h4>$1</h4>')
+    .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+    .replace(/^## (.+)$/gm, '<h2>$1</h2>')
+    .replace(/^# (.+)$/gm, '<h1>$1</h1>')
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g, '<em>$1</em>')
+    .replace(/`([^`]+)`/g, '<code>$1</code>')
+    .replace(/^---+$/gm, '<hr>')
+    .replace(/^> (.+)$/gm, '<blockquote>$1</blockquote>')
+    .replace(/^[\*\-] (.+)$/gm, '<li>$1</li>')
+    .replace(/(<li>[\s\S]*?<\/li>)/g, '<ul>$1</ul>')
+    .replace(/\n\n/g, '<br><br>')
+    .replace(/\n/g, '<br>');
 }
 
-// Bar chart renderer
-function barChart(items, keyFn, valFn, maxVal, colorClass=''){
-  const max = maxVal || Math.max(...items.map(valFn),1);
-  return `<div class="bc">`+items.map(i=>`
-    <div class="br2">
-      <div class="bl">${keyFn(i)}</div>
-      <div class="bt"><div class="bf ${colorClass}" style="width:${valFn(i)/max*100}%"></div></div>
-      <div class="bv">${valFn(i)}</div>
-    </div>`).join('')+`</div>`;
+function barChart(items, lblFn, valFn, maxV, cls = '') {
+  const max = maxV || Math.max(...items.map(valFn), 1);
+  return '<div class="bc">' + items.map(i =>
+    `<div class="br2">
+      <div class="blbl" title="${lblFn(i)}">${lblFn(i)}</div>
+      <div class="btrk"><div class="bfil ${cls}" style="width:${Math.round(valFn(i)/max*100)}%"></div></div>
+      <div class="bval">${valFn(i)}</div>
+    </div>`
+  ).join('') + '</div>';
 }
 
-// ═══════════════════════════════════════════════════════════
-// REDDIT API — via allorigins proxy (CORS bypass)
-// ═══════════════════════════════════════════════════════════
-async function redditFetch(path){
-  const url = `https://www.reddit.com${path}`;
-  const proxy = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
-  const r = await fetch(proxy, {headers:{'Accept':'application/json'}});
-  if(!r.ok) throw new Error(`Reddit fetch failed: ${r.status}`);
-  return r.json();
+function updStats() {
+  document.getElementById('d-s').textContent = ST.stats.s;
+  document.getElementById('d-t').textContent = ST.stats.t;
+  document.getElementById('d-c').textContent = ST.stats.c;
+  document.getElementById('d-p').textContent = ST.stats.p;
 }
 
-async function getSubInfo(name){
-  const d = await redditFetch(`/r/${name}/about.json`);
-  return d.data || {};
+function updateBadge() {
+  document.getElementById('api-badge').textContent = ST.key ? '🟢 AI Active' : '⚪ No API Key';
+  document.getElementById('api-badge').style.color = ST.key ? 'var(--grn)' : 'var(--t3)';
 }
 
-async function getSubPosts(name, sort='hot', limit=50, t='month'){
-  const d = await redditFetch(`/r/${name}/${sort}.json?limit=${limit}&t=${t}`);
-  return (d.data?.children||[]).map(c=>{
-    const p=c.data;
-    return{id:p.id,title:p.title||'',score:p.score||0,upvote_ratio:p.upvote_ratio||0,
-      num_comments:p.num_comments||0,author:p.author||'',created_utc:p.created_utc||0,
-      url:p.url||'',permalink:'https://reddit.com'+(p.permalink||''),
-      selftext:(p.selftext||'').substring(0,400),flair:p.link_flair_text||'',
-      is_self:p.is_self||false,domain:p.domain||''};
-  });
-}
+// ─── REDDIT API — fetch with multiple proxy fallbacks ────────────────────────
+async function rfetch(path) {
+  const redditUrl = 'https://www.reddit.com' + path;
 
-async function analyzeSubredditData(name){
-  const [info, hotPosts, topPosts, newPosts] = await Promise.all([
-    getSubInfo(name),
-    getSubPosts(name,'hot',50),
-    getSubPosts(name,'top',50,'month'),
-    getSubPosts(name,'new',50),
-  ]);
-  if(!info.subscribers) throw new Error(`r/${name} not found or private`);
+  // List of proxies to try in order
+  const proxies = [
+    'https://api.allorigins.win/raw?url='    + encodeURIComponent(redditUrl),
+    'https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent(redditUrl),
+    'https://thingproxy.freeboard.io/fetch/'  + redditUrl,
+    'https://corsproxy.io/?'                  + encodeURIComponent(redditUrl),
+    'https://proxy.cors.sh/'                  + redditUrl,
+  ];
 
-  const all = [...hotPosts,...topPosts];
-  const scores = all.map(p=>p.score).filter(s=>s>0);
-  const cmts   = all.map(p=>p.num_comments);
-  const avgScore = scores.length ? +(scores.reduce((a,b)=>a+b,0)/scores.length).toFixed(1) : 0;
-  const avgCmt   = cmts.length   ? +(cmts.reduce((a,b)=>a+b,0)/cmts.length).toFixed(1)   : 0;
+  let lastErr = 'unknown';
 
-  const DAYS=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
-  const hourC={}, dayC={};
-  newPosts.forEach(p=>{
-    if(p.created_utc){
-      const dt=new Date(p.created_utc*1000);
-      const h=dt.getUTCHours(), d=DAYS[dt.getUTCDay()===0?6:dt.getUTCDay()-1];
-      hourC[h]=(hourC[h]||0)+1;
-      dayC[d]=(dayC[d]||0)+1;
+  for (const proxyUrl of proxies) {
+    try {
+      const r = await fetch(proxyUrl, {
+        headers: { 'Accept': 'application/json', 'x-requested-with': 'XMLHttpRequest' },
+        signal: AbortSignal.timeout(8000),   // 8s timeout per proxy
+      });
+
+      if (!r.ok) { lastErr = 'HTTP ' + r.status; continue; }
+
+      const text = await r.text();
+      if (!text || text.length < 10) { lastErr = 'empty response'; continue; }
+
+      let json;
+      try { json = JSON.parse(text); } catch(e) { lastErr = 'JSON parse error'; continue; }
+
+      // allorigins wraps in { contents: "..." }
+      if (json && typeof json.contents === 'string') {
+        try { json = JSON.parse(json.contents); } catch(e) { lastErr = 'contents parse error'; continue; }
+      }
+
+      // codetabs wraps differently
+      if (json && json.response) {
+        try { json = JSON.parse(json.response); } catch(e) { json = json.response; }
+      }
+
+      if (!json) { lastErr = 'null json'; continue; }
+      return json;   // success!
+
+    } catch(e) {
+      lastErr = e.message || String(e);
+      continue;  // try next proxy
     }
-  });
-
-  const stop=new Set(['the','a','an','is','in','on','at','to','for','of','and','or','but','it','its','this','that','with','are','was','be','has','have','not','by','from','as','do','if','so','we','i','my','your','you','r','x','just','like','get','use','new','one','can','will','need','want','what','how','why','when','who','where']);
-  const words={};
-  all.forEach(p=>{
-    (p.title.toLowerCase().match(/\b[a-z]{3,}\b/g)||[]).forEach(w=>{
-      if(!stop.has(w)) words[w]=(words[w]||0)+1;
-    });
-  });
-  const topKW = Object.entries(words).sort((a,b)=>b[1]-a[1]).slice(0,20).map(([w,c])=>({word:w,count:c}));
-
-  const flairs={};
-  all.forEach(p=>{if(p.flair) flairs[p.flair]=(flairs[p.flair]||0)+1;});
-  const topFlairs = Object.entries(flairs).sort((a,b)=>b[1]-a[1]).slice(0,8).map(([f,c])=>({flair:f,count:c}));
-
-  const top5 = all.sort((a,b)=>b.score-a.score).slice(0,5);
-
-  let postsPerDay=0;
-  if(newPosts.length){
-    const oldest=Math.min(...newPosts.map(p=>p.created_utc).filter(Boolean));
-    const newest=Math.max(...newPosts.map(p=>p.created_utc).filter(Boolean));
-    const days=Math.max((newest-oldest)/86400,1);
-    postsPerDay=+(newPosts.length/days).toFixed(1);
   }
 
-  const peakHours = Object.entries(hourC).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([h])=>+h);
-  const peakDays  = Object.entries(dayC).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([d])=>d);
-  const selfRatio = +(all.filter(p=>p.is_self).length/Math.max(all.length,1)*100).toFixed(1);
+  // All proxies failed
+  throw new Error(
+    '❌ Reddit data fetch failed.\n' +
+    'Possible reasons:\n' +
+    '1. App ko browser mein kholo (claude.ai sandbox mein network block hai)\n' +
+    '2. Internet connection check karo\n' +
+    '3. Subreddit private/banned ho sakta hai\n' +
+    'Last error: ' + lastErr
+  );
+}
 
-  return{
-    subreddit:name, display_name:info.display_name||name,
-    title:info.title||'', description:(info.public_description||'').substring(0,250),
-    subscribers:info.subscribers||0, active_users:info.accounts_active||0,
-    avg_score:avgScore, avg_comments:avgCmt, posts_per_day:postsPerDay, self_post_ratio:selfRatio,
-    top_keywords:topKW, top_flairs:topFlairs, top_posts:top5,
-    hour_distribution:hourC, day_distribution:dayC, peak_hours:peakHours, peak_days:peakDays,
-    analyzed_at:new Date().toISOString(),
+async function getInfo(sub) {
+  try {
+    const d = await rfetch('/r/' + sub + '/about.json');
+    return d.data || {};
+  } catch(e) {
+    throw new Error('r/' + sub + ' fetch fail: ' + e.message);
+  }
+}
+
+async function getPosts(sub, sort = 'hot', limit = 50, t = 'month') {
+  try {
+    const d = await rfetch('/r/' + sub + '/' + sort + '.json?limit=' + limit + '&t=' + t);
+    return (d.data?.children || []).map(c => {
+      const p = c.data || c;
+      return {
+        id: p.id || '', title: p.title || '', score: p.score || 0,
+        num_comments: p.num_comments || 0, author: p.author || '',
+        created_utc: p.created_utc || 0, flair: p.link_flair_text || '',
+        permalink: p.permalink ? 'https://reddit.com' + p.permalink : '',
+        selftext: (p.selftext || '').substring(0, 300), is_self: !!p.is_self,
+      };
+    });
+  } catch(e) {
+    throw new Error('Posts fetch fail for r/' + sub + ': ' + e.message);
+  }
+}
+
+// ─── CLAUDE API ──────────────────────────────────────────────────────────────
+async function claude(system, user, maxTok = 1500) {
+  if (!ST.key) {
+    return '⚠️ **API key nahi hai.** Settings mein jaao → Anthropic API key daalo → Save karo. Phir try karo.';
+  }
+
+  const body = JSON.stringify({
+    model: 'claude-haiku-4-5-20251001',
+    max_tokens: maxTok,
+    system: system,
+    messages: [{ role: 'user', content: user }],
+  });
+
+  const headers = {
+    'Content-Type': 'application/json',
+    'x-api-key': ST.key,
+    'anthropic-version': '2023-06-01',
+    'anthropic-dangerous-direct-browser-access': 'true',
   };
+
+  // Try direct call
+  try {
+    const r = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST', headers, body,
+    });
+    const d = await r.json();
+    if (r.ok) return d.content[0].text;
+    // Known errors
+    if (r.status === 401) throw new Error('❌ Invalid API key — console.anthropic.com se sahi key lo');
+    if (r.status === 403) throw new Error('❌ API key ka access nahi — Anthropic account check karo');
+    if (r.status === 429) throw new Error('❌ Rate limit — thoda wait karo');
+    if (r.status === 500) throw new Error('❌ Anthropic server error — baad mein try karo');
+    throw new Error(d.error?.message || 'API error ' + r.status);
+  } catch (e) {
+    // Auth/known errors — don't retry
+    if (e.message.startsWith('❌')) throw e;
+    // Network/CORS — try proxy
+    console.warn('Direct blocked, trying proxy. Error:', e.message);
+  }
+
+  // Fallback: corsproxy
+  try {
+    const r2 = await fetch('https://corsproxy.io/?url=https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': ST.key,
+        'anthropic-version': '2023-06-01',
+      },
+      body,
+    });
+    const d2 = await r2.json();
+    if (r2.ok) return d2.content[0].text;
+    if (r2.status === 401) throw new Error('❌ Invalid API key');
+    throw new Error(d2.error?.message || 'Proxy error ' + r2.status);
+  } catch (e2) {
+    if (e2.message.startsWith('❌')) throw e2;
+    throw new Error('❌ API call fail hua. Check: (1) Key sahi hai? (2) Credits hain? Error: ' + e2.message);
+  }
 }
 
-// ═══════════════════════════════════════════════════════════
-// ANTHROPIC API
-// ═══════════════════════════════════════════════════════════
-async function callClaude(system, user, maxTokens=1500){
-  if(!S.apiKey) return '⚠️ **No API key** — Settings mein jaao aur Anthropic API key daalo.';
+// ─── STOP WORDS ──────────────────────────────────────────────────────────────
+const STOP = new Set(['the','a','an','is','in','on','at','to','for','of','and','or','but','it','its','this','that','with','are','was','be','has','have','not','by','from','as','do','if','so','we','i','my','your','you','r','x','just','like','get','use','new','one','can','will','need','want','what','how','why','when','who','where','also','been','very','more','some','than','them','they','their','about','would','could','should','which','been','were','had','did','does','into','over','after','before','those','there','these','here','out','all','any','our']);
 
-  // Try direct Anthropic API first (works if CORS allowed)
-  // Falls back to allorigins proxy if blocked
-  const payload = JSON.stringify({
-    model:'claude-haiku-4-5-20251001',
-    max_tokens:maxTokens,
-    system,
-    messages:[{role:'user',content:user}]
+function extractKW(posts) {
+  const freq = {};
+  posts.forEach(p => {
+    (p.title.toLowerCase().match(/\b[a-z]{3,}\b/g) || []).forEach(w => {
+      if (!STOP.has(w)) freq[w] = (freq[w] || 0) + 1;
+    });
   });
-
-  // Attempt 1: direct with browser-access header
-  try {
-    const r = await fetch('https://api.anthropic.com/v1/messages',{
-      method:'POST',
-      headers:{
-        'Content-Type':'application/json',
-        'x-api-key':S.apiKey,
-        'anthropic-version':'2023-06-01',
-        'anthropic-dangerous-direct-browser-access':'true'
-      },
-      body:payload
-    });
-    if(r.ok){
-      const d=await r.json();
-      return d.content[0].text;
-    }
-    const e=await r.json().catch(()=>({}));
-    const msg = e.error?.message||`API error ${r.status}`;
-    // Auth error — no point retrying
-    if(r.status===401||r.status===403) throw new Error('Invalid API key — Settings mein sahi key daalo');
-    throw new Error(msg);
-  } catch(err) {
-    // If it's an auth error, rethrow immediately
-    if(err.message.includes('Invalid API key')||err.message.includes('401')||err.message.includes('403')) throw err;
-    // Otherwise CORS block — try proxy
-    console.warn('Direct API blocked, trying proxy:', err.message);
-  }
-
-  // Attempt 2: via corsproxy.io
-  try {
-    const r2 = await fetch('https://corsproxy.io/?https://api.anthropic.com/v1/messages',{
-      method:'POST',
-      headers:{
-        'Content-Type':'application/json',
-        'x-api-key':S.apiKey,
-        'anthropic-version':'2023-06-01',
-      },
-      body:payload
-    });
-    if(r2.ok){
-      const d=await r2.json();
-      return d.content[0].text;
-    }
-    const e=await r2.json().catch(()=>({}));
-    throw new Error(e.error?.message||`Proxy API error ${r2.status}`);
-  } catch(err2) {
-    throw new Error('API call failed. Check: 1) API key sahi hai? 2) Account mein credits hain? Error: '+err2.message);
-  }
+  return Object.entries(freq).sort((a, b) => b[1] - a[1]).slice(0, 20).map(([word, count]) => ({ word, count }));
 }
 
-// ═══════════════════════════════════════════════════════════
-// MODULE 1: SUBREDDIT ANALYZER
-// ═══════════════════════════════════════════════════════════
-let _lastAnalysis=null;
+// ─── MODULE 1: SUBREDDIT ANALYZER ────────────────────────────────────────────
+let _lastAnalysis = null;
 
-async function analyzeSubreddit(){
-  const sub=document.getElementById('sub-in').value.trim().replace(/^r\//,'');
-  if(!sub) return toast('Enter a subreddit name','er');
-  document.getElementById('a-res').style.display='none';
-  document.getElementById('a-load').style.display='block';
-  document.getElementById('abtn').disabled=true;
-  try{
-    toast('Fetching Reddit data...');
-    const data = await analyzeSubredditData(sub);
-    toast('Generating AI report...');
+async function doAnalyze() {
+  const sub = document.getElementById('sub-in').value.trim().replace(/^r\//, '').trim();
+  if (!sub) return toast('Subreddit naam daalo', 'er');
 
-    const aiReport = await callClaude(
-      'You are a Reddit growth strategist. Analyze subreddit data and write a detailed, actionable report in Markdown. Sections: ## Executive Summary, ## Key Metrics Analysis, ## Content Strategy, ## Growth Opportunities, ## Content Gaps, ## Top Recommendations (numbered list). Be specific and data-driven. Use **bold** for key insights.',
-      `Analyze r/${sub}:\nSubscribers: ${fmtN(data.subscribers)}\nActive Users: ${fmtN(data.active_users)}\nAvg Score: ${data.avg_score}\nAvg Comments: ${data.avg_comments}\nPosts/Day: ${data.posts_per_day}\nSelf Post Ratio: ${data.self_post_ratio}%\nPeak Days: ${data.peak_days.join(', ')}\nPeak Hours UTC: ${data.peak_hours.map(h=>h+':00').join(', ')}\nTop Keywords: ${data.top_keywords.slice(0,12).map(k=>k.word+'('+k.count+')').join(', ')}\nTop Flairs: ${data.top_flairs.slice(0,6).map(f=>f.flair+'('+f.count+')').join(', ')}\nTop Post: "${data.top_posts[0]?.title||'N/A'}" — Score: ${data.top_posts[0]?.score||0}\n\nWrite comprehensive growth intelligence report.`,
+  const aBtn = document.getElementById('abtn');
+  const aLoad = document.getElementById('a-load');
+  const aRes  = document.getElementById('a-res');
+  const aMsg  = document.getElementById('a-load-msg');
+
+  aRes.style.display = 'none';
+  aLoad.style.display = 'block';
+  aBtn.disabled = true;
+  aMsg.textContent = 'Reddit se data fetch ho raha hai...';
+
+  try {
+    toast('Fetching r/' + sub + '...');
+
+    // Fetch sequentially to avoid proxy rate limits
+    aMsg.textContent = 'Subreddit info fetch ho rahi hai...';
+    const info = await getInfo(sub);
+    if (!info.subscribers) throw new Error('r/' + sub + ' nahi mila ya private hai');
+
+    aMsg.textContent = 'Hot posts fetch ho rahe hain...';
+    const hot  = await getPosts(sub, 'hot', 50);
+
+    aMsg.textContent = 'Top posts fetch ho rahe hain...';
+    const top  = await getPosts(sub, 'top', 50, 'month');
+
+    aMsg.textContent = 'New posts fetch ho rahe hain...';
+    const newp = await getPosts(sub, 'new', 50);
+
+    const all = [...hot, ...top];
+    const scores = all.map(p => p.score).filter(s => s > 0);
+    const avgScore = scores.length ? +(scores.reduce((a, b) => a + b, 0) / scores.length).toFixed(1) : 0;
+    const avgCmt = all.length ? +(all.reduce((s, p) => s + p.num_comments, 0) / all.length).toFixed(1) : 0;
+
+    const DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+    const hC = {}, dC = {};
+    newp.forEach(p => {
+      if (p.created_utc) {
+        const dt = new Date(p.created_utc * 1000);
+        const h = dt.getUTCHours();
+        const dow = dt.getUTCDay();
+        const d = DAYS[dow === 0 ? 6 : dow - 1];
+        hC[h] = (hC[h] || 0) + 1;
+        dC[d] = (dC[d] || 0) + 1;
+      }
+    });
+
+    const topKW = extractKW(all);
+    const top5  = all.sort((a, b) => b.score - a.score).slice(0, 5);
+    const peakD = Object.entries(dC).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([d]) => d);
+    const peakH = Object.entries(hC).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([h]) => +h);
+
+    let postsPerDay = 0;
+    if (newp.length > 1) {
+      const ts = newp.map(p => p.created_utc).filter(Boolean);
+      const span = Math.max((Math.max(...ts) - Math.min(...ts)) / 86400, 1);
+      postsPerDay = +(newp.length / span).toFixed(1);
+    }
+
+    const data = {
+      sub, name: info.display_name || sub, title: info.title || '',
+      subscribers: info.subscribers || 0, active: info.accounts_active || 0,
+      avgScore, avgCmt, postsPerDay, selfRatio: +(all.filter(p => p.is_self).length / Math.max(all.length, 1) * 100).toFixed(1),
+      topKW, top5, dayDist: dC, peakDays: peakD, peakHours: peakH,
+    };
+
+    aMsg.textContent = 'AI report generate ho rahi hai...';
+    toast('AI analysis chal rahi hai...');
+
+    const aiRep = await claude(
+      'You are a Reddit growth strategist. Write a detailed actionable report in Markdown. Use sections: ## Executive Summary, ## Key Metrics, ## Content Strategy, ## Growth Opportunities, ## Content Gaps, ## Top Recommendations. Be specific and data-driven. Use **bold** for key insights.',
+      `Analyze r/${sub}:\nSubscribers: ${N(data.subscribers)}\nActive: ${N(data.active)}\nAvg Score: ${data.avgScore}\nAvg Comments: ${data.avgCmt}\nPosts/Day: ${data.postsPerDay}\nPeak Days: ${data.peakDays.join(', ')}\nPeak Hours UTC: ${data.peakHours.map(h => h+':00').join(', ')}\nTop Keywords: ${data.topKW.slice(0,10).map(k=>k.word+'('+k.count+')').join(', ')}\nTop Post: "${data.top5[0]?.title||'N/A'}" — Score: ${data.top5[0]?.score||0}\n\nWrite full intelligence report.`,
       2000
     );
 
-    data.ai_report = aiReport;
-    S.analyses[sub] = data;
+    data.aiRep = aiRep;
     _lastAnalysis = data;
-    S.stats.subs = Object.keys(S.analyses).length;
-    updateStats();
+    ST.analyses[sub] = data;
+    ST.stats.s = Object.keys(ST.analyses).length;
+    updStats();
 
-    renderAnalysis(data);
-    document.getElementById('a-load').style.display='none';
-    document.getElementById('a-res').style.display='block';
-    document.getElementById('abtn').disabled=false;
-    toast('Analysis complete!','ok');
-  }catch(e){
-    document.getElementById('a-load').style.display='none';
-    document.getElementById('abtn').disabled=false;
-    toast('Error: '+e.message,'er');
+    // Render stats
+    document.getElementById('a-stats').innerHTML = [
+      {l:'Subscribers', v:N(data.subscribers)},
+      {l:'Active Users', v:N(data.active)},
+      {l:'Avg Score', v:N(data.avgScore)},
+      {l:'Posts/Day', v:data.postsPerDay},
+    ].map(s => `<div class="sc"><div class="sl">${s.l}</div><div class="sv">${s.v}</div></div>`).join('');
+
+    document.getElementById('a-kw').innerHTML = barChart(data.topKW.slice(0, 12), k => k.word, k => k.count);
+
+    const dayOrder = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+    const sortedDays = dayOrder.filter(d => dC[d]).map(d => ({d, c: dC[d]}));
+    document.getElementById('a-days').innerHTML =
+      `<p style="font-size:.72rem;color:var(--t2);margin-bottom:8px">Peak: <strong style="color:var(--t1)">${peakD.join(', ')}</strong> · ${peakH.map(h=>h+':00').join(', ')} UTC</p>` +
+      barChart(sortedDays, x => x.d, x => x.c, null, 'bl');
+
+    document.getElementById('a-posts').innerHTML = data.top5.map((p, i) => `
+      <tr>
+        <td class="mn">#${i+1}</td>
+        <td class="pr"><a href="${p.permalink}" target="_blank" style="color:var(--ac2);text-decoration:none">${p.title.substring(0,72)}${p.title.length>72?'…':''}</a></td>
+        <td class="mn">${N(p.score)}</td>
+        <td class="mn">${N(p.num_comments)}</td>
+      </tr>`).join('');
+
+    document.getElementById('a-ai').innerHTML = mdHTML(aiRep);
+
+    aLoad.style.display = 'none';
+    aRes.style.display  = 'block';
+    aBtn.disabled = false;
+    toast('Analysis complete! ✅', 'ok');
+
+  } catch (e) {
+    aLoad.style.display = 'none';
+    aBtn.disabled = false;
+    toast(e.message, 'er');
+    document.getElementById('a-res').style.display = 'none';
   }
 }
 
-function renderAnalysis(d){
-  document.getElementById('a-stats').innerHTML=[
-    {l:'Subscribers',v:fmtN(d.subscribers),s:d.display_name},
-    {l:'Active Users',v:fmtN(d.active_users),s:'right now'},
-    {l:'Avg Post Score',v:fmtN(d.avg_score),s:'top posts'},
-    {l:'Posts / Day',v:d.posts_per_day,s:'activity level'},
-  ].map(s=>`<div class="sc"><div class="sl">${s.l}</div><div class="sv">${s.v}</div><div class="ss">${s.s}</div></div>`).join('');
-
-  document.getElementById('a-kw').innerHTML=barChart(d.top_keywords.slice(0,12),k=>k.word,k=>k.count,null,'');
-  
-  const days=d.day_distribution||{};
-  document.getElementById('a-pat').innerHTML=`
-    <p style="font-size:.73rem;color:var(--t2);margin-bottom:9px">
-      Peak days: <strong style="color:var(--t1)">${d.peak_days.join(', ')}</strong><br>
-      Peak hours UTC: <strong style="color:var(--t1)">${d.peak_hours.map(h=>h+':00').join(', ')}</strong>
-    </p>`+barChart(Object.entries(days).sort((a,b)=>['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].indexOf(a[0])-['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].indexOf(b[0])).map(([d,c])=>({d,c})),x=>x.d,x=>x.c,null,'blue');
-
-  document.getElementById('a-posts').innerHTML=d.top_posts.map((p,i)=>`
-    <tr><td class="mono">#${i+1}</td>
-    <td class="pr"><a href="${p.permalink}" target="_blank" style="color:var(--acc2);text-decoration:none">${p.title.substring(0,75)}${p.title.length>75?'…':''}</a></td>
-    <td class="mono">${fmtN(p.score)}</td><td class="mono">${fmtN(p.num_comments)}</td></tr>`).join('');
-
-  document.getElementById('a-ai').innerHTML=md(d.ai_report||'No AI report. Add API key in Settings.');
+function copyReport() {
+  if (!_lastAnalysis) return;
+  navigator.clipboard.writeText(_lastAnalysis.aiRep || '').then(() => toast('Copied!', 'ok'));
 }
 
-function copyAIReport(){
-  if(!_lastAnalysis) return;
-  navigator.clipboard.writeText(_lastAnalysis.ai_report||'').then(()=>toast('Copied!','ok'));
-}
-
-function downloadReport(){
-  if(!_lastAnalysis) return;
-  const d=_lastAnalysis;
-  let content=`# Reddit Intelligence Report: r/${d.subreddit}\n> Generated: ${new Date().toUTCString()}\n\n---\n\n## 📊 Quick Stats\n\n| Metric | Value |\n|--------|-------|\n| Subscribers | ${fmtN(d.subscribers)} |\n| Active Users | ${fmtN(d.active_users)} |\n| Avg Score | ${d.avg_score} |\n| Posts/Day | ${d.posts_per_day} |\n\n---\n\n## 🏆 Top Posts\n\n`;
-  d.top_posts.forEach((p,i)=>{content+=`${i+1}. **${p.title}** — Score: ${fmtN(p.score)} | Comments: ${p.num_comments}\n`;});
-  content+=`\n---\n\n## 🔑 Top Keywords\n\n${d.top_keywords.slice(0,15).map(k=>`- **${k.word}** (${k.count})`).join('\n')}\n\n---\n\n${d.ai_report||''}`;
-  const blob=new Blob([content],{type:'text/markdown'});
-  const a=Object.assign(document.createElement('a'),{href:URL.createObjectURL(blob),download:`ria_report_${d.subreddit}_${new Date().toISOString().slice(0,10)}.md`});
+function dlReport() {
+  if (!_lastAnalysis) return;
+  const d = _lastAnalysis;
+  const txt = `# Reddit Intelligence Report: r/${d.sub}\n> ${new Date().toUTCString()}\n\n## Stats\n- Subscribers: ${N(d.subscribers)}\n- Active Users: ${N(d.active)}\n- Avg Score: ${d.avgScore}\n- Posts/Day: ${d.postsPerDay}\n\n## Top Posts\n${d.top5.map((p,i)=>`${i+1}. ${p.title} (Score: ${N(p.score)})`).join('\n')}\n\n## Top Keywords\n${d.topKW.slice(0,15).map(k=>`- ${k.word}: ${k.count}`).join('\n')}\n\n${d.aiRep}`;
+  const a = Object.assign(document.createElement('a'), {
+    href: URL.createObjectURL(new Blob([txt], {type:'text/markdown'})),
+    download: `ria_${d.sub}_${new Date().toISOString().slice(0,10)}.md`,
+  });
   a.click();
-  toast('Downloaded!','ok');
+  toast('Downloaded!', 'ok');
 }
 
-// ═══════════════════════════════════════════════════════════
-// MODULE 2: TREND FINDER
-// ═══════════════════════════════════════════════════════════
-async function scanTrends(){
-  const subsStr=document.getElementById('tr-subs').value;
-  const subs=subsStr.split(',').map(s=>s.trim().replace(/^r\//,'')).filter(Boolean);
-  if(!subs.length) return toast('Add at least one subreddit','er');
+// ─── MODULE 2: TREND FINDER ───────────────────────────────────────────────────
+async function doTrends() {
+  const subs = document.getElementById('tr-subs').value.split(',').map(s => s.trim().replace(/^r\//, '')).filter(Boolean);
+  if (!subs.length) return toast('Subreddits daalo', 'er');
 
-  document.getElementById('tr-res').style.display='none';
-  document.getElementById('tr-load').style.display='block';
-  document.getElementById('tr-btn').disabled=true;
-  toast('Scanning '+subs.length+' subreddits...');
+  const btn = document.getElementById('trbtn');
+  btn.disabled = true;
+  document.getElementById('tr-res').style.display = 'none';
+  document.getElementById('tr-load').style.display = 'block';
+  toast('Scanning ' + subs.length + ' subreddits...');
 
-  try{
-    const stop=new Set(['the','a','an','is','in','on','at','to','for','of','and','or','but','it','its','this','that','with','are','was','be','has','have','not','by','from','as','do','if','so','we','i','my','your','you','r','x','just','like','get','use','new','one','can','will','need','want','what','how','why','when','who','where','also','been','very','more','some','than','them','they','their','about','would','could','should']);
-    const kwData={};
-
-    for(const sub of subs){
-      try{
-        const posts=await getSubPosts(sub,'hot',30);
-        posts.forEach(p=>{
-          (p.title.toLowerCase().match(/\b[a-z]{4,}\b/g)||[]).forEach(w=>{
-            if(!stop.has(w)){
-              if(!kwData[w]) kwData[w]={count:0,scoreSum:0,subs:new Set()};
-              kwData[w].count++;
-              kwData[w].scoreSum+=p.score;
-              kwData[w].subs.add(sub);
+  try {
+    const kwMap = {};
+    for (const sub of subs) {
+      try {
+        const posts = await getPosts(sub, 'hot', 30);
+        posts.forEach(p => {
+          (p.title.toLowerCase().match(/\b[a-z]{4,}\b/g) || []).forEach(w => {
+            if (!STOP.has(w)) {
+              if (!kwMap[w]) kwMap[w] = {c:0, ss:0, subs:new Set()};
+              kwMap[w].c++;
+              kwMap[w].ss += p.score;
+              kwMap[w].subs.add(sub);
             }
           });
         });
-      }catch(e){}
+      } catch(e) { /* skip failed sub */ }
     }
 
-    const keywords=Object.entries(kwData)
-      .filter(([,d])=>d.count>=2)
-      .map(([word,d])=>{
-        const avgS=d.scoreSum/d.count;
-        const score=Math.min(100,Math.round(d.count*Math.log(avgS+2)*d.subs.size/subs.length*5));
-        return{keyword:word,count:d.count,avg_score:+avgS.toFixed(1),trend_score:score,
-          subreddits:[...d.subs].slice(0,4),growth_pct:Math.min(score*2,500)};
+    const kws = Object.entries(kwMap)
+      .filter(([,v]) => v.c >= 2)
+      .map(([word, v]) => {
+        const avg = v.ss / v.c;
+        const score = Math.min(100, Math.round(v.c * Math.log(avg + 2) * v.subs.size / subs.length * 5));
+        return { word, count: v.c, avg: +avg.toFixed(1), score, subs: [...v.subs], growth: Math.min(score * 2, 500) };
       })
-      .sort((a,b)=>b.trend_score-a.trend_score)
-      .slice(0,50);
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 50);
 
-    S.trends={keywords,subreddits:subs};
-    S.stats.trends=keywords.length;
-    updateStats();
+    ST.stats.t = kws.length;
+    updStats();
 
-    const aiSummary=await callClaude(
-      'You are a Reddit trend analyst. Given keyword trend data, write a concise trend briefing in Markdown. Include: ## 🔥 Top Emerging Trends, ## 💡 Content Opportunities, ## ⚡ Quick Wins. Be specific and actionable. Max 400 words.',
-      `Subreddits scanned: ${subs.join(', ')}\n\nTop trending keywords:\n${keywords.slice(0,15).map(k=>`- ${k.keyword}: score ${k.trend_score}/100, mentions ${k.count}, avg score ${k.avg_score}`).join('\n')}\n\nWrite trend briefing.`,
-      900
+    const aiSum = await claude(
+      'Reddit trend analyst. Write trend briefing in Markdown. Sections: ## 🔥 Top Trends, ## 💡 Opportunities, ## ⚡ Quick Wins. Max 350 words. Be specific.',
+      `Subreddits: ${subs.join(', ')}\nTop keywords:\n${kws.slice(0,12).map(k=>`- ${k.word}: score ${k.score}/100, mentions ${k.count}`).join('\n')}\nWrite briefing.`,
+      800
     );
 
-    document.getElementById('tr-ai').innerHTML=md(aiSummary);
-    document.getElementById('tr-kw').innerHTML=keywords.slice(0,30).map((kw,i)=>`
+    document.getElementById('tr-ai').innerHTML = mdHTML(aiSum);
+    document.getElementById('tr-body').innerHTML = kws.slice(0, 30).map((k, i) => `
       <tr>
-        <td class="mono">#${i+1}</td>
-        <td class="pr"><strong>${kw.keyword}</strong></td>
-        <td><span class="ts ${tc(kw.trend_score)}">${kw.trend_score}</span></td>
-        <td class="mono">${kw.count}</td>
-        <td class="mono" style="color:var(--green)">+${kw.growth_pct}%</td>
-        <td style="font-size:.75rem;color:var(--t3)">${kw.subreddits.map(s=>'r/'+s).join(', ')}</td>
+        <td class="mn">#${i+1}</td>
+        <td class="pr"><strong>${k.word}</strong></td>
+        <td><span class="ts ${tc(k.score)}">${k.score}</span></td>
+        <td class="mn">${k.count}</td>
+        <td class="mn" style="color:var(--grn)">+${k.growth}%</td>
+        <td style="font-size:.73rem;color:var(--t3)">${k.subs.slice(0,3).map(s=>'r/'+s).join(', ')}</td>
       </tr>`).join('');
 
-    document.getElementById('tr-load').style.display='none';
-    document.getElementById('tr-res').style.display='block';
-    document.getElementById('tr-btn').disabled=false;
-    toast('Scan complete! Found '+keywords.length+' trending keywords','ok');
-  }catch(e){
-    document.getElementById('tr-load').style.display='none';
-    document.getElementById('tr-btn').disabled=false;
-    toast('Error: '+e.message,'er');
+    document.getElementById('tr-load').style.display = 'none';
+    document.getElementById('tr-res').style.display  = 'block';
+    btn.disabled = false;
+    toast('Found ' + kws.length + ' trending keywords!', 'ok');
+
+  } catch(e) {
+    document.getElementById('tr-load').style.display = 'none';
+    btn.disabled = false;
+    toast(e.message, 'er');
   }
 }
 
-// Watchlists (in-memory)
-function renderWatchlists(){
-  document.getElementById('wl-list').innerHTML=S.watchlists.length?
-    S.watchlists.map((w,i)=>`
-      <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--blite)">
-        <div><span style="font-weight:600;font-size:.82rem">${w.name}</span><span class="tm tsm2"> · ${w.subs.length} subs</span></div>
+function renderWL() {
+  document.getElementById('wl-list').innerHTML = ST.watchlists.length ?
+    ST.watchlists.map((w, i) => `
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--bli)">
+        <span style="font-size:.8rem;font-weight:600">${w.n} <span class="tm tsm">(${w.s.length})</span></span>
         <div style="display:flex;gap:5px">
           <button class="btn bs bxs" onclick="loadWL(${i})">Load</button>
           <button class="btn bd bxs" onclick="delWL(${i})">✕</button>
         </div>
-      </div>`).join(''):
-    '<p class="tsm2 tm">No watchlists yet</p>';
+      </div>`).join('') :
+    '<p style="font-size:.78rem;color:var(--t3)">No watchlists</p>';
 }
-function addWL(){
-  const n=document.getElementById('wl-n').value.trim();
-  const s=document.getElementById('wl-s').value.split(',').map(x=>x.trim()).filter(Boolean);
-  if(!n||!s.length) return toast('Name and subreddits required','er');
-  S.watchlists.push({name:n,subs:s});
-  document.getElementById('wl-n').value='';
-  document.getElementById('wl-s').value='';
-  renderWatchlists();
-  toast('Watchlist created','ok');
+function addWL() {
+  const n = document.getElementById('wl-n').value.trim();
+  const s = document.getElementById('wl-s').value.split(',').map(x=>x.trim()).filter(Boolean);
+  if (!n || !s.length) return toast('Name aur subreddits daalo', 'er');
+  ST.watchlists.push({n, s});
+  document.getElementById('wl-n').value = '';
+  document.getElementById('wl-s').value = '';
+  renderWL();
+  toast('Watchlist added!', 'ok');
 }
-function delWL(i){S.watchlists.splice(i,1);renderWatchlists();}
-function loadWL(i){document.getElementById('tr-subs').value=S.watchlists[i].subs.join(',');toast('Watchlist loaded','ok');}
+function delWL(i) { ST.watchlists.splice(i, 1); renderWL(); }
+function loadWL(i) { document.getElementById('tr-subs').value = ST.watchlists[i].s.join(','); toast('Loaded!', 'ok'); }
 
-// ═══════════════════════════════════════════════════════════
-// MODULE 3: COMPETITOR TRACKER
-// ═══════════════════════════════════════════════════════════
-async function addComp(){
-  const sub=document.getElementById('cp-sub').value.trim().replace(/^r\//,'');
-  const lbl=document.getElementById('cp-lbl').value.trim()||sub;
-  if(!sub) return toast('Enter subreddit','er');
-  toast('Fetching competitor data...');
-  try{
-    const info=await getSubInfo(sub);
-    const posts=await getSubPosts(sub,'hot',25);
-    const scores=posts.map(p=>p.score);
-    const avg=scores.length?+(scores.reduce((a,b)=>a+b,0)/scores.length).toFixed(1):0;
-    const top3=posts.sort((a,b)=>b.score-a.score).slice(0,3);
-    S.competitors[sub]={subreddit:sub,label:lbl,subscribers:info.subscribers||0,active_users:info.accounts_active||0,avg_score:avg,top_posts:top3,snapshot_at:new Date().toISOString()};
-    S.stats.comps=Object.keys(S.competitors).length;
-    updateStats();
+// ─── MODULE 3: COMPETITOR TRACKER ────────────────────────────────────────────
+async function addComp() {
+  const sub = document.getElementById('cp-sub').value.trim().replace(/^r\//, '');
+  const lbl = document.getElementById('cp-lbl').value.trim() || sub;
+  if (!sub) return toast('Subreddit daalo', 'er');
+  toast('Fetching r/' + sub + '...');
+  try {
+    const info = await getInfo(sub);
+    const posts = await getPosts(sub, 'hot', 25);
+    const scores = posts.map(p => p.score);
+    const avg = scores.length ? +(scores.reduce((a,b)=>a+b,0)/scores.length).toFixed(1) : 0;
+    ST.comps[sub] = {sub, lbl, subscribers:info.subscribers||0, active:info.accounts_active||0, avg, top3:posts.sort((a,b)=>b.score-a.score).slice(0,3), at:new Date().toISOString()};
+    ST.stats.c = Object.keys(ST.comps).length;
+    updStats();
+    document.getElementById('cp-sub').value = '';
+    document.getElementById('cp-lbl').value = '';
     renderComps();
-    document.getElementById('cp-sub').value='';
-    document.getElementById('cp-lbl').value='';
-    toast('Competitor added!','ok');
-  }catch(e){toast('Error: '+e.message,'er');}
+    toast('Added!', 'ok');
+  } catch(e) { toast(e.message, 'er'); }
 }
-async function refreshComps(){
-  const subs=Object.keys(S.competitors);
-  if(!subs.length) return toast('No competitors tracked','er');
-  toast('Refreshing '+subs.length+' competitors...');
-  for(const sub of subs){
-    try{
-      const info=await getSubInfo(sub);
-      const posts=await getSubPosts(sub,'hot',20);
-      const scores=posts.map(p=>p.score);
-      const avg=scores.length?+(scores.reduce((a,b)=>a+b,0)/scores.length).toFixed(1):0;
-      S.competitors[sub]={...S.competitors[sub],subscribers:info.subscribers||0,active_users:info.accounts_active||0,avg_score:avg,snapshot_at:new Date().toISOString()};
-    }catch(e){}
+
+async function refreshComps() {
+  const subs = Object.keys(ST.comps);
+  if (!subs.length) return toast('Koi competitor nahi', 'er');
+  toast('Refreshing...');
+  for (const sub of subs) {
+    try {
+      const info = await getInfo(sub);
+      const posts = await getPosts(sub, 'hot', 20);
+      const scores = posts.map(p=>p.score);
+      const avg = scores.length ? +(scores.reduce((a,b)=>a+b,0)/scores.length).toFixed(1) : 0;
+      ST.comps[sub] = {...ST.comps[sub], subscribers:info.subscribers||0, active:info.accounts_active||0, avg, at:new Date().toISOString()};
+    } catch(e) {}
   }
   renderComps();
-  toast('Refreshed!','ok');
+  toast('Refreshed!', 'ok');
 }
-function renderComps(){
-  const comps=Object.values(S.competitors);
-  document.getElementById('cp-grid').innerHTML=comps.length?`
-    <table class="dt"><thead><tr><th>Subreddit</th><th>Label</th><th>Subscribers</th><th>Active</th><th>Avg Score</th><th>Updated</th><th></th></tr></thead>
-    <tbody>${comps.map(c=>`
+
+function renderComps() {
+  const list = Object.values(ST.comps);
+  document.getElementById('cp-list').innerHTML = list.length ? `
+    <table class="dt"><thead><tr><th>Subreddit</th><th>Label</th><th>Subscribers</th><th>Active</th><th>Avg Score</th><th></th></tr></thead>
+    <tbody>${list.map(c => `
       <tr>
-        <td class="pr"><a href="https://reddit.com/r/${c.subreddit}" target="_blank" style="color:var(--acc2);text-decoration:none">r/${c.subreddit}</a></td>
-        <td><span class="badge bgray">${c.label}</span></td>
-        <td class="mono">${fmtN(c.subscribers)}</td>
-        <td class="mono">${fmtN(c.active_users)}</td>
-        <td class="mono">${c.avg_score}</td>
-        <td class="mono tm tsm2">${fmtD(c.snapshot_at)}</td>
-        <td><button class="btn bd bxs" onclick="delComp('${c.subreddit}')">✕</button></td>
+        <td class="pr"><a href="https://reddit.com/r/${c.sub}" target="_blank" style="color:var(--ac2);text-decoration:none">r/${c.sub}</a></td>
+        <td><span class="bdg bgr">${c.lbl}</span></td>
+        <td class="mn">${N(c.subscribers)}</td>
+        <td class="mn">${N(c.active)}</td>
+        <td class="mn">${c.avg}</td>
+        <td><button class="btn bd bxs" onclick="delComp('${c.sub}')">✕</button></td>
       </tr>`).join('')}
-    </tbody></table>`:
-    '<div class="es"><div class="eic">🎯</div><p>No competitors tracked yet</p></div>';
-}
-function delComp(sub){delete S.competitors[sub];S.stats.comps=Object.keys(S.competitors).length;updateStats();renderComps();}
-async function analyzeComps(){
-  const comps=Object.values(S.competitors);
-  if(!comps.length) return toast('Add competitors first','er');
-  toast('Running AI analysis...');
-  try{
-    const analysis=await callClaude(
-      'You are a competitive intelligence analyst for Reddit communities. Compare the competitor subreddits and identify: strengths, weaknesses, content gaps to exploit, engagement patterns, strategic opportunities. Use Markdown with clear sections.',
-      `Competitor data:\n${comps.map(c=>`r/${c.subreddit}: ${fmtN(c.subscribers)} subscribers, ${c.active_users} active, avg score ${c.avg_score}`).join('\n')}\n\nTop posts:\n${comps.flatMap(c=>(c.top_posts||[]).slice(0,2).map(p=>`r/${c.subreddit}: "${p.title}" (score: ${p.score})`)).join('\n')}\n\nProvide competitive intelligence report.`,
-      1500
-    );
-    document.getElementById('cp-ai').innerHTML=md(analysis);
-    document.getElementById('cp-ai-wrap').style.display='block';
-    toast('Analysis complete!','ok');
-  }catch(e){toast('Error: '+e.message,'er');}
+    </tbody></table>` :
+    '<div class="es"><div class="ei">🎯</div><p>Koi competitor track nahi ho raha</p></div>';
 }
 
-// ═══════════════════════════════════════════════════════════
-// MODULE 4: AI HUMANIZER
-// ═══════════════════════════════════════════════════════════
-const MODES={
-  human:'Rewrite the following AI-generated text to sound like a real person wrote it. Vary sentence length dramatically, use contractions, add natural transitions, minor imperfections. Keep the meaning. Output ONLY the rewritten text, no preamble.',
-  casual_human:'Rewrite this to sound like a thoughtful friend texting you. Super casual, short punchy sentences mixed with longer ones, contractions everywhere, maybe a rhetorical question. Output ONLY the rewritten text.',
-  reddit_human:'Rewrite this to sound like an authentic Reddit comment from a knowledgeable person. Start with the point, add nuance, maybe a personal anecdote, mild humor occasionally. Sound like you\'ve been on Reddit for years. Output ONLY the rewritten text.',
-  professional_human:'Rewrite this as a seasoned professional — clear, confident, authoritative but approachable. Active voice, varied sentence length, no filler. Output ONLY the rewritten text.',
-  community_discussion:'Rewrite as if opening a genuine Reddit community discussion. Share a perspective, invite others in, be curious. Sound like you genuinely want input. Output ONLY the rewritten text.',
+function delComp(sub) { delete ST.comps[sub]; ST.stats.c = Object.keys(ST.comps).length; updStats(); renderComps(); }
+
+async function analyzeComps() {
+  const list = Object.values(ST.comps);
+  if (!list.length) return toast('Pehle competitor add karo', 'er');
+  toast('AI analysis chal rahi hai...');
+  try {
+    const res = await claude(
+      'Competitive intelligence analyst for Reddit communities. Compare competitors, find: content gaps, opportunities, weaknesses. Use Markdown sections: ## Overview, ## Content Gaps, ## Opportunities, ## Strategy.',
+      'Competitors:\n' + list.map(c=>`r/${c.sub}: ${N(c.subscribers)} subscribers, avg score ${c.avg}`).join('\n') +
+      '\nTop posts:\n' + list.flatMap(c=>(c.top3||[]).slice(0,2).map(p=>`r/${c.sub}: "${p.title}" (${p.score})`)).join('\n') +
+      '\n\nProvide competitive analysis.',
+      1200
+    );
+    document.getElementById('cp-ai').innerHTML = mdHTML(res);
+    document.getElementById('cp-ai-wrap').style.display = 'block';
+    toast('Done!', 'ok');
+  } catch(e) { toast(e.message, 'er'); }
+}
+
+// ─── MODULE 4: AI HUMANIZER ───────────────────────────────────────────────────
+const MODES = {
+  human: {
+    label: '🧑 Human',
+    system: `You are a human rewriting expert. Rewrite the given AI-generated text so it sounds like a real, thoughtful person wrote it.
+
+STRICT RULES — NEVER BREAK THESE:
+1. NEVER use em dash (—) anywhere. Use comma, period, or rewrite the sentence instead.
+2. NEVER use words: utilize, leverage, seamlessly, robust, comprehensive, crucial, vital, paramount, delve, dive deep, unlock, empower, game-changer, cutting-edge, innovative, transformative, holistic, synergy, paradigm, streamline, harness, foster, facilitate, multifaceted, nuanced, landscape, ecosystem, groundbreaking, revolutionary, spearhead, pivotal, impactful, scalable.
+3. NEVER start consecutive sentences the same way.
+4. NEVER use "In conclusion", "In summary", "To summarize", "It is worth noting", "It is important to".
+5. Vary sentence length — mix short punchy sentences with longer ones naturally.
+6. Use contractions freely (it's, don't, you'll, I've, that's).
+7. Preserve all the original information and meaning.
+8. Output ONLY the rewritten text. No preamble, no explanation.`,
+  },
+  casual: {
+    label: '😄 Casual',
+    system: `Rewrite this text super casually — like you're texting a smart friend.
+
+STRICT RULES:
+1. NEVER use em dash (—). Use comma or just end the sentence.
+2. NO corporate words: leverage, utilize, robust, seamlessly, comprehensive, innovative, etc.
+3. Short sentences mostly. Mix in one longer one occasionally.
+4. Contractions everywhere — it's, don't, you're, I've, we've, that's.
+5. Maybe throw in a casual question or observation.
+6. Can start a sentence with "And" or "But" — totally fine.
+7. Keep it real, keep it simple.
+8. Output ONLY the rewritten text.`,
+  },
+  reddit: {
+    label: '🔴 Reddit',
+    system: `Rewrite this as a genuine Reddit comment or post from someone who really knows their stuff.
+
+STRICT RULES:
+1. NEVER use em dash (—). Redditors don't write like that.
+2. NO AI giveaway words: leverage, utilize, seamlessly, robust, comprehensive, innovative, cutting-edge, holistic, paradigm, transformative, empower, foster, facilitate.
+3. Start with the actual point — no long intros.
+4. Sound like you have real experience, not like you read it in a textbook.
+5. Conversational but intelligent. Can use "tbh", "ngl", "honestly", "look," to start sentences.
+6. Vary length — some sentences very short, some longer with actual depth.
+7. Maybe end with a genuine observation or mild opinion.
+8. Output ONLY the rewritten text.`,
+  },
+  pro: {
+    label: '💼 Professional',
+    system: `Rewrite this as a sharp, experienced professional — confident and clear, not corporate-robot.
+
+STRICT RULES:
+1. NEVER use em dash (—). Use a period or comma instead.
+2. NO buzzwords: leverage, utilize, synergy, paradigm, robust, seamlessly, holistic, empower, spearhead, impactful, scalable, cutting-edge, innovative, transformative, game-changer, streamline, harness, foster, facilitate.
+3. Active voice. Strong verbs. No passive voice unless absolutely necessary.
+4. Short sentences mixed with medium ones. No marathon sentences.
+5. No filler phrases: "It's worth noting that", "It is important to", "In today's world", "In conclusion".
+6. Sound like a smart human who respects the reader's time.
+7. Output ONLY the rewritten text.`,
+  },
+  community: {
+    label: '💬 Community',
+    system: `Rewrite this as someone opening a genuine, engaging discussion in an online community.
+
+STRICT RULES:
+1. NEVER use em dash (—). It sounds formal and robotic.
+2. NO AI words: leverage, utilize, seamlessly, robust, comprehensive, innovative, holistic, paradigm, transformative, empower, foster, facilitate.
+3. Sound like you genuinely want people's opinions — curious, open, not preachy.
+4. Ask a real question somewhere in the text.
+5. Conversational and warm. Not a lecture.
+6. Vary sentence lengths naturally.
+7. Don't sound like you're selling anything.
+8. Output ONLY the rewritten text.`,
+  },
 };
 
-function selMode(el){
-  document.querySelectorAll('.mpill').forEach(p=>p.classList.remove('sel'));
+function selMode(el) {
+  document.querySelectorAll('.mpill').forEach(p => p.classList.remove('sel'));
   el.classList.add('sel');
-  S.mode=el.dataset.m;
+  ST.mode = el.dataset.m;
 }
 
-async function humanize(){
-  const text=document.getElementById('hum-in').value.trim();
-  if(!text) return toast('Enter text to humanize','er');
-  if(text.length>5000) return toast('Max 5000 characters','er');
-  document.getElementById('hbtn').disabled=true;
-  document.getElementById('hbtn').textContent='⏳ Humanizing...';
-  try{
-    const result=await callClaude(MODES[S.mode],text,1200);
-    document.getElementById('h-orig').textContent=text;
-    document.getElementById('h-hum').textContent=result;
-    document.getElementById('h-res').style.display='block';
-    document.getElementById('hbtn').disabled=false;
-    document.getElementById('hbtn').innerHTML='✨ Humanize Text';
-    toast('Done!','ok');
-  }catch(e){
-    document.getElementById('hbtn').disabled=false;
-    document.getElementById('hbtn').innerHTML='✨ Humanize Text';
-    toast('Error: '+e.message,'er');
+// Post-process: strip any remaining em dashes and AI words just in case
+function cleanHumanized(text) {
+  // Replace em dash variants
+  text = text.replace(/—/g, ',');   // —
+  text = text.replace(/–/g, '-');   // –
+  text = text.replace(/ -- /g, ', ');
+  text = text.replace(/ — /g, ', ');
+  text = text.replace(/—/g, ',');
+
+  // Replace common AI buzzwords that slip through
+  const replacements = [
+    [/utilize/gi, 'use'],
+    [/utilizes/gi, 'uses'],
+    [/utilized/gi, 'used'],
+    [/utilizing/gi, 'using'],
+    [/leverage/gi, 'use'],
+    [/leverages/gi, 'uses'],
+    [/leveraged/gi, 'used'],
+    [/leveraging/gi, 'using'],
+    [/seamlessly/gi, 'smoothly'],
+    [/robust/gi, 'solid'],
+    [/comprehensive/gi, 'thorough'],
+    [/foster/gi, 'build'],
+    [/facilitate/gi, 'help'],
+    [/empower/gi, 'help'],
+    [/spearhead/gi, 'lead'],
+    [/paradigm/gi, 'approach'],
+    [/synergy/gi, 'teamwork'],
+    [/holistic/gi, 'complete'],
+    [/transformative/gi, 'powerful'],
+    [/innovative/gi, 'new'],
+    [/cutting-edge/gi, 'modern'],
+    [/game-changer/gi, 'big deal'],
+    [/streamline/gi, 'simplify'],
+    [/harness/gi, 'use'],
+    [/delve/gi, 'look'],
+    [/pivotal/gi, 'key'],
+    [/crucial/gi, 'important'],
+    [/vital/gi, 'important'],
+    [/paramount/gi, 'very important'],
+    [/In conclusion,?\s*/gi, ''],
+    [/In summary,?\s*/gi, ''],
+    [/To summarize,?\s*/gi, ''],
+    [/It is worth noting that\s*/gi, ''],
+    [/It's worth noting that\s*/gi, ''],
+    [/It is important to note that\s*/gi, ''],
+  ];
+
+  replacements.forEach(([pattern, replacement]) => {
+    text = text.replace(pattern, replacement);
+  });
+
+  return text.trim();
+}
+
+async function doHumanize() {
+  const text = document.getElementById('hum-in').value.trim();
+  if (!text) return toast('Text daalo', 'er');
+  if (text.length > 5000) return toast('Max 5000 characters', 'er');
+
+  const btn = document.getElementById('hbtn');
+  btn.disabled = true;
+  btn.textContent = '⏳ Humanizing...';
+
+  try {
+    const modeObj = MODES[ST.mode] || MODES.human;
+    let result = await claude(modeObj.system, text, 1400);
+
+    // Clean up any AI artifacts that slipped through
+    result = cleanHumanized(result);
+
+    document.getElementById('h-orig').textContent = text;
+    document.getElementById('h-hum').textContent  = result;
+    document.getElementById('h-res').style.display = 'block';
+
+    // Show diff stats
+    const origWords = text.split(/\s+/).length;
+    const newWords  = result.split(/\s+/).length;
+    const diffPct   = Math.round((newWords - origWords) / origWords * 100);
+    const diffStr   = diffPct > 0 ? '+' + diffPct + '%' : diffPct + '%';
+    document.getElementById('h-stats').innerHTML =
+      '<span class="bdg bgr">Original: ' + origWords + ' words</span> ' +
+      '<span class="bdg bg2">Humanized: ' + newWords + ' words (' + diffStr + ')</span> ' +
+      '<span class="bdg bb2">' + modeObj.label + '</span>';
+    document.getElementById('h-stats-wrap').style.display = 'block';
+
+    btn.disabled = false;
+    btn.innerHTML = '✨ Humanize Text';
+    toast('Done! Em dashes aur AI words hata diye.', 'ok');
+  } catch(e) {
+    btn.disabled = false;
+    btn.innerHTML = '✨ Humanize Text';
+    toast(e.message, 'er');
   }
 }
-function copyHum(){navigator.clipboard.writeText(document.getElementById('h-hum').textContent).then(()=>toast('Copied!','ok'));}
 
-// ═══════════════════════════════════════════════════════════
-// MODULE 5: POST GENERATOR
-// ═══════════════════════════════════════════════════════════
-const PT_INST={
-  discussion:'Create a thought-provoking discussion post that invites community debate.',
-  question:'Write a genuine question post that the community will want to answer.',
-  megathread:'Create a megathread post header with clear structure and participation guidelines.',
-  authority:'Write an authoritative, value-packed informational post that establishes expertise.',
-  engagement:'Create a post that naturally drives high engagement through a relatable scenario.',
-  community:'Write a warm, community-focused post that strengthens subreddit culture.',
+function copyHum() {
+  navigator.clipboard.writeText(document.getElementById('h-hum').textContent).then(() => toast('Copied!', 'ok'));
+}
+
+// ─── MODULE 5: POST GENERATOR ─────────────────────────────────────────────────
+const PTYPES = {
+  discussion: 'Create a thought-provoking discussion post inviting community debate.',
+  question:   'Write a genuine question post the community will want to answer.',
+  megathread: 'Create a megathread header with clear structure and participation rules.',
+  authority:  'Write an authoritative, value-packed post that establishes expertise.',
+  engagement: 'Create a post that naturally drives high engagement through a relatable scenario.',
+  community:  'Write a warm community-focused post that strengthens subreddit culture.',
 };
 
-async function genPost(){
-  const sub=document.getElementById('pg-sub').value.trim().replace(/^r\//,'');
-  const type=document.getElementById('pg-type').value;
-  const tone=document.getElementById('pg-tone').value;
-  const goal=document.getElementById('pg-goal').value;
-  if(!sub) return toast('Enter subreddit','er');
+// 8 different body formats — randomly picked each time
+const BODY_FORMATS = [
+  { id:'ultra_short', label:'⚡ Ultra Short',
+    inst:'Write an extremely short body — ONLY 1 to 2 sentences. Punchy, direct, sparks curiosity. No fluff at all.' },
+  { id:'short_para',  label:'📝 Short',
+    inst:'Write a short body of 3-5 sentences in one paragraph. Conversational, gets to the point fast.' },
+  { id:'medium_para', label:'📄 Medium',
+    inst:'Write a medium body of 2-3 paragraphs (7-10 sentences total). Natural storytelling flow, no bullet points.' },
+  { id:'bullets',     label:'• Bullets',
+    inst:'Write the body using bullet points with the • symbol. Start with a 1-line hook, then 5-8 bullet points, each 1-2 sentences.' },
+  { id:'numbered',    label:'🔢 Numbered',
+    inst:'Write the body as a numbered list (1. 2. 3. etc). Start with a short 1-line hook, then 5-7 numbered points, each 1-2 sentences.' },
+  { id:'long_story',  label:'📖 Long Form',
+    inst:'Write a long-form body of 18-25 sentences across 4-5 paragraphs. Personal story or detailed experience. Very human, very authentic Reddit style.' },
+  { id:'mixed',       label:'🔀 Mixed',
+    inst:'Write in mixed format: 2-3 sentence intro paragraph, then 4-6 bullet points (• symbol), then 1-2 sentence closing question or CTA.' },
+  { id:'questions',   label:'❓ Question Style',
+    inst:'Write a short body (3-5 sentences) that weaves in 2-3 genuine questions to make readers want to reply. Conversational and curious tone.' },
+];
 
-  document.getElementById('pg-res').style.display='none';
-  document.getElementById('pg-load').style.display='block';
-  document.getElementById('pgbtn').disabled=true;
+let _lastFmtIdx = -1;
+function pickFmt() {
+  let idx;
+  do { idx = Math.floor(Math.random() * BODY_FORMATS.length); } while (idx === _lastFmtIdx && BODY_FORMATS.length > 1);
+  _lastFmtIdx = idx;
+  return BODY_FORMATS[idx];
+}
 
-  try{
-    const ctx=S.analyses[sub]?`Top keywords: ${S.analyses[sub].top_keywords.slice(0,8).map(k=>k.word).join(', ')}. Avg score: ${S.analyses[sub].avg_score}.`:'';
-    const raw=await callClaude(
-      `You are a Reddit post writer creating authentic, community-driven content. NEVER promotional or spammy.\n${PT_INST[type]}\n\nRespond ONLY with valid JSON (no markdown fences, no extra text):\n{"title":"...","body":"...","tags":["tag1","tag2","tag3"],"best_time_to_post":"...","expected_engagement":"High/Medium/Low","tips":["tip1","tip2"]}`,
-      `Subreddit: r/${sub}\nPost type: ${type}\nTone: ${tone}\nGoal: ${goal}\nContext: ${ctx||'General community'}\n\nGenerate post as pure JSON.`,
-      900
-    );
+function renderBody(text) {
+  if (!text) return '';
+  const lines = text.split('\n');
+  let html = '';
+  let paraLines = [];
+
+  const flushPara = () => {
+    if (paraLines.length) {
+      html += '<p class="pbp">' + paraLines.join('<br>') + '</p>';
+      paraLines = [];
+    }
+  };
+
+  lines.forEach(line => {
+    const trimmed = line.trim();
+    if (!trimmed) { flushPara(); return; }
+
+    // Bullet point
+    if (/^[•\-\*]\s+/.test(trimmed)) {
+      flushPara();
+      html += '<div class="pbb"><span class="pba">•</span><span>' + trimmed.replace(/^[•\-\*]\s+/, '') + '</span></div>';
+    }
+    // Numbered point
+    else if (/^\d+[\.\)]\s+/.test(trimmed)) {
+      flushPara();
+      const num = trimmed.match(/^(\d+)/)[1];
+      html += '<div class="pbn"><span class="pbna">' + num + '.</span><span>' + trimmed.replace(/^\d+[\.\)]\s+/, '') + '</span></div>';
+    }
+    // Regular text
+    else {
+      paraLines.push(trimmed);
+    }
+  });
+  flushPara();
+  return html || '<p class="pbp">' + text + '</p>';
+}
+
+async function doGenPost() {
+  const sub  = document.getElementById('pg-sub').value.trim().replace(/^r\//, '');
+  const type = document.getElementById('pg-type').value;
+  const tone = document.getElementById('pg-tone').value;
+  const goal = document.getElementById('pg-goal').value;
+  if (!sub) return toast('Subreddit daalo', 'er');
+
+  const btn = document.getElementById('pgbtn');
+  btn.disabled = true;
+  document.getElementById('pg-out').style.display  = 'none';
+  document.getElementById('pg-load').style.display = 'block';
+
+  const fmt = pickFmt();
+
+  try {
+    const ctx = ST.analyses[sub] ? 'Top keywords: ' + ST.analyses[sub].topKW.slice(0,8).map(k=>k.word).join(', ') : '';
+    const seed = Math.random().toString(36).slice(2,10);
+
+    const sys = 'You are an expert Reddit post writer creating authentic, human, non-promotional content.\n\nPOST TYPE: ' + type + ' — ' + PTYPES[type] + '\n\nBODY FORMAT (MUST FOLLOW EXACTLY): ' + fmt.inst + '\n\nRULES:\n- Each generation must be UNIQUE — different angle, different hook, different perspective\n- Never start the same way twice\n- Tone: ' + tone + '\n- Goal: ' + goal + '\n- For bullets use • symbol exactly\n- For numbered use 1. 2. 3. format exactly\n\nReturn ONLY pure JSON, no markdown fences:\n{"title":"...","body":"...","tags":["","",""],"time":"best posting time","engagement":"High/Medium/Low","tips":["tip1","tip2"]}';
+
+    const usr = 'Subreddit: r/' + sub + '\nType: ' + type + '\nTone: ' + tone + '\nGoal: ' + goal + '\n' + ctx + '\nUnique seed: ' + seed + '\n\nGenerate post as pure JSON only.';
+
+    const raw = await claude(sys, usr, 1200);
+
     let post;
-    try{post=JSON.parse(raw.replace(/```json|```/g,'').trim());}
-    catch(e){post={title:'Generated Post',body:raw,tags:[],best_time_to_post:'Mon-Wed 9am-12pm',expected_engagement:'Medium',tips:[]};}
+    try {
+      const cleaned = raw.replace(/^```json\s*/m,'').replace(/^```\s*/m,'').replace(/```\s*$/m,'').trim();
+      post = JSON.parse(cleaned);
+    } catch(e) {
+      post = { title: 'Generated Post', body: raw, tags:[], time:'Mon-Wed 9am-12pm', engagement:'Medium', tips:[] };
+    }
 
-    S.postHistory.unshift({...post,subreddit:sub,type,created:new Date().toISOString()});
-    S.stats.posts=S.postHistory.length;
-    updateStats();
+    post.fmt = fmt.id;
+    ST.posts.unshift({...post, sub, type, at: new Date().toISOString()});
+    ST.stats.p = ST.posts.length;
+    updStats();
 
-    document.getElementById('pg-title').textContent=post.title||'';
-    document.getElementById('pg-body').textContent=post.body||'';
-    document.getElementById('pg-meta').innerHTML=[
-      post.expected_engagement?`<span class="badge ${post.expected_engagement==='High'?'bg':post.expected_engagement==='Medium'?'bgold':'bgray'}">${post.expected_engagement}</span>`:'',
-      post.best_time_to_post?`<span class="badge bb2">⏰ ${post.best_time_to_post}</span>`:'',
-      ...(post.tags||[]).map(t=>`<span class="badge bgray">${t}</span>`),
+    document.getElementById('pg-tit').textContent = post.title || '';
+    document.getElementById('pg-bod').innerHTML   = renderBody(post.body || '');
+
+    document.getElementById('pg-met').innerHTML = [
+      '<span class="bdg ' + (post.engagement==='High'?'bg2':post.engagement==='Medium'?'bgold':'bgr') + '">' + (post.engagement||'—') + '</span>',
+      '<span class="bdg bb2">' + fmt.label + '</span>',
+      post.time ? '<span class="bdg bgr">⏰ ' + post.time + '</span>' : '',
+      ...(post.tags||[]).map(t=>'<span class="bdg bgr">' + t + '</span>'),
     ].join(' ');
-    document.getElementById('pg-tips').innerHTML=(post.tips||[]).map(t=>`<div style="display:flex;gap:7px;margin-bottom:5px"><span>💡</span><span style="font-size:.8rem;color:var(--t2)">${t}</span></div>`).join('');
 
-    document.getElementById('pg-load').style.display='none';
-    document.getElementById('pg-res').style.display='block';
-    document.getElementById('pgbtn').disabled=false;
-    renderPostHistory();
-    toast('Post generated!','ok');
-  }catch(e){
-    document.getElementById('pg-load').style.display='none';
-    document.getElementById('pgbtn').disabled=false;
-    toast('Error: '+e.message,'er');
+    document.getElementById('pg-tips').innerHTML = (post.tips||[]).map(t =>
+      '<div style="display:flex;gap:7px;margin-bottom:5px"><span>💡</span><span style="font-size:.79rem;color:var(--t2)">' + t + '</span></div>'
+    ).join('');
+
+    document.getElementById('pg-load').style.display = 'none';
+    document.getElementById('pg-out').style.display  = 'block';
+    btn.disabled = false;
+    renderPostHist();
+    toast('Post ready! ' + fmt.label, 'ok');
+
+  } catch(e) {
+    document.getElementById('pg-load').style.display = 'none';
+    btn.disabled = false;
+    toast(e.message, 'er');
   }
 }
-function copyPost(){
-  const t=document.getElementById('pg-title').textContent;
-  const b=document.getElementById('pg-body').textContent;
-  navigator.clipboard.writeText(t+'\n\n'+b).then(()=>toast('Copied!','ok'));
-}
-function renderPostHistory(){
-  document.getElementById('pg-hist').innerHTML=S.postHistory.slice(0,5).length?
-    S.postHistory.slice(0,5).map(p=>`
-      <div style="padding:7px 0;border-bottom:1px solid var(--blite)">
-        <div style="font-size:.8rem;font-weight:600;color:var(--t1);margin-bottom:3px">${p.title.substring(0,60)}${p.title.length>60?'…':''}</div>
-        <div style="display:flex;gap:5px"><span class="badge bo">${p.type}</span><span class="badge bgray">r/${p.subreddit}</span></div>
-      </div>`).join(''):
-    '<p class="tsm2 tm">No posts generated yet</p>';
+
+function copyPost() {
+  const t = document.getElementById('pg-tit').textContent;
+  const b = document.getElementById('pg-bod').textContent;
+  navigator.clipboard.writeText(t + '\n\n' + b).then(() => toast('Copied!', 'ok'));
 }
 
-// ═══════════════════════════════════════════════════════════
-// MODULE 6: KEYWORD DISCOVERY
-// ═══════════════════════════════════════════════════════════
-async function discoverKW(){
-  const subsStr=document.getElementById('kw-subs').value;
-  const subs=subsStr.split(',').map(s=>s.trim().replace(/^r\//,'')).filter(Boolean);
-  if(!subs.length) return toast('Add subreddits','er');
+function renderPostHist() {
+  document.getElementById('pg-hist').innerHTML = ST.posts.slice(0,5).length ?
+    ST.posts.slice(0,5).map(p => `
+      <div style="padding:7px 0;border-bottom:1px solid var(--bli)">
+        <div style="font-size:.79rem;font-weight:600;color:var(--t1);margin-bottom:3px">${p.title.substring(0,58)}${p.title.length>58?'…':''}</div>
+        <span class="bdg bo">${p.type}</span> <span class="bdg bgr">r/${p.sub}</span>
+      </div>`).join('') :
+    '<p style="font-size:.77rem;color:var(--t3)">No posts yet</p>';
+}
 
-  document.getElementById('kw-res').style.display='none';
-  document.getElementById('kw-load').style.display='block';
-  document.getElementById('kwbtn').disabled=true;
-  toast('Mining keywords from '+subs.length+' subreddits...');
+// ─── MODULE 6: KEYWORD DISCOVERY ─────────────────────────────────────────────
+async function doKeywords() {
+  const subs = document.getElementById('kw-subs').value.split(',').map(s=>s.trim().replace(/^r\//,'')).filter(Boolean);
+  if (!subs.length) return toast('Subreddits daalo', 'er');
 
-  try{
-    // Re-use trend scan logic
-    const stop=new Set(['the','a','an','is','in','on','at','to','for','of','and','or','but','it','its','this','that','with','are','was','be','has','have','not','by','from','as','do','if','so','we','i','my','your','you','r','x','just','like','get','use','new','one','can','will','need','want','what','how','why','when','who','where','also','been','very','more','some','than','them','they','their','about','would','could','should']);
-    const kwData={};
-    for(const sub of subs){
-      try{
-        const posts=await getSubPosts(sub,'hot',40);
-        posts.forEach(p=>{
-          (p.title.toLowerCase().match(/\b[a-z]{4,}\b/g)||[]).forEach(w=>{
-            if(!stop.has(w)){
-              if(!kwData[w]) kwData[w]={count:0,scoreSum:0,subs:new Set()};
-              kwData[w].count++;
-              kwData[w].scoreSum+=p.score;
-              kwData[w].subs.add(sub);
+  const btn = document.getElementById('kwbtn');
+  btn.disabled = true;
+  document.getElementById('kw-res').style.display  = 'none';
+  document.getElementById('kw-load').style.display = 'block';
+  toast('Mining keywords from ' + subs.length + ' subreddits...');
+
+  try {
+    const kwMap = {};
+    for (const sub of subs) {
+      try {
+        const posts = await getPosts(sub, 'hot', 40);
+        posts.forEach(p => {
+          (p.title.toLowerCase().match(/\b[a-z]{4,}\b/g)||[]).forEach(w => {
+            if (!STOP.has(w)) {
+              if (!kwMap[w]) kwMap[w] = {c:0, ss:0, subs:new Set()};
+              kwMap[w].c++;
+              kwMap[w].ss += p.score;
+              kwMap[w].subs.add(sub);
             }
           });
         });
-      }catch(e){}
+      } catch(e) {}
     }
-    const keywords=Object.entries(kwData)
-      .filter(([,d])=>d.count>=2)
-      .map(([word,d])=>{
-        const avgS=d.scoreSum/d.count;
-        const score=Math.min(100,Math.round(d.count*Math.log(avgS+2)*d.subs.size/subs.length*5));
-        return{keyword:word,count:d.count,avg_score:+avgS.toFixed(1),trend_score:score,subreddits:[...d.subs],growth_pct:Math.min(score*2,500)};
-      })
-      .sort((a,b)=>b.trend_score-a.trend_score)
-      .slice(0,60);
 
-    const aiKW=await callClaude(
-      'You are a Reddit keyword strategist. Analyze keyword data and identify: underserved niches, content gaps, high-opportunity keywords, emerging trends. Use Markdown with sections: ## 🎯 High-Opportunity Keywords, ## 📈 Emerging Trends, ## 💡 Content Strategy, ## ⚡ Quick Wins.',
-      `Subreddits: ${subs.join(', ')}\n\nTop keywords:\n${keywords.slice(0,20).map(k=>`- ${k.keyword}: score ${k.trend_score}/100, mentions ${k.count}, avg post score ${k.avg_score}`).join('\n')}\n\nProvide keyword strategy.`,
-      1200
+    const kws = Object.entries(kwMap)
+      .filter(([,v]) => v.c >= 2)
+      .map(([word, v]) => {
+        const avg = v.ss / v.c;
+        const score = Math.min(100, Math.round(v.c * Math.log(avg+2) * v.subs.size / subs.length * 5));
+        return {word, count:v.c, avg:+avg.toFixed(1), score, subs:[...v.subs], growth:Math.min(score*2,500)};
+      })
+      .sort((a,b) => b.score - a.score)
+      .slice(0, 60);
+
+    const aiKW = await claude(
+      'Reddit keyword strategist. Find: underserved niches, content gaps, high-opportunity keywords. Sections: ## 🎯 High-Opportunity, ## 📈 Emerging Trends, ## 💡 Content Strategy, ## ⚡ Quick Wins. Be specific.',
+      `Subreddits: ${subs.join(', ')}\nTop keywords:\n${kws.slice(0,18).map(k=>`- ${k.word}: score ${k.score}/100, mentions ${k.count}, avg score ${k.avg}`).join('\n')}\nProvide strategy.`,
+      1100
     );
 
-    document.getElementById('kw-ai').innerHTML=md(aiKW);
-    const top10=keywords.slice(0,10);
-    document.getElementById('kw-chart').innerHTML=barChart(top10,k=>k.keyword,k=>k.trend_score,100,'');
-    document.getElementById('kw-cloud').innerHTML=keywords.slice(0,45).map(k=>`<span class="tag ${k.trend_score>=70?'lg':k.trend_score>=40?'md':''}">${k.keyword}</span>`).join('');
-    document.getElementById('kw-tbl').innerHTML=keywords.map(k=>`
+    document.getElementById('kw-ai').innerHTML = mdHTML(aiKW);
+    document.getElementById('kw-chart').innerHTML = barChart(kws.slice(0,10), k=>k.word, k=>k.score, 100);
+    document.getElementById('kw-cloud').innerHTML = kws.slice(0,45).map(k =>
+      `<span class="tag ${k.score>=70?'lg':k.score>=40?'md':''}">${k.word}</span>`
+    ).join('');
+    document.getElementById('kw-tbl').innerHTML = kws.map(k => `
       <tr>
-        <td class="pr">${k.keyword}</td>
-        <td><span class="ts ${tc(k.trend_score)}">${k.trend_score}</span></td>
-        <td class="mono">${k.count}</td>
-        <td class="mono">${k.avg_score}</td>
-        <td class="mono" style="color:var(--green)">+${k.growth_pct}%</td>
-        <td style="font-size:.72rem;color:var(--t3)">${k.subreddits.slice(0,3).map(s=>'r/'+s).join(', ')}</td>
+        <td class="pr">${k.word}</td>
+        <td><span class="ts ${tc(k.score)}">${k.score}</span></td>
+        <td class="mn">${k.count}</td>
+        <td class="mn">${k.avg}</td>
+        <td class="mn" style="color:var(--grn)">+${k.growth}%</td>
+        <td style="font-size:.72rem;color:var(--t3)">${k.subs.slice(0,3).map(s=>'r/'+s).join(', ')}</td>
       </tr>`).join('');
 
-    document.getElementById('kw-load').style.display='none';
-    document.getElementById('kw-res').style.display='block';
-    document.getElementById('kwbtn').disabled=false;
-    toast('Found '+keywords.length+' keywords!','ok');
-  }catch(e){
-    document.getElementById('kw-load').style.display='none';
-    document.getElementById('kwbtn').disabled=false;
-    toast('Error: '+e.message,'er');
+    document.getElementById('kw-load').style.display = 'none';
+    document.getElementById('kw-res').style.display  = 'block';
+    btn.disabled = false;
+    toast('Found ' + kws.length + ' keywords!', 'ok');
+
+  } catch(e) {
+    document.getElementById('kw-load').style.display = 'none';
+    btn.disabled = false;
+    toast(e.message, 'er');
   }
 }
 
-// ═══════════════════════════════════════════════════════════
-// MODULE 8: AUTOMATION (in-memory jobs)
-// ═══════════════════════════════════════════════════════════
-function createJob(){
-  const n=document.getElementById('jb-n').value.trim();
-  const t=document.getElementById('jb-t').value;
-  const tg=document.getElementById('jb-tg').value.trim();
-  const s=document.getElementById('jb-s').value;
-  if(!n||!tg) return toast('Name and target required','er');
-  S.jobs.push({id:Date.now(),name:n,type:t,target:tg,schedule:s,active:true,created:new Date().toISOString(),last_run:null});
-  document.getElementById('jb-n').value='';
-  document.getElementById('jb-tg').value='';
+// ─── AUTOMATION ───────────────────────────────────────────────────────────────
+function createJob() {
+  const n  = document.getElementById('jb-n').value.trim();
+  const t  = document.getElementById('jb-t').value;
+  const tg = document.getElementById('jb-tg').value.trim();
+  const s  = document.getElementById('jb-s').value;
+  if (!n || !tg) return toast('Name aur target daalo', 'er');
+  ST.jobs.push({id:Date.now(), n, t, tg, s, on:true});
+  document.getElementById('jb-n').value = '';
+  document.getElementById('jb-tg').value = '';
   renderJobs();
-  toast('Job created','ok');
+  toast('Job created!', 'ok');
 }
-function renderJobs(){
-  document.getElementById('jb-list').innerHTML=S.jobs.length?
-    S.jobs.map(j=>`
-      <div style="padding:9px 0;border-bottom:1px solid var(--blite)">
+
+function renderJobs() {
+  document.getElementById('jb-list').innerHTML = ST.jobs.length ?
+    ST.jobs.map(j => `
+      <div style="padding:8px 0;border-bottom:1px solid var(--bli)">
         <div style="display:flex;justify-content:space-between;align-items:center">
-          <div><span style="font-weight:600;font-size:.83rem">${j.name}</span><span class="badge ${j.active?'bg':'bgray'}" style="margin-left:6px">${j.active?'Active':'Paused'}</span></div>
-          <div style="display:flex;gap:5px">
-            <button class="btn bs bxs" onclick="toggleJob(${j.id})">${j.active?'⏸':'▶'}</button>
+          <span style="font-weight:600;font-size:.82rem">${j.n} <span class="bdg ${j.on?'bg2':'bgr'}">${j.on?'Active':'Paused'}</span></span>
+          <div style="display:flex;gap:4px">
+            <button class="btn bs bxs" onclick="toggleJob(${j.id})">${j.on?'⏸':'▶'}</button>
             <button class="btn bd bxs" onclick="delJob(${j.id})">✕</button>
           </div>
         </div>
-        <div style="font-size:.7rem;color:var(--t3);margin-top:3px">${j.type} · <strong style="color:var(--t2)">${j.target}</strong> · ${j.schedule}</div>
-      </div>`).join(''):
-    '<div class="es"><div class="eic">⚙️</div><p>No jobs created yet</p></div>';
-}
-function toggleJob(id){const j=S.jobs.find(x=>x.id===id);if(j){j.active=!j.active;renderJobs();}}
-function delJob(id){S.jobs=S.jobs.filter(x=>x.id!==id);renderJobs();}
-
-// ═══════════════════════════════════════════════════════════
-// SETTINGS
-// ═══════════════════════════════════════════════════════════
-function saveKey(){
-  const k=document.getElementById('s-key').value.trim();
-  if(!k) return toast('Enter API key','er');
-  S.apiKey=k;
-  localStorage.setItem('ria_key',k);
-  document.getElementById('s-key').value='';
-  document.getElementById('s-key').placeholder='••••••••••••'+k.slice(-4);
-  document.getElementById('key-saved').style.display='flex';
-  updateApiBadge();
-  toast('API key saved!','ok');
+        <div style="font-size:.69rem;color:var(--t3);margin-top:3px">${j.t} · <strong style="color:var(--t2)">${j.tg}</strong> · ${j.s}</div>
+      </div>`).join('') :
+    '<div class="es"><div class="ei">⚙️</div><p>No jobs</p></div>';
 }
 
-// ═══════════════════════════════════════════════════════════
-// INIT
-// ═══════════════════════════════════════════════════════════
-function init(){
-  updateApiBadge();
-  updateStats();
-  if(S.apiKey){
-    document.getElementById('s-key').placeholder='••••••••••••'+S.apiKey.slice(-4);
+function toggleJob(id) { const j = ST.jobs.find(x=>x.id===id); if(j) {j.on=!j.on; renderJobs();} }
+function delJob(id)    { ST.jobs = ST.jobs.filter(x=>x.id!==id); renderJobs(); }
+
+// ─── SETTINGS ─────────────────────────────────────────────────────────────────
+function saveKey() {
+  const k = document.getElementById('s-key').value.trim();
+  if (!k) return toast('API key daalo', 'er');
+  if (!k.startsWith('sk-')) return toast('Key "sk-" se start honi chahiye', 'er');
+  ST.key = k;
+  localStorage.setItem('ria_k', k);
+  document.getElementById('s-key').value = '';
+  document.getElementById('s-key').placeholder = '••••••••' + k.slice(-6);
+  document.getElementById('key-ok').style.display = 'block';
+  updateBadge();
+  renderDash();
+  toast('Key saved! AI active ✅', 'ok');
+}
+
+function renderSettings() {
+  if (ST.key) {
+    document.getElementById('s-key').placeholder = '••••••••' + ST.key.slice(-6);
+    document.getElementById('key-ok').style.display = 'block';
   }
-  // Seed a sample job for demo
-  S.jobs=[
-    {id:1,name:'Daily Entrepreneur Scan',type:'subreddit',target:'entrepreneur',schedule:'daily',active:true,created:new Date().toISOString(),last_run:null},
-    {id:2,name:'Marketing Trend Watch',type:'subreddit',target:'marketing',schedule:'daily',active:true,created:new Date().toISOString(),last_run:null},
-  ];
-  S.watchlists=[
-    {name:'Marketing Stack',subs:['marketing','socialmedia','content_marketing','SEO']},
-    {name:'AI & Tech',subs:['artificial','MachineLearning','ChatGPT','singularity']},
-    {name:'Startup World',subs:['startups','entrepreneur','SaaS']},
-  ];
 }
 
-init();
+// ─── DASHBOARD ────────────────────────────────────────────────────────────────
+function renderDash() {
+  updStats();
+  document.getElementById('dash-setup').innerHTML = `
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--rai);border-radius:var(--rs);border:1px solid var(--bor)">
+        <span style="font-size:18px">${ST.key?'✅':'❌'}</span>
+        <div>
+          <div style="font-size:.82rem;font-weight:600;color:var(--t1)">Anthropic API Key</div>
+          <div style="font-size:.71rem;color:var(--t3)">${ST.key?'Active — AI features ready':'Not set — Settings mein daalo'}</div>
+        </div>
+        ${!ST.key?`<button class="btn bp bsm" style="margin-left:auto" onclick="nav('settings')">Set Key →</button>`:''}
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--rai);border-radius:var(--rs);border:1px solid var(--bor)">
+        <span style="font-size:18px">✅</span>
+        <div>
+          <div style="font-size:.82rem;font-weight:600;color:var(--t1)">Reddit API</div>
+          <div style="font-size:.71rem;color:var(--t3)">Public API ready — no login needed</div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--rai);border-radius:var(--rs);border:1px solid var(--bor)">
+        <span style="font-size:18px">${ST.stats.s>0?'✅':'⚪'}</span>
+        <div>
+          <div style="font-size:.82rem;font-weight:600;color:var(--t1)">Subreddits Analyzed</div>
+          <div style="font-size:.71rem;color:var(--t3)">${ST.stats.s} this session</div>
+        </div>
+      </div>
+    </div>`;
+}
+
+// ─── INIT ──────────────────────────────────────────────────────────────────────
+updateBadge();
+updStats();
+renderDash();
+renderJobs();
+renderWL();
 </script>
 </body>
 </html>
