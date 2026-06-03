@@ -697,18 +697,65 @@ async function analyzeSubredditData(name){
 // ANTHROPIC API
 // ═══════════════════════════════════════════════════════════
 async function callClaude(system, user, maxTokens=1500){
-  if(!S.apiKey) return '⚠️ **No API key** — go to Settings and add your Anthropic API key to enable AI analysis.';
-  const r = await fetch('https://api.anthropic.com/v1/messages',{
-    method:'POST',
-    headers:{'Content-Type':'application/json','x-api-key':S.apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-    body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:maxTokens,system,messages:[{role:'user',content:user}]})
+  if(!S.apiKey) return '⚠️ **No API key** — Settings mein jaao aur Anthropic API key daalo.';
+
+  // Try direct Anthropic API first (works if CORS allowed)
+  // Falls back to allorigins proxy if blocked
+  const payload = JSON.stringify({
+    model:'claude-haiku-4-5-20251001',
+    max_tokens:maxTokens,
+    system,
+    messages:[{role:'user',content:user}]
   });
-  if(!r.ok){
+
+  // Attempt 1: direct with browser-access header
+  try {
+    const r = await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'x-api-key':S.apiKey,
+        'anthropic-version':'2023-06-01',
+        'anthropic-dangerous-direct-browser-access':'true'
+      },
+      body:payload
+    });
+    if(r.ok){
+      const d=await r.json();
+      return d.content[0].text;
+    }
     const e=await r.json().catch(()=>({}));
-    throw new Error(e.error?.message||`API error ${r.status}`);
+    const msg = e.error?.message||`API error ${r.status}`;
+    // Auth error — no point retrying
+    if(r.status===401||r.status===403) throw new Error('Invalid API key — Settings mein sahi key daalo');
+    throw new Error(msg);
+  } catch(err) {
+    // If it's an auth error, rethrow immediately
+    if(err.message.includes('Invalid API key')||err.message.includes('401')||err.message.includes('403')) throw err;
+    // Otherwise CORS block — try proxy
+    console.warn('Direct API blocked, trying proxy:', err.message);
   }
-  const d=await r.json();
-  return d.content[0].text;
+
+  // Attempt 2: via corsproxy.io
+  try {
+    const r2 = await fetch('https://corsproxy.io/?https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'x-api-key':S.apiKey,
+        'anthropic-version':'2023-06-01',
+      },
+      body:payload
+    });
+    if(r2.ok){
+      const d=await r2.json();
+      return d.content[0].text;
+    }
+    const e=await r2.json().catch(()=>({}));
+    throw new Error(e.error?.message||`Proxy API error ${r2.status}`);
+  } catch(err2) {
+    throw new Error('API call failed. Check: 1) API key sahi hai? 2) Account mein credits hain? Error: '+err2.message);
+  }
 }
 
 // ═══════════════════════════════════════════════════════════
