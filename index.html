@@ -1,2694 +1,1228 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Reddit Tasks</title>
-  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-  <style>
-    :root { color-scheme: dark; }
-    html, body { height: 100%; }
-    .glass { background: rgba(15, 23, 42, 0.55); backdrop-filter: blur(10px); }
-    .gridbg {
-      background-image:
-        radial-gradient(closest-side, rgba(99,102,241,.25), transparent 70%),
-        radial-gradient(closest-side, rgba(34,197,94,.18), transparent 70%),
-        linear-gradient(to bottom, rgba(2,6,23,1), rgba(2,6,23,.9));
-      background-position: 10% 0%, 90% 20%, 0 0;
-      background-size: 900px 900px, 900px 900px, 100% 100%;
-      background-repeat: no-repeat;
-    }
-    .spinner {
-      width: 18px; height: 18px; border-radius: 999px;
-      border: 2px solid rgba(255,255,255,.25);
-      border-top-color: rgba(255,255,255,.9);
-      animation: spin 800ms linear infinite;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
-    /* Modal box helper to keep text constrained and wrapped */
-    .modal-box { overflow: hidden; word-break: break-word; overflow-wrap: anywhere; }
-    .modal-box a { word-break: break-word; overflow-wrap: anywhere; }
-    /* Keep modal content boxed and non-overflowing */
-    #modalOverlay .modal-card {
-      overflow: hidden;
-      word-break: break-word;
-      overflow-wrap: anywhere;
-    }
-    #modalOverlay a {
-      word-break: break-word;
-      overflow-wrap: anywhere;
-    }
-    #modalOverlay .modal-card .heading {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 8px;
-      flex-wrap: wrap;
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reddit Intelligence Agent</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,600;9..40,700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0d0d12;--surface:#13131a;--raised:#1a1a24;--card:#1e1e2c;--hover:#252535;--border:#2a2a3a;--blite:#1e1e2c;--acc:#ff4500;--acc2:#0079d3;--gold:#ffd635;--green:#46d369;--red:#ff585b;--t1:#f0f0f5;--t2:#9898b0;--t3:#5a5a72;--r:10px;--rs:6px;--sw:230px;--mono:'Space Mono',monospace;--main:'DM Sans',system-ui,sans-serif}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{font-size:15px}
+body{font-family:var(--main);background:var(--bg);color:var(--t1);height:100vh;overflow:hidden;display:flex}
+::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-track{background:var(--surface)}::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+/* Sidebar */
+#sb{width:var(--sw);height:100vh;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;overflow-y:auto;z-index:10}
+.sb-brand{padding:18px 14px 14px;border-bottom:1px solid var(--border)}
+.brand-row{display:flex;align-items:center;gap:10px;margin-bottom:3px}
+.b-icon{width:32px;height:32px;background:var(--acc);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:17px;box-shadow:0 0 16px rgba(255,69,0,.2)}
+.b-name{font-family:var(--mono);font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;line-height:1.3}
+.b-sub{font-size:.62rem;color:var(--t3);font-family:var(--mono)}
+.sb-sec{padding:10px 8px 4px}
+.sb-lbl{font-size:.58rem;text-transform:uppercase;letter-spacing:.12em;color:var(--t3);font-family:var(--mono);padding:0 8px 6px}
+.ni{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:var(--rs);cursor:pointer;font-size:.83rem;color:var(--t2);transition:all .15s;margin-bottom:1px;position:relative;border:1px solid transparent}
+.ni:hover{background:var(--raised);color:var(--t1)}
+.ni.active{background:rgba(255,69,0,.12);color:var(--acc);border-color:rgba(255,69,0,.2)}
+.ni.active::before{content:'';position:absolute;left:0;top:22%;bottom:22%;width:3px;background:var(--acc);border-radius:0 3px 3px 0}
+.ni-ic{font-size:15px;width:18px;text-align:center;flex-shrink:0}
+.sb-ft{margin-top:auto;padding:10px 8px;border-top:1px solid var(--border)}
+/* Main */
+#main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+#topbar{height:54px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 22px;gap:14px;flex-shrink:0}
+#pt{font-size:.95rem;font-weight:700}
+#ps{font-size:.72rem;color:var(--t3);margin-top:1px}
+.tb-r{margin-left:auto;display:flex;align-items:center;gap:10px}
+.sdot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green)}
+.stxt{font-size:.68rem;color:var(--t3);font-family:var(--mono)}
+#content{flex:1;overflow-y:auto;padding:22px}
+.page{display:none}.page.active{display:block}
+/* Cards */
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:18px;margin-bottom:14px}
+.ct{font-size:.75rem;font-family:var(--mono);text-transform:uppercase;letter-spacing:.08em;color:var(--t3);margin-bottom:13px;display:flex;align-items:center;gap:7px}
+.ct .acc{color:var(--acc)}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+/* Stat */
+.sc{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:14px 18px;position:relative;overflow:hidden}
+.sc::after{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--acc);opacity:.4}
+.sl{font-size:.68rem;color:var(--t3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:7px}
+.sv{font-family:var(--mono);font-size:1.5rem;font-weight:700}
+.ss{font-size:.68rem;color:var(--t3);margin-top:3px}
+/* Form */
+.fg{margin-bottom:13px}
+.fl{display:block;font-size:.7rem;color:var(--t2);font-family:var(--mono);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px}
+input[type=text],input[type=password],textarea,select{width:100%;background:var(--raised);border:1px solid var(--border);border-radius:var(--rs);color:var(--t1);padding:8px 11px;font-family:var(--main);font-size:.85rem;outline:none;transition:border-color .15s}
+input:focus,textarea:focus,select:focus{border-color:var(--acc);box-shadow:0 0 0 3px rgba(255,69,0,.1)}
+textarea{resize:vertical;min-height:90px}
+select{cursor:pointer}
+select option{background:var(--raised)}
+/* Buttons */
+.btn{display:inline-flex;align-items:center;gap:7px;padding:8px 16px;border-radius:var(--rs);font-family:var(--main);font-size:.83rem;font-weight:600;cursor:pointer;border:none;transition:all .15s;white-space:nowrap}
+.bp{background:var(--acc);color:#fff}.bp:hover{background:#cc3700;transform:translateY(-1px);box-shadow:0 4px 16px rgba(255,69,0,.3)}
+.bs{background:var(--raised);color:var(--t1);border:1px solid var(--border)}.bs:hover{background:var(--hover)}
+.bb{background:var(--acc2);color:#fff}.bb:hover{background:#005fa3}
+.bd{background:transparent;color:var(--red);border:1px solid rgba(255,88,91,.3)}.bd:hover{background:rgba(255,88,91,.1)}
+.bsm{padding:5px 11px;font-size:.75rem}.bxs{padding:3px 8px;font-size:.68rem}
+.btn:disabled{opacity:.5;cursor:not-allowed;transform:none!important}
+/* Badge */
+.badge{display:inline-flex;align-items:center;padding:2px 7px;border-radius:20px;font-size:.65rem;font-family:var(--mono);font-weight:700;text-transform:uppercase}
+.bo{background:rgba(255,69,0,.15);color:var(--acc);border:1px solid rgba(255,69,0,.3)}
+.bb2{background:rgba(0,121,211,.15);color:var(--acc2);border:1px solid rgba(0,121,211,.3)}
+.bg{background:rgba(70,211,105,.12);color:var(--green);border:1px solid rgba(70,211,105,.3)}
+.br{background:rgba(255,88,91,.12);color:var(--red);border:1px solid rgba(255,88,91,.3)}
+.bgold{background:rgba(255,214,53,.12);color:var(--gold);border:1px solid rgba(255,214,53,.3)}
+.bgray{background:rgba(152,152,176,.1);color:var(--t2);border:1px solid var(--border)}
+/* Table */
+.dt{width:100%;border-collapse:collapse}
+.dt th{text-align:left;padding:7px 11px;font-size:.62rem;font-family:var(--mono);text-transform:uppercase;letter-spacing:.1em;color:var(--t3);border-bottom:1px solid var(--border)}
+.dt td{padding:9px 11px;font-size:.8rem;border-bottom:1px solid var(--blite);color:var(--t2)}
+.dt tr:last-child td{border-bottom:none}
+.dt tr:hover td{background:var(--raised);color:var(--t1)}
+.dt td.pr{color:var(--t1);font-weight:600}
+.dt .mono{font-family:var(--mono);font-size:.75rem}
+/* Progress */
+.pb{height:4px;background:var(--raised);border-radius:2px;overflow:hidden;margin-top:5px}
+.pf{height:100%;background:var(--acc);border-radius:2px;transition:width .5s}
+.pf.blue{background:var(--acc2)}.pf.green{background:var(--green)}
+/* Trend score */
+.ts{display:inline-flex;align-items:center;justify-content:center;width:38px;height:38px;border-radius:50%;font-family:var(--mono);font-size:.68rem;font-weight:700}
+.tsh{background:rgba(70,211,105,.15);color:var(--green);border:2px solid var(--green)}
+.tsm{background:rgba(255,214,53,.15);color:var(--gold);border:2px solid var(--gold)}
+.tsl{background:rgba(255,88,91,.15);color:var(--red);border:2px solid var(--red)}
+/* AI output */
+.aio{background:var(--raised);border:1px solid var(--border);border-left:3px solid var(--acc);border-radius:var(--rs);padding:15px;font-size:.83rem;line-height:1.75;color:var(--t2)}
+.aio h1,.aio h2,.aio h3{color:var(--t1);margin:1em 0 .4em}
+.aio h1{font-size:1.05rem}.aio h2{font-size:.9rem;color:var(--acc)}.aio h3{font-size:.83rem;color:var(--acc2)}
+.aio strong{color:var(--t1)}.aio code{background:var(--card);padding:1px 5px;border-radius:3px;font-family:var(--mono);font-size:.76rem}
+.aio hr{border:none;border-top:1px solid var(--border);margin:12px 0}
+/* Loader */
+.loader{display:inline-block;width:15px;height:15px;border:2px solid var(--border);border-top-color:var(--acc);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.ls{display:flex;align-items:center;gap:10px;color:var(--t3);font-size:.8rem;padding:18px}
+/* Bar chart */
+.bc{display:flex;flex-direction:column;gap:7px}
+.br2{display:flex;align-items:center;gap:9px}
+.bl{font-size:.7rem;color:var(--t2);width:90px;flex-shrink:0;text-align:right;font-family:var(--mono)}
+.bt{flex:1;height:7px;background:var(--raised);border-radius:4px;overflow:hidden}
+.bf{height:100%;background:var(--acc);border-radius:4px;transition:width .6s}
+.bf.blue{background:var(--acc2)}
+.bv{font-size:.65rem;color:var(--t3);width:36px;font-family:var(--mono)}
+/* Tag cloud */
+.tc{display:flex;flex-wrap:wrap;gap:6px}
+.tag{padding:3px 9px;border-radius:20px;font-size:.7rem;font-family:var(--mono);background:var(--raised);color:var(--t2);border:1px solid var(--border)}
+.tag.lg{font-size:.82rem;padding:4px 12px;color:var(--acc);border-color:rgba(255,69,0,.3);background:rgba(255,69,0,.08)}
+.tag.md{font-size:.76rem;color:var(--t1)}
+/* Compare */
+.cg{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.cb{background:var(--raised);border:1px solid var(--border);border-radius:var(--rs);padding:13px}
+.cb.orig{border-left:3px solid var(--t3)}.cb.hum{border-left:3px solid var(--green)}
+.clbl{font-size:.62rem;font-family:var(--mono);text-transform:uppercase;letter-spacing:.1em;color:var(--t3);margin-bottom:7px}
+.ctxt{font-size:.81rem;line-height:1.7;color:var(--t2);white-space:pre-wrap}
+/* Mode pills */
+.mp{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:13px}
+.mpill{padding:5px 13px;border-radius:20px;border:1px solid var(--border);background:var(--raised);color:var(--t2);font-size:.76rem;cursor:pointer;transition:all .15s}
+.mpill:hover{border-color:var(--acc);color:var(--t1)}
+.mpill.sel{background:rgba(255,69,0,.12);border-color:var(--acc);color:var(--acc)}
+/* Post */
+.pc{background:var(--raised);border:1px solid var(--border);border-radius:var(--r);padding:15px;margin-bottom:13px}
+.ptitle{font-weight:700;color:var(--t1);margin-bottom:7px;line-height:1.4}
+.pbody{font-size:.81rem;color:var(--t2);line-height:1.65;white-space:pre-wrap}
+.pmeta{display:flex;gap:8px;margin-top:9px;flex-wrap:wrap}
+/* Alert */
+.ai2{display:flex;gap:11px;padding:10px 0;border-bottom:1px solid var(--blite)}
+.ai2:last-child{border-bottom:none}
+.aico{font-size:18px;flex-shrink:0;margin-top:1px}
+.amsg{font-size:.8rem;color:var(--t2);line-height:1.5}
+.atm{font-size:.65rem;color:var(--t3);font-family:var(--mono);margin-top:2px}
+/* Toast */
+.toast{position:fixed;bottom:22px;right:22px;background:var(--card);border:1px solid var(--border);border-left:3px solid var(--acc);border-radius:var(--rs);padding:11px 15px;font-size:.81rem;color:var(--t1);z-index:9999;box-shadow:0 4px 24px rgba(0,0,0,.4);animation:sli .25s ease;max-width:300px}
+.toast.ok{border-left-color:var(--green)}.toast.er{border-left-color:var(--red)}
+@keyframes sli{from{transform:translateX(20px);opacity:0}to{transform:translateX(0);opacity:1}}
+/* Utils */
+.sh{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.stit{font-size:.95rem;font-weight:700}.ssub{font-size:.76rem;color:var(--t3);margin-top:2px}
+.div{border:none;border-top:1px solid var(--border);margin:14px 0}
+.es{text-align:center;padding:36px 18px;color:var(--t3)}.es .eic{font-size:36px;margin-bottom:10px}.es p{font-size:.8rem}
+.tm{color:var(--t3)}.tsm2{font-size:.76rem}.mn{font-family:var(--mono)}
+.flex{display:flex}.aic{align-items:center}.jb{justify-content:space-between}.g8{gap:8px}
+.mt12{margin-top:12px}.mt16{margin-top:16px}.wf{width:100%}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}.pulse{animation:pulse 2s infinite}
+/* Sections headers */
+.sec-h{margin-bottom:16px}
+.sec-h .title{font-size:1rem;font-weight:700;color:var(--t1)}
+.sec-h .sub{font-size:.75rem;color:var(--t3);margin-top:3px}
+/* API key notice */
+.key-notice{background:rgba(255,214,53,.06);border:1px solid rgba(255,214,53,.2);border-radius:var(--rs);padding:10px 14px;font-size:.78rem;color:var(--gold);margin-bottom:14px;display:flex;gap:8px;align-items:flex-start}
+@media(max-width:900px){.g4{grid-template-columns:1fr 1fr}.g3{grid-template-columns:1fr 1fr}}
+@media(max-width:640px){#sb{display:none}.g2,.g3,.g4,.cg{grid-template-columns:1fr}}
+</style>
 </head>
-<body class="min-h-full gridbg text-slate-100">
-  <div class="min-h-screen">
-    <!-- Top bar -->
-    <header class="sticky top-0 z-30 border-b border-white/10 bg-slate-950/60 backdrop-blur">
-      <div class="mx-auto max-w-7xl px-4 py-3 flex items-center justify-between gap-3">
-        <div class="flex items-center gap-3">
-          <div class="h-9 w-9 rounded-xl bg-gradient-to-br from-indigo-500 to-emerald-400 grid place-items-center shadow-lg shadow-indigo-500/20">
-            <span class="font-black text-slate-950">R</span>
-          </div>
-          <div>
-            <div class="text-sm tracking-wide text-white/80">Earn with Simple Tasks</div>
-            <div class="text-lg font-semibold">Reddit Tasks</div>
+<body>
+
+<!-- SIDEBAR -->
+<nav id="sb">
+  <div class="sb-brand">
+    <div class="brand-row">
+      <div class="b-icon">🤖</div>
+      <div><div class="b-name">RIA</div><div class="b-sub">Intelligence Agent</div></div>
+    </div>
+  </div>
+  <div class="sb-sec">
+    <div class="sb-lbl">Core</div>
+    <div class="ni active" data-p="dashboard"><span class="ni-ic">⚡</span>Dashboard</div>
+  </div>
+  <div class="sb-sec">
+    <div class="sb-lbl">Modules</div>
+    <div class="ni" data-p="analyzer"><span class="ni-ic">🔍</span>Subreddit Analyzer</div>
+    <div class="ni" data-p="trends"><span class="ni-ic">📈</span>Trend Finder</div>
+    <div class="ni" data-p="competitors"><span class="ni-ic">🎯</span>Competitor Tracker</div>
+    <div class="ni" data-p="humanizer"><span class="ni-ic">✍️</span>AI Humanizer</div>
+    <div class="ni" data-p="generator"><span class="ni-ic">✨</span>Post Generator</div>
+    <div class="ni" data-p="keywords"><span class="ni-ic">🔑</span>Keyword Discovery</div>
+  </div>
+  <div class="sb-sec">
+    <div class="sb-lbl">System</div>
+    <div class="ni" data-p="automation"><span class="ni-ic">⚙️</span>Automation</div>
+    <div class="ni" data-p="settings"><span class="ni-ic">🔧</span>Settings</div>
+  </div>
+  <div class="sb-ft">
+    <div class="ni" style="cursor:default">
+      <span class="ni-ic">🟢</span>
+      <span style="font-size:.72rem;color:var(--t3)" id="api-badge">No API Key</span>
+    </div>
+  </div>
+</nav>
+
+<!-- MAIN -->
+<div id="main">
+  <div id="topbar">
+    <div><div id="pt">Dashboard</div><div id="ps">Overview & quick stats</div></div>
+    <div class="tb-r">
+      <div class="sdot pulse"></div>
+      <span class="stxt">RIA v1.0</span>
+    </div>
+  </div>
+  <div id="content">
+
+    <!-- DASHBOARD -->
+    <div id="page-dashboard" class="page active">
+      <div class="g4" id="dash-stats">
+        <div class="sc"><div class="sl">Analyzed Subreddits</div><div class="sv" id="d-subs">0</div><div class="ss">in session</div></div>
+        <div class="sc"><div class="sl">Trends Detected</div><div class="sv" id="d-trends">0</div><div class="ss">keywords tracked</div></div>
+        <div class="sc"><div class="sl">Competitors</div><div class="sv" id="d-comps">0</div><div class="ss">subreddits</div></div>
+        <div class="sc"><div class="sl">Posts Generated</div><div class="sv" id="d-posts">0</div><div class="ss">this session</div></div>
+      </div>
+      <div class="g2 mt16">
+        <div class="card">
+          <div class="ct">⚡ Quick Actions</div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <button class="btn bp wf" onclick="nav('analyzer')">🔍 Analyze a Subreddit</button>
+            <button class="btn bs wf" onclick="nav('trends')">📈 Scan for Trends</button>
+            <button class="btn bs wf" onclick="nav('humanizer')">✍️ Humanize AI Text</button>
+            <button class="btn bs wf" onclick="nav('generator')">✨ Generate a Post</button>
+            <button class="btn bs wf" onclick="nav('keywords')">🔑 Discover Keywords</button>
           </div>
         </div>
+        <div class="card">
+          <div class="ct">ℹ️ About RIA</div>
+          <p style="font-size:.8rem;color:var(--t2);line-height:1.8">
+            <strong style="color:var(--t1)">Reddit Intelligence Agent</strong> is an AI-powered platform for Reddit power users.<br><br>
+            <span style="color:var(--acc)">Modules:</span><br>
+            • Subreddit Analyzer — deep community intelligence<br>
+            • Trend Finder — emerging keywords & topics<br>
+            • Competitor Tracker — monitor rival communities<br>
+            • AI Humanizer — make AI text sound human<br>
+            • Post Generator — create authentic content<br>
+            • Keyword Discovery — find opportunities<br>
+            • Automation — background job scheduler<br><br>
+            <span style="color:var(--t3);font-size:.72rem">Add Anthropic API key in Settings for AI features. Reddit data fetched live.</span>
+          </p>
+        </div>
+      </div>
+      <div class="card mt16" id="dash-recent" style="display:none">
+        <div class="ct">📋 Recent Activity</div>
+        <div id="dash-activity"></div>
+      </div>
+    </div>
 
-        <div class="flex items-center gap-2">
-          <div id="netBadge" class="hidden sm:flex items-center gap-2 rounded-full border border-white/10 px-3 py-1 text-xs text-white/70">
-            <span class="inline-block h-2 w-2 rounded-full bg-emerald-400" id="netDot"></span>
-            <span id="netText">Online</span>
+    <!-- SUBREDDIT ANALYZER -->
+    <div id="page-analyzer" class="page">
+      <div class="card">
+        <div class="sec-h"><div class="title">🔍 Subreddit Analyzer</div><div class="sub">Fetch live Reddit data + AI intelligence report</div></div>
+        <div id="key-warn-analyzer" class="key-notice" style="display:none">⚠️ Add Anthropic API key in Settings for AI analysis. Live Reddit data will still be fetched.</div>
+        <div style="display:flex;gap:10px;align-items:flex-end">
+          <div class="fg" style="flex:1;margin:0">
+            <label class="fl">Subreddit Name</label>
+            <input type="text" id="sub-in" placeholder="e.g. entrepreneur, marketing, AITools" onkeydown="if(event.key==='Enter')analyzeSubreddit()"/>
           </div>
-
-          <!-- Hidden by default to avoid flash; shown only when logged out -->
-          <button id="btnLogin" class="hidden inline-flex items-center gap-2 rounded-xl bg-white text-slate-950 px-3 py-2 text-sm font-semibold hover:bg-white/90">
-            <span class="hidden sm:inline">Login with Google</span>
-            <span class="sm:hidden">Login</span>
-          </button>
-
-          <div id="userMenu" class="hidden items-center gap-2">
-            <div class="hidden md:block text-right">
-              <div id="userName" class="text-sm font-semibold leading-5">—</div>
-              <div id="userEmail" class="text-xs text-white/60">—</div>
-            </div>
-            <img id="userPhoto" alt="" class="h-9 w-9 rounded-full border border-white/10" />
-            <button id="btnLogout" class="rounded-xl border border-white/10 px-3 py-2 text-sm hover:bg-white/5">Logout</button>
+          <button class="btn bp" id="abtn" onclick="analyzeSubreddit()">🔍 Analyze</button>
+        </div>
+      </div>
+      <div id="a-load" style="display:none"><div class="card"><div class="ls"><div class="loader"></div>Fetching Reddit data & generating AI report... (15-30s)</div></div></div>
+      <div id="a-res" style="display:none">
+        <div class="g4" id="a-stats"></div>
+        <div class="g2 mt16">
+          <div class="card"><div class="ct">🔑 Top Keywords</div><div id="a-kw"></div></div>
+          <div class="card"><div class="ct">📅 Posting Patterns</div><div id="a-pat"></div></div>
+        </div>
+        <div class="card"><div class="ct">🏆 Top Posts</div><table class="dt"><thead><tr><th>#</th><th>Title</th><th>Score</th><th>Comments</th></tr></thead><tbody id="a-posts"></tbody></table></div>
+        <div class="card">
+          <div class="ct"><span class="acc">🤖</span> AI Intelligence Report</div>
+          <div id="a-ai" class="aio"></div>
+          <div style="margin-top:11px;display:flex;gap:8px">
+            <button class="btn bs bsm" onclick="copyAIReport()">📋 Copy Report</button>
+            <button class="btn bs bsm" onclick="downloadReport()">⬇️ Download MD</button>
           </div>
         </div>
       </div>
-    </header>
+    </div>
 
-    <main class="mx-auto max-w-7xl px-4 py-6">
-      <!-- Hero (logged out) -->
-      <section id="hero" class="rounded-2xl border border-white/10 glass p-6 md:p-8">
-        <div class="grid md:grid-cols-2 gap-6 items-center">
-          <div>
-            <h1 class="text-2xl md:text-3xl font-bold leading-tight">
-              Reddit <span class="text-indigo-300">Post</span> / <span class="text-emerald-300">Comment</span> tasks.
-              <span class="block mt-2 text-white/80 text-lg font-semibold">Task Dashboard</span>
-            </h1>
-            <p class="mt-3 text-sm md:text-base text-white/70">
-              After Google login, a user can claim a task (lock window), and must submit a proof link within the time window.
-              Admin can create tasks and review submissions.
-            </p>
-            <div class="mt-5 flex flex-wrap gap-3">
-              <button id="btnLoginHero" class="inline-flex items-center gap-2 rounded-xl bg-indigo-500 px-4 py-2 text-sm font-semibold hover:bg-indigo-400">
-                <span>Start — Google Login</span>
-              </button>
-              <a href="#" id="btnDemoScroll" class="inline-flex items-center gap-2 rounded-xl border border-white/10 px-4 py-2 text-sm hover:bg-white/5">UI Preview</a>
-            </div>
-            <div class="mt-6 grid grid-cols-3 gap-3 text-center">
-              <div class="rounded-xl border border-white/10 p-3">
-                <div class="text-xs text-white/60">Lock</div>
-                <div class="mt-1 font-semibold">30 min</div>
-              </div>
-              <div class="rounded-xl border border-white/10 p-3">
-                <div class="text-xs text-white/60">Eligibility</div>
-                <div class="mt-1 font-semibold">Karma 200+</div>
-              </div>
-              <div class="rounded-xl border border-white/10 p-3">
-                <div class="text-xs text-white/60">Payout</div>
-                <div class="mt-1 font-semibold">Wallet credit</div>
-              </div>
-            </div>
-          </div>
-          <div class="rounded-2xl border border-white/10 p-5 bg-slate-950/40">
-            <div class="flex items-center justify-between">
-              <div class="text-sm font-semibold">Flow</div>
-              <div class="text-xs text-white/60">v3</div>
-            </div>
-            <ol class="mt-3 space-y-2 text-sm text-white/75 list-decimal list-inside">
-              <li>Login</li>
-              <li>Fill Reddit profile + karma (min 200)</li>
-              <li>Claim a task (locked for claim window)</li>
-              <li>Submit proof link within the claim window</li>
-              <li>Admin approves → wallet is credited</li>
-            </ol>
+    <!-- TREND FINDER -->
+    <div id="page-trends" class="page">
+      <div class="g2">
+        <div class="card">
+          <div class="sec-h"><div class="title">📈 Trend Finder</div><div class="sub">Scan multiple subreddits for rising keywords</div></div>
+          <div class="fg"><label class="fl">Subreddits to Scan (comma separated)</label><input type="text" id="tr-subs" value="marketing,socialmedia,entrepreneur,artificial,startups,business"/></div>
+          <button class="btn bp" onclick="scanTrends()" id="tr-btn">📡 Scan Now</button>
+        </div>
+        <div class="card">
+          <div class="ct">📋 Watchlists</div>
+          <div id="wl-list"></div>
+          <div class="div"></div>
+          <div style="display:flex;gap:7px;align-items:flex-end">
+            <div style="flex:.4"><label class="fl">Name</label><input type="text" id="wl-n" placeholder="My Watchlist"/></div>
+            <div style="flex:1"><label class="fl">Subreddits</label><input type="text" id="wl-s" placeholder="sub1, sub2, sub3"/></div>
+            <button class="btn bs bsm" onclick="addWL()">+ Add</button>
           </div>
         </div>
-      </section>
+      </div>
+      <div id="tr-load" style="display:none"><div class="card"><div class="ls"><div class="loader"></div>Scanning subreddits for trends...</div></div></div>
+      <div id="tr-res" style="display:none">
+        <div class="card"><div class="ct"><span class="acc">🤖</span> AI Trend Briefing</div><div id="tr-ai" class="aio"></div></div>
+        <div class="card">
+          <div class="ct">🔥 Trending Keywords</div>
+          <table class="dt"><thead><tr><th>Rank</th><th>Keyword</th><th>Score</th><th>Mentions</th><th>Growth</th><th>Subreddits</th></tr></thead><tbody id="tr-kw"></tbody></table>
+        </div>
+      </div>
+    </div>
 
-      <!-- App -->
-      <section id="app" class="hidden mt-6">
-        <!-- Panel switch + quick status -->
-        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
-          <div class="flex flex-col md:flex-row md:items-center gap-3">
-            <div id="panelSwitch" class="hidden inline-flex rounded-2xl border border-white/10 bg-slate-950/40 p-1">
-              <button id="btnPanelUser" class="rounded-xl px-4 py-2 text-sm font-semibold bg-white/10">Dashboard</button>
-              <button id="btnPanelAdmin" class="hidden rounded-xl px-4 py-2 text-sm font-semibold hover:bg-white/5">Admin</button>
-            </div>
-
-            <div id="profileStatus" class="rounded-2xl border border-white/10 bg-slate-950/40 px-3 py-2 text-sm text-white/70 flex items-center gap-2">
-              <span id="profileDot" class="inline-block h-2 w-2 rounded-full bg-amber-300"></span>
-              <span id="profileText">Profile: pending</span>
-              <button id="btnEditProfile" class="ml-1 text-xs underline text-indigo-200 hover:text-indigo-100">Edit</button>
-            </div>
-
-            <div id="activeClaimPill" class="hidden rounded-2xl border border-white/10 bg-slate-950/40 px-3 py-2 text-sm text-white/70">
-              <span class="text-white/60">Active claim:</span>
-              <span id="activeClaimTime" class="ml-1 font-semibold">—</span>
-              <button id="btnOpenActiveClaim" class="ml-2 text-xs underline text-emerald-200 hover:text-emerald-100">Open</button>
-            </div>
+    <!-- COMPETITOR TRACKER -->
+    <div id="page-competitors" class="page">
+      <div class="g2">
+        <div class="card">
+          <div class="sec-h"><div class="title">🎯 Add Competitor</div></div>
+          <div class="fg"><label class="fl">Subreddit</label><input type="text" id="cp-sub" placeholder="e.g. digital_marketing"/></div>
+          <div class="fg"><label class="fl">Label (optional)</label><input type="text" id="cp-lbl" placeholder="e.g. Main Competitor"/></div>
+          <div style="display:flex;gap:8px">
+            <button class="btn bp" onclick="addComp()">+ Track Competitor</button>
+            <button class="btn bs" onclick="refreshComps()">🔄 Refresh All</button>
           </div>
+        </div>
+        <div class="card">
+          <div class="ct">🤖 AI Analysis</div>
+          <p class="tsm2" style="color:var(--t2);margin-bottom:11px">Run AI analysis on all tracked competitors to find content gaps and opportunities.</p>
+          <button class="btn bb" onclick="analyzeComps()">Run AI Analysis</button>
+        </div>
+      </div>
+      <div class="card"><div class="ct">📊 Tracked Competitors</div><div id="cp-grid"></div></div>
+      <div id="cp-ai-wrap" style="display:none" class="card"><div class="ct"><span class="acc">🤖</span> Competitive Intelligence</div><div id="cp-ai" class="aio"></div></div>
+    </div>
 
-          <div id="filtersBar" class="flex flex-wrap items-center gap-2">
-            <div class="w-full sm:w-auto rounded-2xl border border-white/10 bg-slate-950/40 p-2 flex items-center gap-2">
-              <input id="searchInput" class="min-w-0 w-full sm:w-56 bg-transparent outline-none text-sm placeholder:text-white/40" placeholder="Search title/subreddit/task id..." />
-              <button id="btnClearSearch" class="shrink-0 text-xs text-white/60 hover:text-white">Clear</button>
-            </div>
+    <!-- AI HUMANIZER -->
+    <div id="page-humanizer" class="page">
+      <div class="card">
+        <div class="sec-h"><div class="title">✍️ AI Text Humanizer</div><div class="sub">Transform robotic AI text into authentic human writing</div></div>
+        <div class="fg"><label class="fl">Mode</label>
+          <div class="mp">
+            <div class="mpill sel" data-m="human" onclick="selMode(this)">🧑 Human</div>
+            <div class="mpill" data-m="casual_human" onclick="selMode(this)">😄 Casual</div>
+            <div class="mpill" data-m="reddit_human" onclick="selMode(this)">🔴 Reddit</div>
+            <div class="mpill" data-m="professional_human" onclick="selMode(this)">💼 Professional</div>
+            <div class="mpill" data-m="community_discussion" onclick="selMode(this)">💬 Community</div>
+          </div>
+        </div>
+        <div class="fg">
+          <label class="fl">AI-Generated Text</label>
+          <textarea id="hum-in" placeholder="Paste your AI-generated text here..." style="min-height:130px" oninput="document.getElementById('hcc').textContent=this.value.length+' / 5000'"></textarea>
+          <div style="font-size:.68rem;color:var(--t3);margin-top:3px" id="hcc">0 / 5000</div>
+        </div>
+        <button class="btn bp" id="hbtn" onclick="humanize()">✨ Humanize Text</button>
+      </div>
+      <div id="h-res" style="display:none" class="card">
+        <div class="ct">Side-by-Side Comparison</div>
+        <div class="cg">
+          <div class="cb orig"><div class="clbl">Original (AI)</div><div class="ctxt" id="h-orig"></div></div>
+          <div class="cb hum"><div class="clbl">Humanized ✓</div><div class="ctxt" id="h-hum"></div></div>
+        </div>
+        <div style="margin-top:11px;display:flex;gap:8px">
+          <button class="btn bs bsm" onclick="copyHum()">📋 Copy Humanized</button>
+          <button class="btn bs bsm" onclick="humanize()">🔄 Humanize Again</button>
+        </div>
+      </div>
+    </div>
 
-            <select id="typeFilter" class="w-full sm:w-auto rounded-2xl border border-white/10 bg-slate-950/40 px-3 py-2 text-sm outline-none">
-              <option value="all">All Types</option>
-              <option value="post">Post</option>
-              <option value="comment">Comment</option>
+    <!-- POST GENERATOR -->
+    <div id="page-generator" class="page">
+      <div class="g2">
+        <div class="card">
+          <div class="sec-h"><div class="title">✨ Post Generator</div><div class="sub">Create organic, community-driven Reddit posts</div></div>
+          <div class="fg"><label class="fl">Subreddit</label><input type="text" id="pg-sub" placeholder="e.g. entrepreneur"/></div>
+          <div class="fg"><label class="fl">Post Type</label>
+            <select id="pg-type">
+              <option value="discussion">💬 Discussion Post</option>
+              <option value="question">❓ Question Post</option>
+              <option value="megathread">📌 Megathread</option>
+              <option value="authority">🏆 Authority Post</option>
+              <option value="engagement">🔥 Engagement Post</option>
+              <option value="community">🤝 Community Post</option>
             </select>
-
-            <select id="adminStatusFilter" class="hidden w-full sm:w-auto rounded-2xl border border-white/10 bg-slate-950/40 px-3 py-2 text-sm outline-none">
-              <option value="all">All Status</option>
-              <option value="open">Open</option>
-              <option value="submitted">Submitted</option>
-              <option value="closed">Closed</option>
+          </div>
+          <div class="fg"><label class="fl">Tone</label>
+            <select id="pg-tone">
+              <option value="casual">Casual & Conversational</option>
+              <option value="professional">Professional</option>
+              <option value="enthusiastic">Enthusiastic</option>
+              <option value="humble">Humble & Curious</option>
+              <option value="authoritative">Authoritative</option>
             </select>
           </div>
+          <div class="fg"><label class="fl">Goal</label>
+            <select id="pg-goal">
+              <option value="engagement">Drive Engagement</option>
+              <option value="traffic">Drive Traffic</option>
+              <option value="brand_awareness">Brand Awareness</option>
+              <option value="community_building">Community Building</option>
+              <option value="education">Educate Community</option>
+            </select>
+          </div>
+          <button class="btn bp wf" onclick="genPost()" id="pgbtn">✨ Generate Post</button>
         </div>
-
-        <!-- USER PANEL -->
-        <div id="panelUser" class="mt-4">
-          <!-- User tabs (visible to all users) -->
-          <div id="userPanelSwitch" class="inline-flex w-full sm:w-auto rounded-2xl border border-white/10 bg-slate-950/40 p-1">
-            <button id="btnUserDashboard" class="flex-1 sm:flex-none rounded-xl px-4 py-2 text-sm font-semibold bg-white/10">Dashboard</button>
-            <button id="btnUserWallet" class="flex-1 sm:flex-none rounded-xl px-4 py-2 text-sm font-semibold hover:bg-white/5">Wallet</button>
-          </div>
-
-          <!-- DASHBOARD VIEW -->
-          <div id="userDashboardView">
-
-          <div id="userEligibilityBanner" class="hidden mt-4 rounded-2xl border border-amber-400/20 bg-amber-500/10 p-4 text-sm text-amber-100">
-            <div class="font-semibold">Reddit profile required</div>
-            <div class="mt-1 text-amber-100/90">To claim tasks you must fill your Reddit username and have minimum karma <b>200+</b>.</div>
-            <div class="mt-3">
-              <button id="btnOpenProfileFromBanner" class="rounded-xl bg-amber-300 text-slate-950 px-4 py-2 text-sm font-semibold hover:bg-amber-200">Fill Profile</button>
-            </div>
-          </div>
-
-          <div id="activeClaimCard" class="hidden mt-4 rounded-2xl border border-white/10 glass p-5">
-            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-              <div>
-                <div class="text-sm text-white/60">Your active claim</div>
-                <div id="activeClaimTitle" class="mt-1 text-lg font-semibold">—</div>
-                <div id="activeClaimMeta" class="mt-1 text-xs text-white/60">—</div>
-              </div>
-              <div class="flex flex-col sm:flex-row sm:items-center gap-2">
-                <div class="rounded-xl border border-white/10 px-3 py-2 text-sm">
-                  <span class="text-white/60">Time left</span>
-                  <span id="activeClaimCountdown" class="ml-2 font-semibold">—</span>
-                </div>
-                <button id="btnOpenClaimModal" class="rounded-xl bg-white text-slate-950 px-4 py-2 text-sm font-semibold hover:bg-white/90">Open</button>
-              </div>
-            </div>
-            <div class="mt-3 text-xs text-white/60">While you have an active claim, you cannot claim another task.</div>
-          </div>
-
-          <div class="mt-4 flex items-center justify-between">
-            <div class="text-sm text-white/70">Available tasks</div>
-            <div id="tasksLoading" class="hidden items-center gap-2 text-xs text-white/60"><span class="spinner"></span><span>Loading...</span></div>
-          </div>
-
-          <div id="tasksEmpty" class="hidden mt-4 rounded-2xl border border-white/10 p-6 text-center text-white/70">
-            No tasks available right now.
-          </div>
-
-          <div id="tasksList" class="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3"></div>
-
-          <div class="mt-10">
-            <div class="flex items-center justify-between">
-              <div>
-                <div class="text-lg font-semibold">My Submissions</div>
-                <div class="text-xs text-white/60">Your submitted proofs</div>
-              </div>
-              <div id="mineLoading" class="hidden items-center gap-2 text-xs text-white/60"><span class="spinner"></span><span>Loading...</span></div>
-            </div>
-            <div id="mineEmpty" class="hidden mt-4 rounded-2xl border border-white/10 p-6 text-center text-white/70">
-              You have not submitted any proof yet.
-            </div>
-            <div id="mineList" class="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3"></div>
-          </div>
-
-          </div> <!-- end dashboard view -->
-
-          <!-- WALLET VIEW (hidden by default) -->
-          <div id="userWalletView" class="hidden mt-4">
-            <div class="rounded-2xl border border-white/10 glass p-5">
-              <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                <div>
-                  <div class="text-xs text-white/60">Wallet</div>
-                  <div class="mt-1 text-2xl font-bold" id="walletBalance">$0.00</div>
-                  <div class="mt-1 text-xs text-white/60">
-                    <span class="text-white/50">Approved:</span> <span class="font-semibold" id="walletApproved">$0.00</span>
-                    <span class="mx-2 text-white/30">•</span>
-                    <span class="text-white/50">Pending:</span> <span class="font-semibold" id="walletPending">$0.00</span>
-                  </div>
-                </div>
-                <div class="flex flex-col sm:flex-row gap-2">
-                  <button id="btnWalletInfo" class="rounded-xl border border-white/10 px-4 py-2 text-sm hover:bg-white/5">How it works</button>
-                  <button id="btnWithdraw" class="rounded-xl bg-emerald-500 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-emerald-400 opacity-60 cursor-not-allowed" disabled>Withdraw (min $2)</button>
-                </div>
-              </div>
-
-              <!-- Amount input appears after selecting a payment method -->
-              <div id="withdrawAmountWrap" class="hidden mt-4 rounded-2xl border border-white/10 bg-slate-950/30 p-4">
-                <div class="text-sm font-semibold">Withdrawal amount</div>
-                <div class="mt-2 grid gap-2">
-                  <label class="block">
-                    <div class="text-xs text-white/60">Amount (USD)</div>
-                    <input id="withdrawAmount" type="number" min="2" step="0.01" class="mt-1 w-full rounded-xl border border-white/10 bg-slate-950/40 px-3 py-2 text-sm outline-none" placeholder="2.00" />
-                    <div id="withdrawAmountHint" class="mt-1 text-[11px] text-white/50">Available: $0.00</div>
-                  </label>
-                </div>
-              </div>
-
-              <div class="mt-3 text-xs text-white/60">
-                Your wallet is updated when an admin approves your submission.
-              </div>
-            </div>
-
-            <div class="mt-4 rounded-2xl border border-white/10 bg-slate-950/40 p-5">
-              <div class="flex items-center justify-between gap-3">
-                <div>
-                  <div class="text-sm font-semibold">Payout methods</div>
-                  <div class="text-xs text-white/60">Add your details to receive payments after withdrawal is enabled.</div>
-                </div>
-              </div>
-
-              <form id="payoutForm" class="mt-4 grid gap-4">
-                <label class="block">
-                  <div class="text-xs text-white/60">Payment method</div>
-                  <select id="payoutMethod" class="mt-1 w-full rounded-xl border border-white/10 bg-slate-950/40 px-3 py-2 text-sm outline-none" required>
-                    <option value="">Select a method...</option>
-                    <option value="binance">Binance</option>
-                    <option value="upi">UPI</option>
-                  </select>
-                </label>
-
-                <div id="binanceFieldsWrap" class="hidden rounded-2xl border border-white/10 bg-slate-950/30 p-4">
-                  <div class="text-sm font-semibold">Binance details</div>
-                  <div class="mt-2 grid gap-2">
-                    <label class="block">
-                      <div class="text-xs text-white/60">Binance username</div>
-                      <input id="binanceUsername" class="mt-1 w-full rounded-xl border border-white/10 bg-slate-950/40 px-3 py-2 text-sm outline-none" placeholder="e.g. john_doe" />
-                    </label>
-                    <label class="block">
-                      <div class="text-xs text-white/60">Binance ID</div>
-                      <input id="binanceId" class="mt-1 w-full rounded-xl border border-white/10 bg-slate-950/40 px-3 py-2 text-sm outline-none" placeholder="e.g. Binance UID" />
-                    </label>
-                  </div>
-                </div>
-
-                <div id="upiFieldsWrap" class="hidden rounded-2xl border border-white/10 bg-slate-950/30 p-4">
-                  <div class="text-sm font-semibold">UPI details</div>
-                  <div class="mt-2 grid gap-2">
-                    <label class="block">
-                      <div class="text-xs text-white/60">UPI ID</div>
-                      <input id="upiId" class="mt-1 w-full rounded-xl border border-white/10 bg-slate-950/40 px-3 py-2 text-sm outline-none" placeholder="e.g. name@bank" />
-                    </label>
-                    <label class="block">
-                      <div class="text-xs text-white/60">Account holder name</div>
-                      <input id="upiName" class="mt-1 w-full rounded-xl border border-white/10 bg-slate-950/40 px-3 py-2 text-sm outline-none" placeholder="e.g. Rahul Kumar" />
-                    </label>
-                  </div>
-                </div>
-
-                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                  <div id="payoutHint" class="text-xs text-white/60">Select a payment method and save your details to enable withdrawals.</div>
-                  <button id="btnSavePayout" type="submit" class="inline-flex items-center gap-2 rounded-xl bg-indigo-500 px-4 py-2 text-sm font-semibold hover:bg-indigo-400">
-                    <span id="payoutBtnText">Save payout details</span>
-                    <span id="payoutSpinner" class="hidden spinner" aria-hidden="true"></span>
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        </div>
-
-        <!-- ADMIN PANEL -->
-        <div id="panelAdmin" class="hidden mt-4">
-          <div class="rounded-2xl border border-white/10 bg-slate-950/40 p-1 inline-flex flex-wrap">
-            <button data-admin-tab="create" class="adminTab rounded-xl px-4 py-2 text-sm font-semibold bg-white/10">Create Task</button>
-            <button data-admin-tab="tasks" class="adminTab rounded-xl px-4 py-2 text-sm font-semibold hover:bg-white/5">Manage Tasks</button>
-            <button data-admin-tab="users" class="adminTab rounded-xl px-4 py-2 text-sm font-semibold hover:bg-white/5">Users</button>
-            <button data-admin-tab="subs" class="adminTab rounded-xl px-4 py-2 text-sm font-semibold hover:bg-white/5">Submissions</button>
-          </div>
-
-          <!-- Admin: Create -->
-          <div id="adminCreate" class="mt-4">
-            <div class="grid lg:grid-cols-3 gap-4">
-              <div class="lg:col-span-2 rounded-2xl border border-white/10 glass p-5">
-                <div class="flex items-center justify-between">
-                  <h2 class="text-lg font-semibold">Create a Reddit Task</h2>
-                  <div class="text-xs text-white/60">(Admin only)</div>
-                </div>
-
-                <form id="createForm" class="mt-4 grid md:grid-cols-2 gap-3">
-                  <label class="block">
-                    <div class="text-xs text-white/60">Task Type</div>
-                    <select id="ctType" class="mt-1 w-full rounded-xl border border-white/10 bg-slate-950/40 px-3 py-2 text-sm outline-none" required>
-                      <option value="post">Post</option>
-                      <option value="comment">Comment</option>
-                    </select>
-                  </label>
-
-                  <label id="ctSubredditWrap" class="block">
-                    <div class="text-xs text-white/60">Subreddit</div>
-                    <input id="ctSubreddit" class="mt-1 w-full rounded-xl border border-white/10 bg-slate-950/40 px-3 py-2 text-sm outline-none" placeholder="e.g. AskReddit" required />
-                  </label>
-
-                  <label id="ctTitleWrap" class="block md:col-span-2">
-                    <div class="text-xs text-white/60">Title</div>
-                    <input id="ctTitle" class="mt-1 w-full rounded-xl border border-white/10 bg-slate-950/40 px-3 py-2 text-sm outline-none" placeholder="Post title..." />
-                  </label>
-
-                  <!-- Post fields -->
-                  <div id="postFields" class="md:col-span-2 grid gap-3">
-                    <label class="block">
-                      <div class="text-xs text-white/60">Body (Post content)</div>
-                      <textarea id="ctBody" class="mt-1 w-full rounded-xl border border-white/10 bg-slate-950/40 px-3 py-2 text-sm outline-none" rows="5" placeholder="Post body..." required></textarea>
-                    </label>
-                    <label class="block">
-                      <div class="text-xs text-white/60">Image URL (optional)</div>
-                      <input id="ctImage" class="mt-1 w-full rounded-xl border border-white/10 bg-slate-950/40 px-3 py-2 text-sm outline-none" placeholder="https://..." />
-                      <div class="mt-1 text-[11px] text-white/45">Optional preview image (reference only).</div>
-                    </label>
-                  </div>
-
-                  <!-- Comment fields -->
-                  <div id="commentFields" class="md:col-span-2 hidden gap-3" style="display: none;">
-                    <div class="grid md:grid-cols-3 gap-3">
-                      <label class="block md:col-span-2">
-                        <div class="flex items-center justify-between gap-2">
-                          <div class="text-xs text-white/60">Target Link (post URL)</div>
-                          <button type="button" id="btnCopyTargetLink" class="shrink-0 rounded-lg border border-white/10 bg-slate-950/30 px-2 py-1 text-[11px] text-white/70 hover:bg-white/5" title="Copy target link">
-                            <span class="inline-flex items-center gap-1">
-                              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-4 w-4">
-                                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-                              </svg>
-                              <span>Copy</span>
-                            </span>
-                          </button>
-                        </div>
-                        <input id="ctTargetLink" class="mt-1 w-full rounded-xl border border-white/10 bg-slate-950/40 px-3 py-2 text-sm outline-none" placeholder="https://www.reddit.com/..." />
-                      </label>
-
-                      <label class="block">
-                        <div class="text-xs text-white/60">Action</div>
-                        <select id="ctCommentMode" class="mt-1 w-full rounded-xl border border-white/10 bg-slate-950/40 px-3 py-2 text-sm outline-none">
-                          <option value="comment">Comment</option>
-                          <option value="reply">Reply</option>
-                        </select>
-                      </label>
-                    </div>
-
-                    <label class="block">
-                      <div class="flex items-center justify-between gap-2">
-                        <div class="text-xs text-white/60">Comment Text</div>
-                        <button type="button" id="btnCopyCommentText" class="shrink-0 rounded-lg border border-white/10 bg-slate-950/30 px-2 py-1 text-[11px] text-white/70 hover:bg-white/5" title="Copy comment text">
-                          <span class="inline-flex items-center gap-1">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-4 w-4">
-                              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-                            </svg>
-                            <span>Copy</span>
-                          </span>
-                        </button>
-                      </div>
-                      <textarea id="ctInstructions" class="mt-1 w-full rounded-xl border border-white/10 bg-slate-950/40 px-3 py-2 text-sm outline-none" rows="4" placeholder="Write the exact comment/reply text..." required></textarea>
-                      <div class="mt-1 text-[11px] text-white/45">Users should post exactly this text unless specified otherwise.</div>
-                    </label>
-                  </div>
-
-                  <label class="block">
-                    <div class="text-xs text-white/60">Price (USD)</div>
-                    <input id="ctReward" type="number" min="0" step="0.01" class="mt-1 w-full rounded-xl border border-white/10 bg-slate-950/40 px-3 py-2 text-sm outline-none" value="1" required />
-                    <div class="mt-1 text-[11px] text-white/45">Amount in USD ($).</div>
-                  </label>
-
-                  <label class="block">
-                    <div class="text-xs text-white/60">Status</div>
-                    <select id="ctStatus" class="mt-1 w-full rounded-xl border border-white/10 bg-slate-950/40 px-3 py-2 text-sm outline-none" required>
-                      <option value="open">Open</option>
-                      <option value="closed">Closed</option>
-                    </select>
-                  </label>
-
-                  <label class="block">
-                    <div class="text-xs text-white/60">Claim window (minutes)</div>
-                    <input id="ctClaimMins" type="number" min="1" step="1" class="mt-1 w-full rounded-xl border border-white/10 bg-slate-950/40 px-3 py-2 text-sm outline-none" value="30" required />
-                    <div class="mt-1 text-[11px] text-white/45">Default 30 minutes.</div>
-                  </label>
-
-                  <label class="block">
-                    <div class="text-xs text-white/60">Expire in (days)</div>
-                    <input id="ctExpireDays" type="number" min="0" step="1" class="mt-1 w-full rounded-xl border border-white/10 bg-slate-950/40 px-3 py-2 text-sm outline-none" value="0" />
-                    <div class="mt-1 text-[11px] text-white/45">0 = no expiry</div>
-                  </label>
-
-                  <div class="md:col-span-2 flex items-center justify-between gap-3 pt-2">
-                    <div id="createHint" class="text-xs text-white/60">Tip: Write clear instructions. User must submit proof within the claim window.</div>
-                    <button id="btnCreateTask" class="inline-flex items-center gap-2 rounded-xl bg-emerald-500 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-emerald-400">
-                      <span id="createBtnText">Create Task</span>
-                      <span id="createSpinner" class="hidden spinner" aria-hidden="true"></span>
-                    </button>
-                  </div>
-                </form>
-              </div>
-
-              <aside class="rounded-2xl border border-white/10 bg-slate-950/40 p-5">
-                <div class="text-sm font-semibold">Admin Notes</div>
-                <ul class="mt-3 space-y-2 text-sm text-white/70">
-                  <li>After a claim, the task is locked for the configured window.</li>
-                  <li>When the lock expires, the task becomes available again (with client-side cleanup).</li>
-                  <li>Wallet is credited only after admin approval.</li>
-                </ul>
-              </aside>
-            </div>
-          </div>
-
-          <!-- Admin: Tasks -->
-          <div id="adminTasks" class="hidden mt-4">
-            <div class="flex items-center justify-between">
-              <div>
-                <div class="text-lg font-semibold">Manage Tasks</div>
-                <div class="text-xs text-white/60">Open/Close, Force Unlock</div>
-              </div>
-              <div id="adminTasksLoading" class="hidden items-center gap-2 text-xs text-white/60"><span class="spinner"></span><span>Loading...</span></div>
-            </div>
-            <div id="adminTasksList" class="mt-4 grid gap-3"></div>
-          </div>
-
-          <!-- Admin: Users -->
-          <div id="adminUsers" class="hidden mt-4">
-            <div class="flex items-center justify-between">
-              <div>
-                <div class="text-lg font-semibold">Users</div>
-                <div class="text-xs text-white/60">Account + Reddit profile details</div>
-              </div>
-              <div id="usersLoading" class="hidden items-center gap-2 text-xs text-white/60"><span class="spinner"></span><span>Loading...</span></div>
-            </div>
-            <div id="usersList" class="mt-4 grid gap-3"></div>
-          </div>
-
-          <!-- Admin: Submissions -->
-          <div id="adminSubs" class="hidden mt-4">
-            <div class="flex items-center justify-between">
-              <div>
-                <div class="text-lg font-semibold">Submissions</div>
-                <div class="text-xs text-white/60">Approve to credit user wallet</div>
-              </div>
-              <div id="subsLoading" class="hidden items-center gap-2 text-xs text-white/60"><span class="spinner"></span><span>Loading...</span></div>
-            </div>
-            <div id="subsList" class="mt-4 grid gap-3"></div>
-          </div>
-        </div>
-      </section>
-
-      <footer class="mt-10 pb-10 text-center text-xs text-white/45"></footer>
-    </main>
-  </div>
-
-  <!-- Task modal (details + claim/submit) -->
-  <div id="modalOverlay" class="fixed inset-0 z-50 hidden overflow-y-auto">
-    <div class="absolute inset-0 bg-black/70"></div>
-    <div class="relative mx-auto max-w-3xl px-4 py-6 sm:py-10">
-      <div class="modal-card rounded-2xl border border-white/10 bg-slate-950/80 backdrop-blur p-5 overflow-hidden">
-        <div class="heading flex items-start justify-between gap-4">
-          <div class="min-w-0">
-            <div id="modalType" class="text-xs text-white/60">—</div>
-            <div id="modalTitle" class="mt-1 text-lg font-semibold break-words">—</div>
-            <div id="modalMeta" class="mt-1 text-xs text-white/60">—</div>
-          </div>
-          <button id="btnCloseModal" class="rounded-xl border border-white/10 px-3 py-2 text-sm hover:bg-white/5">Close</button>
-        </div>
-
-        <div class="mt-4 grid gap-3">
-          <div id="modalImageWrap" class="hidden rounded-xl border border-white/10 overflow-hidden bg-slate-950/40">
-            <img id="modalImage" alt="" class="w-full max-h-80 object-cover" />
-          </div>
-
-          <div class="rounded-xl border border-white/10 p-3">
-            <div class="flex items-center justify-between gap-2">
-              <div class="text-xs text-white/60">Details</div>
-              <button type="button" id="btnCopyModalDetails" class="shrink-0 rounded-lg border border-white/10 bg-slate-950/30 px-2 py-1 text-[11px] text-white/70 hover:bg-white/5" title="Copy text">
-                <span class="inline-flex items-center gap-1">
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-3 w-3">
-                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-                  </svg>
-                  <span>Copy</span>
-                </span>
-              </button>
-            </div>
-            <div id="modalDetails" class="mt-1 whitespace-pre-wrap text-sm text-white/80 break-words" style="word-break: break-word;">—</div>
-          </div>
-
-          <div class="rounded-xl border border-white/10 p-3 overflow-hidden">
-            <div class="flex flex-col gap-3">
-              <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
-                <div class="min-w-0 flex-1">
-                  <div class="flex items-center justify-between gap-2">
-                    <div class="text-xs text-white/60">Target / Reference Link</div>
-                    <button type="button" id="btnCopyModalLink" class="shrink-0 rounded-lg border border-white/10 bg-slate-950/30 px-2 py-1 text-[11px] text-white/70 hover:bg-white/5" title="Copy link">
-                      <span class="inline-flex items-center gap-1">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-3 w-3">
-                          <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-                        </svg>
-                        <span>Copy</span>
-                      </span>
-                    </button>
-                  </div>
-                  <a id="modalLink" href="#" target="_blank" rel="noreferrer" class="mt-1 block text-sm text-indigo-300 hover:underline break-words overflow-hidden" style="word-break: break-word; overflow-wrap: anywhere;">—</a>
-                </div>
-                <div class="shrink-0 flex items-center gap-2 rounded-xl border border-white/10 px-3 py-2">
-                  <span class="text-xs text-white/60">Price:</span>
-                  <span id="modalReward" class="text-sm font-semibold">—</span>
-                  <span class="text-xs text-white/60">USD</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div class="rounded-xl border border-white/10 p-3 overflow-hidden">
-            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-              <div>
-                <div class="text-sm font-semibold">Claim / Submit</div>
-                <div id="modalLockInfo" class="text-xs text-white/60 mt-0.5">—</div>
-              </div>
-              <div class="flex flex-wrap items-center gap-2">
-                <button id="btnClaim" class="hidden rounded-xl bg-emerald-500 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-emerald-400">Claim</button>
-                <button id="btnForceUnlock" class="hidden rounded-xl border border-white/10 px-4 py-2 text-sm hover:bg-white/5">Force Unlock</button>
-              </div>
-            </div>
-
-            <form id="submitForm" class="mt-3 grid gap-3">
-              <label class="block">
-                <div class="text-xs text-white/60">Completion Proof Link (Reddit post/comment URL)</div>
-                <input id="proofLink" class="mt-1 w-full rounded-xl border border-white/10 bg-slate-950/40 px-3 py-2 text-sm outline-none" placeholder="https://www.reddit.com/..." required />
-              </label>
-              <label class="block">
-                <div class="text-xs text-white/60">Note (optional)</div>
-                <textarea id="proofNote" class="mt-1 w-full rounded-xl border border-white/10 bg-slate-950/40 px-3 py-2 text-sm outline-none" rows="3" placeholder="Any extra info..."></textarea>
-              </label>
-              <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                <div id="submitHint" class="text-xs text-white/60"></div>
-                <button id="btnSubmitProof" class="inline-flex items-center gap-2 rounded-xl bg-indigo-500 px-4 py-2 text-sm font-semibold hover:bg-indigo-400">
-                  <span id="submitBtnText">Submit</span>
-                  <span id="submitSpinner" class="hidden spinner" aria-hidden="true"></span>
-                </button>
-              </div>
-            </form>
-          </div>
-
-          <div class="rounded-xl border border-white/10 p-3">
-            <div class="text-sm font-semibold">Recent Submissions (this task)</div>
-            <div id="taskSubs" class="mt-2 grid gap-2"></div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Wallet modal -->
-  <div id="walletOverlay" class="fixed inset-0 z-[54] hidden overflow-y-auto">
-    <div class="absolute inset-0 bg-black/70"></div>
-    <div class="relative mx-auto max-w-xl px-4 py-6 sm:py-10">
-      <div class="rounded-2xl border border-white/10 bg-slate-950/85 backdrop-blur p-5">
-        <div class="flex items-start justify-between gap-4">
-          <div>
-            <div class="text-xs text-white/60">Wallet</div>
-            <div class="mt-1 text-lg font-semibold">How approvals work</div>
-          </div>
-          <button id="btnCloseWallet" class="rounded-xl border border-white/10 px-3 py-2 text-sm hover:bg-white/5">Close</button>
-        </div>
-        <div class="mt-4 space-y-3 text-sm text-white/75">
-          <div class="rounded-xl border border-white/10 bg-slate-950/40 p-3">
-            <div class="font-semibold text-white">Step 1 — Claim</div>
-            <div class="mt-1 text-white/70">Claim a task to lock it for the time window.</div>
-          </div>
-          <div class="rounded-xl border border-white/10 bg-slate-950/40 p-3">
-            <div class="font-semibold text-white">Step 2 — Submit proof</div>
-            <div class="mt-1 text-white/70">Submit your Reddit post/comment URL before the lock expires.</div>
-          </div>
-          <div class="rounded-xl border border-white/10 bg-slate-950/40 p-3">
-            <div class="font-semibold text-white">Step 3 — Admin review</div>
-            <div class="mt-1 text-white/70">Admin approves or rejects your submission. On approval, the task price is added to your wallet.</div>
-          </div>
-          <div class="text-xs text-white/50">Minimum withdrawal: $2.00. Withdrawals are not implemented in this demo UI.</div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Profile modal -->
-  <div id="profileOverlay" class="fixed inset-0 z-[55] hidden overflow-y-auto">
-    <div class="absolute inset-0 bg-black/70"></div>
-    <div class="relative mx-auto max-w-xl px-4 py-6 sm:py-10">
-      <div class="rounded-2xl border border-white/10 bg-slate-950/85 backdrop-blur p-5">
-        <div class="flex items-start justify-between gap-4">
-          <div>
-            <div class="text-xs text-white/60">User Profile</div>
-            <div class="mt-1 text-lg font-semibold">Reddit Profile (Manual)</div>
-            <div class="mt-1 text-xs text-white/60">Minimum karma: <b>200+</b></div>
-          </div>
-          <button id="btnCloseProfile" class="rounded-xl border border-white/10 px-3 py-2 text-sm hover:bg-white/5">Close</button>
-        </div>
-
-        <form id="profileForm" class="mt-4 grid gap-3">
-          <label class="block">
-            <div class="text-xs text-white/60">Reddit Username</div>
-            <input id="rpUsername" class="mt-1 w-full rounded-xl border border-white/10 bg-slate-950/40 px-3 py-2 text-sm outline-none" placeholder="e.g. someUser" required />
-          </label>
-          <label class="block">
-            <div class="text-xs text-white/60">Reddit Profile Link (optional)</div>
-            <input id="rpLink" class="mt-1 w-full rounded-xl border border-white/10 bg-slate-950/40 px-3 py-2 text-sm outline-none" placeholder="https://www.reddit.com/user/..." />
-          </label>
-          <label class="block">
-            <div class="text-xs text-white/60">Karma</div>
-            <input id="rpKarma" type="number" min="0" step="1" class="mt-1 w-full rounded-xl border border-white/10 bg-slate-950/40 px-3 py-2 text-sm outline-none" placeholder="200" required />
-          </label>
-          <div class="flex items-center justify-between gap-3 pt-2">
-            <div id="profileHint" class="text-xs text-white/60">Karma must be 200+ to claim tasks.</div>
-            <button id="btnSaveProfile" class="inline-flex items-center gap-2 rounded-xl bg-emerald-500 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-emerald-400">
-              <span id="profileBtnText">Save</span>
-              <span id="profileSpinner" class="hidden spinner" aria-hidden="true"></span>
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  </div>
-
-  <!-- Toast -->
-  <div id="toast" class="fixed bottom-4 left-1/2 -translate-x-1/2 z-[60] hidden">
-    <div class="rounded-2xl border border-white/10 bg-slate-950/80 backdrop-blur px-4 py-3 text-sm shadow-xl">
-      <div class="flex items-start gap-3">
-        <div id="toastDot" class="mt-1 h-2 w-2 rounded-full bg-emerald-400"></div>
         <div>
-          <div id="toastTitle" class="font-semibold">—</div>
-          <div id="toastMsg" class="text-xs text-white/70 mt-0.5">—</div>
+          <div id="pg-load" style="display:none" class="card"><div class="ls"><div class="loader"></div>Generating post...</div></div>
+          <div id="pg-res" style="display:none">
+            <div class="pc">
+              <div class="ptitle" id="pg-title"></div>
+              <div class="pbody" id="pg-body"></div>
+              <div class="pmeta" id="pg-meta"></div>
+            </div>
+            <div class="card" id="pg-tips-card"><div class="ct">💡 Tips</div><div id="pg-tips"></div></div>
+            <div style="display:flex;gap:8px;margin-top:8px">
+              <button class="btn bs bsm" onclick="copyPost()">📋 Copy Post</button>
+              <button class="btn bs bsm" onclick="genPost()">🔄 Regenerate</button>
+            </div>
+          </div>
+          <div class="card mt16"><div class="ct">📚 Generated Posts</div><div id="pg-hist"></div></div>
         </div>
-        <button id="toastClose" class="ml-2 text-xs text-white/60 hover:text-white">Close</button>
       </div>
     </div>
+
+    <!-- KEYWORD DISCOVERY -->
+    <div id="page-keywords" class="page">
+      <div class="card">
+        <div class="sec-h"><div class="title">🔑 Keyword Discovery</div><div class="sub">Mine trending & underserved keywords from Reddit</div></div>
+        <div style="display:flex;gap:10px;align-items:flex-end">
+          <div class="fg" style="flex:1;margin:0"><label class="fl">Subreddits to Mine</label><input type="text" id="kw-subs" value="entrepreneur,startups,marketing,business,SEO"/></div>
+          <button class="btn bp" onclick="discoverKW()" id="kwbtn">🔑 Discover</button>
+        </div>
+      </div>
+      <div id="kw-load" style="display:none"><div class="card"><div class="ls"><div class="loader"></div>Mining keywords...</div></div></div>
+      <div id="kw-res" style="display:none">
+        <div class="card"><div class="ct"><span class="acc">🤖</span> AI Keyword Strategy</div><div id="kw-ai" class="aio"></div></div>
+        <div class="g2">
+          <div class="card"><div class="ct">📊 Top Keywords by Trend Score</div><div id="kw-chart"></div></div>
+          <div class="card"><div class="ct">☁️ Keyword Cloud</div><div id="kw-cloud" class="tc" style="padding:6px 0"></div></div>
+        </div>
+        <div class="card"><div class="ct">📋 Full Keyword Table</div>
+          <table class="dt"><thead><tr><th>Keyword</th><th>Score</th><th>Mentions</th><th>Avg Score</th><th>Growth</th><th>Subreddits</th></tr></thead><tbody id="kw-tbl"></tbody></table>
+        </div>
+      </div>
+    </div>
+
+    <!-- AUTOMATION -->
+    <div id="page-automation" class="page">
+      <div class="g2">
+        <div class="card">
+          <div class="sec-h"><div class="title">⚙️ Create Monitoring Job</div></div>
+          <div class="fg"><label class="fl">Job Name</label><input type="text" id="jb-n" placeholder="e.g. Daily Marketing Scan"/></div>
+          <div class="fg"><label class="fl">Type</label>
+            <select id="jb-t">
+              <option value="subreddit">Monitor Subreddit</option>
+              <option value="competitor">Track Competitor</option>
+              <option value="keyword">Watch Keyword</option>
+            </select>
+          </div>
+          <div class="fg"><label class="fl">Target</label><input type="text" id="jb-tg" placeholder="subreddit name or keyword"/></div>
+          <div class="fg"><label class="fl">Schedule</label>
+            <select id="jb-s">
+              <option value="hourly">Hourly</option>
+              <option value="daily" selected>Daily</option>
+              <option value="weekly">Weekly</option>
+            </select>
+          </div>
+          <button class="btn bp" onclick="createJob()">+ Create Job</button>
+        </div>
+        <div class="card"><div class="ct">⚙️ Active Jobs</div><div id="jb-list"></div></div>
+      </div>
+    </div>
+
+    <!-- SETTINGS -->
+    <div id="page-settings" class="page">
+      <div class="g2">
+        <div class="card">
+          <div class="sec-h"><div class="title">🔧 API Configuration</div></div>
+          <div class="fg">
+            <label class="fl">Anthropic API Key</label>
+            <input type="password" id="s-key" placeholder="sk-ant-api03-..."/>
+            <div style="font-size:.68rem;color:var(--t3);margin-top:3px">Required for all AI features. Get yours at <a href="https://console.anthropic.com" target="_blank" style="color:var(--acc2)">console.anthropic.com</a></div>
+          </div>
+          <button class="btn bp" onclick="saveKey()">💾 Save & Activate</button>
+          <div id="key-saved" style="display:none;margin-top:10px" class="key-notice">✅ API key saved! AI features are now active.</div>
+        </div>
+        <div class="card">
+          <div class="ct">📖 How It Works</div>
+          <p style="font-size:.8rem;color:var(--t2);line-height:1.8">
+            <strong style="color:var(--t1)">Reddit Data</strong> — fetched live from Reddit's public JSON API. No Reddit account needed for public subreddits.<br><br>
+            <strong style="color:var(--t1)">AI Analysis</strong> — powered by Claude (Anthropic). Add your API key above to unlock all AI features.<br><br>
+            <strong style="color:var(--t1)">CORS Note</strong> — Reddit API calls go through a proxy to avoid browser CORS restrictions. Some subreddits may be rate-limited.<br><br>
+            <strong style="color:var(--t1)">Data Storage</strong> — all data stored in your browser's memory during the session. Nothing sent to external servers except Reddit API and Anthropic API.
+          </p>
+        </div>
+      </div>
+    </div>
+
   </div>
+</div>
 
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
-    import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
-    import {
-      getFirestore,
-      collection,
-      doc,
-      setDoc,
-      getDoc,
-      updateDoc,
-      serverTimestamp,
-      query,
-      where,
-      orderBy,
-      limit,
-      onSnapshot,
-      runTransaction,
-      increment
-    } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+<script>
+// ═══════════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════════
+const S = {
+  apiKey: localStorage.getItem('ria_key') || '',
+  mode: 'human',
+  analyses: {},    // subreddit -> analysis data
+  competitors: {}, // subreddit -> snapshot
+  watchlists: [],
+  jobs: [],
+  postHistory: [],
+  trends: null,
+  stats: { subs:0, trends:0, comps:0, posts:0 }
+};
 
-    // --- Firebase config (provided) ---
-    const firebaseConfig = {
-      apiKey: "AIzaSyBRJEmHXbHysb0weZfsVNTzUl0TDTjyuVI",
-      authDomain: "earnwithsimpletasks.firebaseapp.com",
-      projectId: "earnwithsimpletasks",
-      storageBucket: "earnwithsimpletasks.firebasestorage.app",
-      messagingSenderId: "942400388770",
-      appId: "1:942400388770:web:47475e0a0b60c1fb1b21fb",
-      measurementId: "G-132E8PF7LT"
-    };
+// ═══════════════════════════════════════════════════════════
+// NAV
+// ═══════════════════════════════════════════════════════════
+const PM = {
+  dashboard:   ['Dashboard','Overview & quick stats'],
+  analyzer:    ['Subreddit Analyzer','Deep intelligence on any subreddit'],
+  trends:      ['Trend Finder','Emerging topics & rising discussions'],
+  competitors: ['Competitor Tracker','Monitor rival communities'],
+  humanizer:   ['AI Humanizer','Transform AI text into authentic writing'],
+  generator:   ['Post Generator','Create organic, community-driven posts'],
+  keywords:    ['Keyword Discovery','Uncover trending & underserved keywords'],
+  automation:  ['Automation System','Background monitoring jobs'],
+  settings:    ['Settings','API keys & preferences'],
+};
 
-    // --- Admin allowlist (EDIT THIS) ---
-    const ADMIN_EMAILS = [
-      // "youradmin@gmail.com"
-    ];
-    const ADMIN_UIDS = [
-      // "yourAdminUid"
-    ];
+function nav(p) {
+  document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.ni[data-p]').forEach(x=>x.classList.remove('active'));
+  document.getElementById('page-'+p).classList.add('active');
+  const el = document.querySelector(`.ni[data-p="${p}"]`);
+  if(el) el.classList.add('active');
+  const m = PM[p]||['',''];
+  document.getElementById('pt').textContent = m[0];
+  document.getElementById('ps').textContent = m[1];
+  if(p==='trends') renderWatchlists();
+  if(p==='competitors') renderComps();
+  if(p==='automation') renderJobs();
+  if(p==='analyzer') checkKeyWarn('key-warn-analyzer');
+}
+document.querySelectorAll('.ni[data-p]').forEach(el=>{
+  el.addEventListener('click',()=>nav(el.dataset.p));
+});
 
-    // --- Task counter ---
-    const TASK_ID_START = 1010;
-    const COUNTER_DOC = { col: 'meta', doc: 'counters', field: 'nextTaskId' };
+// ═══════════════════════════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════════════════════════
+function toast(msg,type=''){
+  const el=document.createElement('div');
+  el.className=`toast ${type==='ok'?'ok':type==='er'?'er':''}`;
+  el.textContent=msg;
+  document.body.appendChild(el);
+  setTimeout(()=>el.remove(),3500);
+}
+function fmtN(n){return Number(n||0).toLocaleString();}
+function fmtD(s){if(!s)return'—';return new Date(s).toLocaleString('en-US',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});}
+function tc(score){return score>=70?'tsh':score>=40?'tsm':'tsl';}
+function checkKeyWarn(id){
+  const el=document.getElementById(id);
+  if(el) el.style.display=S.apiKey?'none':'flex';
+}
+function updateApiBadge(){
+  document.getElementById('api-badge').textContent = S.apiKey ? '🟢 AI Active' : '⚪ No API Key';
+}
+function updateStats(){
+  document.getElementById('d-subs').textContent = S.stats.subs;
+  document.getElementById('d-trends').textContent = S.stats.trends;
+  document.getElementById('d-comps').textContent = S.stats.comps;
+  document.getElementById('d-posts').textContent = S.stats.posts;
+}
 
-    // --- Wallet / withdrawal ---
-    const MIN_WITHDRAW_USD = 2;
+// Markdown → HTML (minimal)
+function md(text){
+  if(!text)return'';
+  return text
+    .replace(/^#### (.+)$/gm,'<h4>$1</h4>')
+    .replace(/^### (.+)$/gm,'<h3>$1</h3>')
+    .replace(/^## (.+)$/gm,'<h2>$1</h2>')
+    .replace(/^# (.+)$/gm,'<h1>$1</h1>')
+    .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g,'<em>$1</em>')
+    .replace(/`(.+?)`/g,'<code>$1</code>')
+    .replace(/^---$/gm,'<hr>')
+    .replace(/^> (.+)$/gm,'<blockquote style="border-left:3px solid var(--acc);margin:8px 0;padding:6px 12px;background:rgba(255,69,0,.05)">$1</blockquote>')
+    .replace(/^[\*\-] (.+)$/gm,'<li style="margin-left:16px;margin-bottom:3px">$1</li>')
+    .replace(/^\d+\. (.+)$/gm,'<li style="margin-left:16px;margin-bottom:3px">$1</li>')
+    .replace(/\n{2,}/g,'<br><br>')
+    .replace(/\n/g,'<br>');
+}
 
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db = getFirestore(app);
+// Bar chart renderer
+function barChart(items, keyFn, valFn, maxVal, colorClass=''){
+  const max = maxVal || Math.max(...items.map(valFn),1);
+  return `<div class="bc">`+items.map(i=>`
+    <div class="br2">
+      <div class="bl">${keyFn(i)}</div>
+      <div class="bt"><div class="bf ${colorClass}" style="width:${valFn(i)/max*100}%"></div></div>
+      <div class="bv">${valFn(i)}</div>
+    </div>`).join('')+`</div>`;
+}
 
-    // --- DOM helpers ---
-    const el = (id) => document.getElementById(id);
-    const safe = (v) => (v ?? '').toString();
+// ═══════════════════════════════════════════════════════════
+// REDDIT API — via allorigins proxy (CORS bypass)
+// ═══════════════════════════════════════════════════════════
+async function redditFetch(path){
+  const url = `https://www.reddit.com${path}`;
+  const proxy = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
+  const r = await fetch(proxy, {headers:{'Accept':'application/json'}});
+  if(!r.ok) throw new Error(`Reddit fetch failed: ${r.status}`);
+  return r.json();
+}
 
-    const hero = el('hero');
-    const appSection = el('app');
+async function getSubInfo(name){
+  const d = await redditFetch(`/r/${name}/about.json`);
+  return d.data || {};
+}
 
-    const btnLogin = el('btnLogin');
-    const btnLoginHero = el('btnLoginHero');
-    const btnLogout = el('btnLogout');
+async function getSubPosts(name, sort='hot', limit=50, t='month'){
+  const d = await redditFetch(`/r/${name}/${sort}.json?limit=${limit}&t=${t}`);
+  return (d.data?.children||[]).map(c=>{
+    const p=c.data;
+    return{id:p.id,title:p.title||'',score:p.score||0,upvote_ratio:p.upvote_ratio||0,
+      num_comments:p.num_comments||0,author:p.author||'',created_utc:p.created_utc||0,
+      url:p.url||'',permalink:'https://reddit.com'+(p.permalink||''),
+      selftext:(p.selftext||'').substring(0,400),flair:p.link_flair_text||'',
+      is_self:p.is_self||false,domain:p.domain||''};
+  });
+}
 
-    // Prevent any initial flash of the header login button before auth state resolves
-    if (btnLogin) {
-      btnLogin.classList.add('hidden');
-      btnLogin.style.display = 'none';
-      btnLogin.setAttribute('aria-hidden', 'true');
-      btnLogin.tabIndex = -1;
+async function analyzeSubredditData(name){
+  const [info, hotPosts, topPosts, newPosts] = await Promise.all([
+    getSubInfo(name),
+    getSubPosts(name,'hot',50),
+    getSubPosts(name,'top',50,'month'),
+    getSubPosts(name,'new',50),
+  ]);
+  if(!info.subscribers) throw new Error(`r/${name} not found or private`);
+
+  const all = [...hotPosts,...topPosts];
+  const scores = all.map(p=>p.score).filter(s=>s>0);
+  const cmts   = all.map(p=>p.num_comments);
+  const avgScore = scores.length ? +(scores.reduce((a,b)=>a+b,0)/scores.length).toFixed(1) : 0;
+  const avgCmt   = cmts.length   ? +(cmts.reduce((a,b)=>a+b,0)/cmts.length).toFixed(1)   : 0;
+
+  const DAYS=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  const hourC={}, dayC={};
+  newPosts.forEach(p=>{
+    if(p.created_utc){
+      const dt=new Date(p.created_utc*1000);
+      const h=dt.getUTCHours(), d=DAYS[dt.getUTCDay()===0?6:dt.getUTCDay()-1];
+      hourC[h]=(hourC[h]||0)+1;
+      dayC[d]=(dayC[d]||0)+1;
     }
+  });
 
-    const userMenu = el('userMenu');
-    const userName = el('userName');
-    const userEmail = el('userEmail');
-    const userPhoto = el('userPhoto');
-
-    const netBadge = el('netBadge');
-    const netText = el('netText');
-    const netDot = el('netDot');
-
-    const panelSwitch = el('panelSwitch');
-    const btnPanelUser = el('btnPanelUser');
-    const btnPanelAdmin = el('btnPanelAdmin');
-    const panelUser = el('panelUser');
-    const panelAdmin = el('panelAdmin');
-
-    // User panel tabs
-    const filtersBar = el('filtersBar');
-    const userPanelSwitch = el('userPanelSwitch');
-    const btnUserDashboard = el('btnUserDashboard');
-    const btnUserWallet = el('btnUserWallet');
-    const userDashboardView = el('userDashboardView');
-    const userWalletView = el('userWalletView');
-
-    const typeFilter = el('typeFilter');
-    const searchInput = el('searchInput');
-    const btnClearSearch = el('btnClearSearch');
-    const adminStatusFilter = el('adminStatusFilter');
-
-    const tasksLoading = el('tasksLoading');
-    const tasksEmpty = el('tasksEmpty');
-    const tasksList = el('tasksList');
-
-    const mineLoading = el('mineLoading');
-    const mineEmpty = el('mineEmpty');
-    const mineList = el('mineList');
-
-    const profileDot = el('profileDot');
-    const profileText = el('profileText');
-    const btnEditProfile = el('btnEditProfile');
-
-    const userEligibilityBanner = el('userEligibilityBanner');
-    const btnOpenProfileFromBanner = el('btnOpenProfileFromBanner');
-
-    const activeClaimPill = el('activeClaimPill');
-    const activeClaimTime = el('activeClaimTime');
-    const btnOpenActiveClaim = el('btnOpenActiveClaim');
-
-    const activeClaimCard = el('activeClaimCard');
-    const activeClaimTitle = el('activeClaimTitle');
-    const activeClaimMeta = el('activeClaimMeta');
-    const activeClaimCountdown = el('activeClaimCountdown');
-    const btnOpenClaimModal = el('btnOpenClaimModal');
-
-    // Admin UI
-    const adminTabs = Array.from(document.querySelectorAll('.adminTab'));
-    const adminCreate = el('adminCreate');
-    const adminTasks = el('adminTasks');
-    const adminUsers = el('adminUsers');
-    const adminSubs = el('adminSubs');
-
-    const adminTasksLoading = el('adminTasksLoading');
-    const adminTasksList = el('adminTasksList');
-
-    const usersLoading = el('usersLoading');
-    const usersList = el('usersList');
-
-    const subsLoading = el('subsLoading');
-    const subsList = el('subsList');
-
-    // Create form
-    const createForm = el('createForm');
-    const ctType = el('ctType');
-    const postFields = el('postFields');
-    const commentFields = el('commentFields');
-    const ctCommentMode = el('ctCommentMode');
-    const btnCopyTargetLink = el('btnCopyTargetLink');
-    const btnCopyCommentText = el('btnCopyCommentText');
-
-    const btnCreateTask = el('btnCreateTask');
-    const createSpinner = el('createSpinner');
-    const createBtnText = el('createBtnText');
-
-    // Task modal
-    const modalOverlay = el('modalOverlay');
-    const btnCloseModal = el('btnCloseModal');
-    const modalType = el('modalType');
-    const modalTitle = el('modalTitle');
-    const modalMeta = el('modalMeta');
-    const modalImageWrap = el('modalImageWrap');
-    const modalImage = el('modalImage');
-    const modalDetails = el('modalDetails');
-    const modalLink = el('modalLink');
-    const modalReward = el('modalReward');
-    const modalLockInfo = el('modalLockInfo');
-    const btnClaim = el('btnClaim');
-    const btnForceUnlock = el('btnForceUnlock');
-
-    const submitForm = el('submitForm');
-    const proofLink = el('proofLink');
-    const proofNote = el('proofNote');
-    const btnSubmitProof = el('btnSubmitProof');
-    const submitSpinner = el('submitSpinner');
-    const submitBtnText = el('submitBtnText');
-    const submitHint = el('submitHint');
-    const taskSubs = el('taskSubs');
-
-    // Profile modal
-    const profileOverlay = el('profileOverlay');
-    const btnCloseProfile = el('btnCloseProfile');
-    const profileForm = el('profileForm');
-    const rpUsername = el('rpUsername');
-    const rpLink = el('rpLink');
-    const rpKarma = el('rpKarma');
-    const btnSaveProfile = el('btnSaveProfile');
-    const profileSpinner = el('profileSpinner');
-    const profileBtnText = el('profileBtnText');
-    const profileHint = el('profileHint');
-
-    // Wallet
-    const walletBalance = el('walletBalance');
-    const walletApproved = el('walletApproved');
-    const walletPending = el('walletPending');
-    const btnWalletInfo = el('btnWalletInfo');
-    const btnWithdraw = el('btnWithdraw');
-    const withdrawAmountWrap = el('withdrawAmountWrap');
-    const withdrawAmount = el('withdrawAmount');
-    const withdrawAmountHint = el('withdrawAmountHint');
-    const walletOverlay = el('walletOverlay');
-    const btnCloseWallet = el('btnCloseWallet');
-
-    // Payout methods
-    const payoutForm = el('payoutForm');
-    const payoutMethod = el('payoutMethod');
-    const binanceFieldsWrap = el('binanceFieldsWrap');
-    const upiFieldsWrap = el('upiFieldsWrap');
-
-    const binanceUsername = el('binanceUsername');
-    const binanceId = el('binanceId');
-
-    const upiId = el('upiId');
-    const upiName = el('upiName');
-
-    const payoutHint = el('payoutHint');
-    const btnSavePayout = el('btnSavePayout');
-    const payoutSpinner = el('payoutSpinner');
-    const payoutBtnText = el('payoutBtnText');
-
-    // Toast
-    const toast = el('toast');
-    const toastTitle = el('toastTitle');
-    const toastMsg = el('toastMsg');
-    const toastDot = el('toastDot');
-    const toastClose = el('toastClose');
-
-    // --- State ---
-    let currentUser = null;
-    let currentUserDoc = null;
-    let isAdmin = false;
-
-    let tasksCache = [];
-    let openTask = null;
-
-    let unsubTasks = null;
-    let unsubMine = null;
-    let unsubUsers = null;
-    let unsubSubs = null;
-    let unsubTaskSubs = null;
-    let unsubUserDoc = null;
-
-    let uiPanel = 'user';
-    let adminTab = 'create';
-
-    let userTab = 'dashboard'; // dashboard | wallet
-
-    // Prevent overwriting payout form while the user is editing
-    let payoutFormDirty = false;
-
-    // --- Utils ---
-    const fmtTime = (ts) => {
-      if (!ts) return '—';
-      const d = ts.toDate ? ts.toDate() : new Date(ts);
-      return d.toLocaleString(undefined, { year: 'numeric', month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit' });
-    };
-
-    const nowMs = () => Date.now();
-
-    const toMs = (ts) => {
-      if (!ts) return 0;
-      const d = ts.toDate ? ts.toDate() : new Date(ts);
-      return d.getTime();
-    };
-
-    const msToClock = (ms) => {
-      const s = Math.max(0, Math.floor(ms / 1000));
-      const mm = String(Math.floor(s / 60)).padStart(2, '0');
-      const ss = String(s % 60).padStart(2, '0');
-      return `${mm}:${ss}`;
-    };
-
-    const escapeHtml = (str) => {
-      return String(str)
-        .replaceAll('&', '&amp;')
-        .replaceAll('<', '&lt;')
-        .replaceAll('>', '&gt;')
-        .replaceAll('"', '&quot;')
-        .replaceAll("'", '&#039;');
-    };
-    const escapeAttr = (str) => escapeHtml(str).replaceAll('`', '&#096;');
-
-    function showToast({ title, message, type = 'success' }) {
-      toastTitle.textContent = title;
-      toastMsg.textContent = message;
-      toastDot.className = `mt-1 h-2 w-2 rounded-full ${type === 'error' ? 'bg-rose-400' : type === 'warn' ? 'bg-amber-300' : 'bg-emerald-400'}`;
-      toast.classList.remove('hidden');
-      clearTimeout(showToast._t);
-      showToast._t = setTimeout(() => toast.classList.add('hidden'), 3500);
-    }
-    toastClose.addEventListener('click', () => toast.classList.add('hidden'));
-
-    function setBusy(button, busy, spinnerEl, textEl, busyText) {
-      button.disabled = busy;
-      button.classList.toggle('opacity-60', busy);
-      button.classList.toggle('cursor-not-allowed', busy);
-      if (spinnerEl) spinnerEl.classList.toggle('hidden', !busy);
-      if (textEl) {
-        if (!textEl.dataset.orig) textEl.dataset.orig = textEl.textContent;
-        textEl.textContent = busy ? busyText : textEl.dataset.orig;
-      }
-    }
-
-    function setOnlineBadge() {
-      netBadge.classList.remove('hidden');
-      const online = navigator.onLine;
-      netText.textContent = online ? 'Online' : 'Offline';
-      netDot.className = `inline-block h-2 w-2 rounded-full ${online ? 'bg-emerald-400' : 'bg-rose-400'}`;
-    }
-
-    async function copyTextFromInput(inputEl, label) {
-      const text = (inputEl?.value ?? '').trim();
-      if (!text) {
-        showToast({ title: 'Nothing to copy', message: `${label} is empty.`, type: 'warn' });
-        return;
-      }
-      try {
-        await navigator.clipboard.writeText(text);
-        showToast({ title: 'Copied', message: `${label} copied to clipboard.` });
-      } catch (err) {
-        // Fallback
-        try {
-          inputEl.focus();
-          inputEl.select();
-          document.execCommand('copy');
-          showToast({ title: 'Copied', message: `${label} copied to clipboard.` });
-        } catch (e2) {
-          showToast({ title: 'Copy failed', message: 'Your browser blocked clipboard access.', type: 'error' });
-        }
-      }
-    }
-
-    btnCopyTargetLink?.addEventListener('click', () => copyTextFromInput(el('ctTargetLink'), 'Target link'));
-    btnCopyCommentText?.addEventListener('click', () => copyTextFromInput(el('ctInstructions'), 'Comment text'));
-
-    // Modal copy buttons
-    async function copyText(text, label) {
-      if (!text || !text.trim()) {
-        showToast({ title: 'Nothing to copy', message: `${label} is empty.`, type: 'warn' });
-        return;
-      }
-      try {
-        await navigator.clipboard.writeText(text.trim());
-        showToast({ title: 'Copied', message: `${label} copied to clipboard.` });
-      } catch (err) {
-        showToast({ title: 'Copy failed', message: 'Your browser blocked clipboard access.', type: 'error' });
-      }
-    }
-
-    el('btnCopyModalLink')?.addEventListener('click', () => {
-      const link = el('modalLink')?.href || el('modalLink')?.textContent || '';
-      copyText(link, 'Link');
+  const stop=new Set(['the','a','an','is','in','on','at','to','for','of','and','or','but','it','its','this','that','with','are','was','be','has','have','not','by','from','as','do','if','so','we','i','my','your','you','r','x','just','like','get','use','new','one','can','will','need','want','what','how','why','when','who','where']);
+  const words={};
+  all.forEach(p=>{
+    (p.title.toLowerCase().match(/\b[a-z]{3,}\b/g)||[]).forEach(w=>{
+      if(!stop.has(w)) words[w]=(words[w]||0)+1;
     });
+  });
+  const topKW = Object.entries(words).sort((a,b)=>b[1]-a[1]).slice(0,20).map(([w,c])=>({word:w,count:c}));
 
-    el('btnCopyModalDetails')?.addEventListener('click', () => {
-      const details = el('modalDetails')?.textContent || '';
-      // For comment tasks, extract just the comment text (after the label)
-      const lines = details.split('\n');
-      const textToCopy = lines.length > 1 ? lines.slice(1).join('\n').trim() : details.trim();
-      copyText(textToCopy, 'Text');
-    });
-    window.addEventListener('online', setOnlineBadge);
-    window.addEventListener('offline', setOnlineBadge);
-    setOnlineBadge();
+  const flairs={};
+  all.forEach(p=>{if(p.flair) flairs[p.flair]=(flairs[p.flair]||0)+1;});
+  const topFlairs = Object.entries(flairs).sort((a,b)=>b[1]-a[1]).slice(0,8).map(([f,c])=>({flair:f,count:c}));
 
-    // --- Wallet modal ---
-    function openWallet() {
-      walletOverlay.classList.remove('hidden');
-      document.body.style.overflow = 'hidden';
-    }
-    function closeWallet() {
-      walletOverlay.classList.add('hidden');
-      document.body.style.overflow = '';
-    }
-    btnWalletInfo?.addEventListener('click', openWallet);
-    btnCloseWallet?.addEventListener('click', closeWallet);
-    walletOverlay?.addEventListener('click', (e) => {
-      if (e.target === walletOverlay) closeWallet();
-    });
+  const top5 = all.sort((a,b)=>b.score-a.score).slice(0,5);
 
-    function payoutIsComplete(u = currentUserDoc) {
-      const p = u?.payout || {};
-      const m = safe(p.method).trim();
-      if (!m) return false;
-      if (m === 'binance') {
-        return !!safe(p.binanceUsername).trim() && !!safe(p.binanceId).trim();
-      }
-      if (m === 'upi') {
-        return !!safe(p.upiId).trim() && !!safe(p.upiName).trim();
-      }
-      return false;
-    }
+  let postsPerDay=0;
+  if(newPosts.length){
+    const oldest=Math.min(...newPosts.map(p=>p.created_utc).filter(Boolean));
+    const newest=Math.max(...newPosts.map(p=>p.created_utc).filter(Boolean));
+    const days=Math.max((newest-oldest)/86400,1);
+    postsPerDay=+(newPosts.length/days).toFixed(1);
+  }
 
-    function syncPayoutUIFromSelection() {
-      const m = safe(payoutMethod?.value).trim();
-      binanceFieldsWrap?.classList.toggle('hidden', m !== 'binance');
-      upiFieldsWrap?.classList.toggle('hidden', m !== 'upi');
+  const peakHours = Object.entries(hourC).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([h])=>+h);
+  const peakDays  = Object.entries(dayC).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([d])=>d);
+  const selfRatio = +(all.filter(p=>p.is_self).length/Math.max(all.length,1)*100).toFixed(1);
 
-      // Required toggles (HTML required only works when not hidden, but we enforce in JS as well)
-      if (binanceUsername) binanceUsername.required = m === 'binance';
-      if (binanceId) binanceId.required = m === 'binance';
-      if (upiId) upiId.required = m === 'upi';
-      if (upiName) upiName.required = m === 'upi';
+  return{
+    subreddit:name, display_name:info.display_name||name,
+    title:info.title||'', description:(info.public_description||'').substring(0,250),
+    subscribers:info.subscribers||0, active_users:info.accounts_active||0,
+    avg_score:avgScore, avg_comments:avgCmt, posts_per_day:postsPerDay, self_post_ratio:selfRatio,
+    top_keywords:topKW, top_flairs:topFlairs, top_posts:top5,
+    hour_distribution:hourC, day_distribution:dayC, peak_hours:peakHours, peak_days:peakDays,
+    analyzed_at:new Date().toISOString(),
+  };
+}
 
-      // Hint
-      if (payoutHint) {
-        payoutHint.textContent = !m
-          ? 'Select a payment method and save your details to enable withdrawals.'
-          : (m === 'binance'
-              ? 'Binance requires username and Binance ID.'
-              : 'UPI requires UPI ID and account holder name.');
-      }
-    }
+// ═══════════════════════════════════════════════════════════
+// ANTHROPIC API
+// ═══════════════════════════════════════════════════════════
+async function callClaude(system, user, maxTokens=1500){
+  if(!S.apiKey) return '⚠️ **No API key** — go to Settings and add your Anthropic API key to enable AI analysis.';
+  const r = await fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:{'Content-Type':'application/json','x-api-key':S.apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+    body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:maxTokens,system,messages:[{role:'user',content:user}]})
+  });
+  if(!r.ok){
+    const e=await r.json().catch(()=>({}));
+    throw new Error(e.error?.message||`API error ${r.status}`);
+  }
+  const d=await r.json();
+  return d.content[0].text;
+}
 
-    function populatePayoutFormFromUserDoc(u = currentUserDoc) {
-      const p = u?.payout || {};
-      if (payoutMethod) payoutMethod.value = p.method || '';
-      if (binanceUsername) binanceUsername.value = p.binanceUsername || '';
-      if (binanceId) binanceId.value = p.binanceId || '';
-      if (upiId) upiId.value = p.upiId || '';
-      if (upiName) upiName.value = p.upiName || '';
-      syncPayoutUIFromSelection();
-    }
+// ═══════════════════════════════════════════════════════════
+// MODULE 1: SUBREDDIT ANALYZER
+// ═══════════════════════════════════════════════════════════
+let _lastAnalysis=null;
 
-    payoutMethod?.addEventListener('change', () => {
-      syncPayoutUIFromSelection();
-    });
+async function analyzeSubreddit(){
+  const sub=document.getElementById('sub-in').value.trim().replace(/^r\//,'');
+  if(!sub) return toast('Enter a subreddit name','er');
+  document.getElementById('a-res').style.display='none';
+  document.getElementById('a-load').style.display='block';
+  document.getElementById('abtn').disabled=true;
+  try{
+    toast('Fetching Reddit data...');
+    const data = await analyzeSubredditData(sub);
+    toast('Generating AI report...');
 
-    payoutForm?.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      if (!currentUser) return;
+    const aiReport = await callClaude(
+      'You are a Reddit growth strategist. Analyze subreddit data and write a detailed, actionable report in Markdown. Sections: ## Executive Summary, ## Key Metrics Analysis, ## Content Strategy, ## Growth Opportunities, ## Content Gaps, ## Top Recommendations (numbered list). Be specific and data-driven. Use **bold** for key insights.',
+      `Analyze r/${sub}:\nSubscribers: ${fmtN(data.subscribers)}\nActive Users: ${fmtN(data.active_users)}\nAvg Score: ${data.avg_score}\nAvg Comments: ${data.avg_comments}\nPosts/Day: ${data.posts_per_day}\nSelf Post Ratio: ${data.self_post_ratio}%\nPeak Days: ${data.peak_days.join(', ')}\nPeak Hours UTC: ${data.peak_hours.map(h=>h+':00').join(', ')}\nTop Keywords: ${data.top_keywords.slice(0,12).map(k=>k.word+'('+k.count+')').join(', ')}\nTop Flairs: ${data.top_flairs.slice(0,6).map(f=>f.flair+'('+f.count+')').join(', ')}\nTop Post: "${data.top_posts[0]?.title||'N/A'}" — Score: ${data.top_posts[0]?.score||0}\n\nWrite comprehensive growth intelligence report.`,
+      2000
+    );
 
-      const method = safe(payoutMethod?.value).trim();
-      if (!method) {
-        showToast({ title: 'Select a method', message: 'Please choose Binance or UPI.', type: 'warn' });
-        return;
-      }
+    data.ai_report = aiReport;
+    S.analyses[sub] = data;
+    _lastAnalysis = data;
+    S.stats.subs = Object.keys(S.analyses).length;
+    updateStats();
 
-      const payload = { method };
-      if (method === 'binance') {
-        const username = safe(binanceUsername?.value).trim();
-        const bid = safe(binanceId?.value).trim();
-        if (!username || !bid) {
-          showToast({ title: 'Missing details', message: 'Binance username and Binance ID are required.', type: 'warn' });
-          return;
-        }
-        payload.binanceUsername = username;
-        payload.binanceId = bid;
-        // Clear other method fields
-        payload.upiId = null;
-        payload.upiName = null;
-      }
+    renderAnalysis(data);
+    document.getElementById('a-load').style.display='none';
+    document.getElementById('a-res').style.display='block';
+    document.getElementById('abtn').disabled=false;
+    toast('Analysis complete!','ok');
+  }catch(e){
+    document.getElementById('a-load').style.display='none';
+    document.getElementById('abtn').disabled=false;
+    toast('Error: '+e.message,'er');
+  }
+}
 
-      if (method === 'upi') {
-        const uid = safe(upiId?.value).trim();
-        const uname = safe(upiName?.value).trim();
-        if (!uid || !uname) {
-          showToast({ title: 'Missing details', message: 'UPI ID and account holder name are required.', type: 'warn' });
-          return;
-        }
-        payload.upiId = uid;
-        payload.upiName = uname;
-        // Clear other method fields
-        payload.binanceUsername = null;
-        payload.binanceId = null;
-      }
+function renderAnalysis(d){
+  document.getElementById('a-stats').innerHTML=[
+    {l:'Subscribers',v:fmtN(d.subscribers),s:d.display_name},
+    {l:'Active Users',v:fmtN(d.active_users),s:'right now'},
+    {l:'Avg Post Score',v:fmtN(d.avg_score),s:'top posts'},
+    {l:'Posts / Day',v:d.posts_per_day,s:'activity level'},
+  ].map(s=>`<div class="sc"><div class="sl">${s.l}</div><div class="sv">${s.v}</div><div class="ss">${s.s}</div></div>`).join('');
 
-      setBusy(btnSavePayout, true, payoutSpinner, payoutBtnText, 'Saving...');
-      try {
-        await updateDoc(doc(db, 'users', currentUser.uid), {
-          payout: payload
-        });
-        showToast({ title: 'Saved', message: 'Payout details saved.' });
-      } catch (err) {
-        console.error(err);
-        showToast({ title: 'Save failed', message: err?.message || 'Unknown error', type: 'error' });
-      } finally {
-        setBusy(btnSavePayout, false, payoutSpinner, payoutBtnText, 'Save payout details');
-      }
-    });
+  document.getElementById('a-kw').innerHTML=barChart(d.top_keywords.slice(0,12),k=>k.word,k=>k.count,null,'');
+  
+  const days=d.day_distribution||{};
+  document.getElementById('a-pat').innerHTML=`
+    <p style="font-size:.73rem;color:var(--t2);margin-bottom:9px">
+      Peak days: <strong style="color:var(--t1)">${d.peak_days.join(', ')}</strong><br>
+      Peak hours UTC: <strong style="color:var(--t1)">${d.peak_hours.map(h=>h+':00').join(', ')}</strong>
+    </p>`+barChart(Object.entries(days).sort((a,b)=>['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].indexOf(a[0])-['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].indexOf(b[0])).map(([d,c])=>({d,c})),x=>x.d,x=>x.c,null,'blue');
 
-    btnWithdraw?.addEventListener('click', () => {
-      const bal = Number(currentUserDoc?.walletBalance ?? 0);
-      if (bal < MIN_WITHDRAW_USD) {
-        showToast({ title: 'Withdrawal not available', message: `Minimum balance is $${MIN_WITHDRAW_USD.toFixed(2)}.`, type: 'warn' });
-        return;
-      }
-      if (!payoutIsComplete()) {
-        showToast({ title: 'Payout details required', message: 'Please select a payment method and save your payout details first.', type: 'warn' });
-        return;
-      }
-      showToast({ title: 'Coming soon', message: 'Withdrawals are not implemented in this demo UI.' });
-    });
+  document.getElementById('a-posts').innerHTML=d.top_posts.map((p,i)=>`
+    <tr><td class="mono">#${i+1}</td>
+    <td class="pr"><a href="${p.permalink}" target="_blank" style="color:var(--acc2);text-decoration:none">${p.title.substring(0,75)}${p.title.length>75?'…':''}</a></td>
+    <td class="mono">${fmtN(p.score)}</td><td class="mono">${fmtN(p.num_comments)}</td></tr>`).join('');
 
-    // --- User tabs (Dashboard / Wallet) ---
-    function setUserTab(tab) {
-      userTab = tab;
-      const dash = tab === 'dashboard';
-      btnUserDashboard?.classList.toggle('bg-white/10', dash);
-      btnUserDashboard?.classList.toggle('hover:bg-white/5', !dash);
-      btnUserWallet?.classList.toggle('bg-white/10', !dash);
-      btnUserWallet?.classList.toggle('hover:bg-white/5', dash);
+  document.getElementById('a-ai').innerHTML=md(d.ai_report||'No AI report. Add API key in Settings.');
+}
 
-      userDashboardView?.classList.toggle('hidden', !dash);
-      userWalletView?.classList.toggle('hidden', dash);
+function copyAIReport(){
+  if(!_lastAnalysis) return;
+  navigator.clipboard.writeText(_lastAnalysis.ai_report||'').then(()=>toast('Copied!','ok'));
+}
 
-      // Hide filters/search while in wallet view
-      filtersBar?.classList.toggle('hidden', !dash);
-    }
+function downloadReport(){
+  if(!_lastAnalysis) return;
+  const d=_lastAnalysis;
+  let content=`# Reddit Intelligence Report: r/${d.subreddit}\n> Generated: ${new Date().toUTCString()}\n\n---\n\n## 📊 Quick Stats\n\n| Metric | Value |\n|--------|-------|\n| Subscribers | ${fmtN(d.subscribers)} |\n| Active Users | ${fmtN(d.active_users)} |\n| Avg Score | ${d.avg_score} |\n| Posts/Day | ${d.posts_per_day} |\n\n---\n\n## 🏆 Top Posts\n\n`;
+  d.top_posts.forEach((p,i)=>{content+=`${i+1}. **${p.title}** — Score: ${fmtN(p.score)} | Comments: ${p.num_comments}\n`;});
+  content+=`\n---\n\n## 🔑 Top Keywords\n\n${d.top_keywords.slice(0,15).map(k=>`- **${k.word}** (${k.count})`).join('\n')}\n\n---\n\n${d.ai_report||''}`;
+  const blob=new Blob([content],{type:'text/markdown'});
+  const a=Object.assign(document.createElement('a'),{href:URL.createObjectURL(blob),download:`ria_report_${d.subreddit}_${new Date().toISOString().slice(0,10)}.md`});
+  a.click();
+  toast('Downloaded!','ok');
+}
 
-    btnUserDashboard?.addEventListener('click', () => setUserTab('dashboard'));
-    btnUserWallet?.addEventListener('click', () => setUserTab('wallet'));
+// ═══════════════════════════════════════════════════════════
+// MODULE 2: TREND FINDER
+// ═══════════════════════════════════════════════════════════
+async function scanTrends(){
+  const subsStr=document.getElementById('tr-subs').value;
+  const subs=subsStr.split(',').map(s=>s.trim().replace(/^r\//,'')).filter(Boolean);
+  if(!subs.length) return toast('Add at least one subreddit','er');
 
-    // --- Panel switching ---
-    function setPanel(panel) {
-      uiPanel = panel;
-      const userActive = panel === 'user';
-      btnPanelUser.classList.toggle('bg-white/10', userActive);
-      btnPanelUser.classList.toggle('hover:bg-white/5', !userActive);
-      btnPanelAdmin.classList.toggle('bg-white/10', !userActive);
-      btnPanelAdmin.classList.toggle('hover:bg-white/5', userActive);
+  document.getElementById('tr-res').style.display='none';
+  document.getElementById('tr-load').style.display='block';
+  document.getElementById('tr-btn').disabled=true;
+  toast('Scanning '+subs.length+' subreddits...');
 
-      panelUser.classList.toggle('hidden', !userActive);
-      panelAdmin.classList.toggle('hidden', userActive);
+  try{
+    const stop=new Set(['the','a','an','is','in','on','at','to','for','of','and','or','but','it','its','this','that','with','are','was','be','has','have','not','by','from','as','do','if','so','we','i','my','your','you','r','x','just','like','get','use','new','one','can','will','need','want','what','how','why','when','who','where','also','been','very','more','some','than','them','they','their','about','would','could','should']);
+    const kwData={};
 
-      adminStatusFilter.classList.toggle('hidden', userActive || !isAdmin);
-
-      // Optimization: stop admin listeners when leaving admin panel
-      if (userActive) {
-        if (unsubUsers) { unsubUsers(); unsubUsers = null; }
-        if (unsubSubs) { unsubSubs(); unsubSubs = null; }
-        usersLoading.classList.add('hidden');
-        subsLoading.classList.add('hidden');
-      } else if (isAdmin) {
-        startUsersListener();
-        startAdminSubsListener();
-      }
-
-      renderAll();
-    }
-
-    btnPanelUser.addEventListener('click', () => setPanel('user'));
-    btnPanelAdmin.addEventListener('click', () => isAdmin && setPanel('admin'));
-
-    function setAdminTab(tab) {
-      adminTab = tab;
-      adminTabs.forEach(b => {
-        const active = b.dataset.adminTab === tab;
-        b.classList.toggle('bg-white/10', active);
-        b.classList.toggle('hover:bg-white/5', !active);
-      });
-      adminCreate.classList.toggle('hidden', tab !== 'create');
-      adminTasks.classList.toggle('hidden', tab !== 'tasks');
-      adminUsers.classList.toggle('hidden', tab !== 'users');
-      adminSubs.classList.toggle('hidden', tab !== 'subs');
-
-      adminStatusFilter.classList.toggle('hidden', tab !== 'tasks');
-      renderAll();
-    }
-    adminTabs.forEach(b => b.addEventListener('click', () => setAdminTab(b.dataset.adminTab)));
-
-    // --- Hero scroll ---
-    el('btnDemoScroll')?.addEventListener('click', (e) => {
-      e.preventDefault();
-      window.scrollTo({ top: hero.offsetTop + hero.offsetHeight + 8, behavior: 'smooth' });
-    });
-
-    // Filters
-    btnClearSearch.addEventListener('click', () => { searchInput.value = ''; renderAll(); });
-    searchInput.addEventListener('input', () => renderAll());
-    typeFilter.addEventListener('change', () => renderAll());
-    adminStatusFilter.addEventListener('change', () => renderAll());
-
-    // --- Auth ---
-    async function googleLogin() {
-      const provider = new GoogleAuthProvider();
-      provider.setCustomParameters({ prompt: 'select_account' });
-      try {
-        await signInWithPopup(auth, provider);
-      } catch (err) {
-        console.error(err);
-        showToast({ title: 'Login failed', message: err?.message || 'Unknown error', type: 'error' });
-      }
-    }
-    btnLogin.addEventListener('click', googleLogin);
-    btnLoginHero.addEventListener('click', googleLogin);
-
-    btnLogout.addEventListener('click', async () => {
-      try {
-        await signOut(auth);
-      } catch (err) {
-        showToast({ title: 'Logout failed', message: err?.message || 'Unknown error', type: 'error' });
-      }
-    });
-
-    onAuthStateChanged(auth, async (user) => {
-      currentUser = user;
-      currentUserDoc = null;
-      isAdmin = false;
-
-      stopAllListeners();
-      closeModal();
-      closeWallet();
-
-      if (!user) {
-        hero.classList.remove('hidden');
-        appSection.classList.add('hidden');
-
-        // Show header login button only when logged out
-        btnLogin.classList.remove('hidden');
-        btnLogin.style.display = '';
-        btnLogin.setAttribute('aria-hidden', 'false');
-        btnLogin.tabIndex = 0;
-
-        userMenu.classList.add('hidden');
-        return;
-      }
-
-      // UI basics
-      hero.classList.add('hidden');
-      appSection.classList.remove('hidden');
-
-      // Force-remove header login button when logged in (no flash / no layout)
-      btnLogin.classList.add('hidden');
-      btnLogin.style.display = 'none';
-      btnLogin.setAttribute('aria-hidden', 'true');
-      btnLogin.tabIndex = -1;
-
-      userMenu.classList.remove('hidden');
-
-      userName.textContent = user.displayName || 'User';
-      userEmail.textContent = user.email || '';
-      userPhoto.src = user.photoURL || 'https://www.gravatar.com/avatar/?d=mp';
-
-      // Ensure user doc exists
-      try {
-        const uref = doc(db, 'users', user.uid);
-        const snap = await getDoc(uref);
-        if (!snap.exists()) {
-          await setDoc(uref, {
-            uid: user.uid,
-            name: user.displayName || null,
-            email: user.email || null,
-            photoURL: user.photoURL || null,
-            redditUsername: null,
-            redditProfileLink: null,
-            redditKarma: null,
-            createdAt: serverTimestamp(),
-            lastLoginAt: serverTimestamp(),
-            activeClaimTaskId: null,
-            activeClaimUntil: null,
-            isAdmin: false,
-
-            // Wallet (USD)
-            walletBalance: 0,
-            walletApprovedTotal: 0,
-
-            // Payout
-            payout: {
-              method: null,
-              binanceUsername: null,
-              binanceId: null,
-              upiId: null,
-              upiName: null
+    for(const sub of subs){
+      try{
+        const posts=await getSubPosts(sub,'hot',30);
+        posts.forEach(p=>{
+          (p.title.toLowerCase().match(/\b[a-z]{4,}\b/g)||[]).forEach(w=>{
+            if(!stop.has(w)){
+              if(!kwData[w]) kwData[w]={count:0,scoreSum:0,subs:new Set()};
+              kwData[w].count++;
+              kwData[w].scoreSum+=p.score;
+              kwData[w].subs.add(sub);
             }
           });
-        } else {
-          const d = snap.data() || {};
-          await updateDoc(uref, {
-            name: user.displayName || null,
-            email: user.email || null,
-            photoURL: user.photoURL || null,
-            lastLoginAt: serverTimestamp(),
-
-            // Ensure wallet fields exist for older users
-            walletBalance: Number(d.walletBalance ?? 0),
-            walletApprovedTotal: Number(d.walletApprovedTotal ?? 0)
-          });
-        }
-      } catch (err) {
-        console.warn('User doc write failed', err);
-      }
-
-      // Listen user doc (for profile + active claim + wallet)
-      startUserDocListener();
-
-      // Start common listeners
-      startTasksListener();
-      startMineListener();
-
-      // Default view
-      setPanel('user');
-      setUserTab('dashboard');
-      setAdminTab('create');
-
-      showToast({ title: 'Logged in', message: `Welcome ${user.displayName || ''}`.trim() });
-    });
-
-    function stopAllListeners() {
-      if (unsubTasks) { unsubTasks(); unsubTasks = null; }
-      if (unsubMine) { unsubMine(); unsubMine = null; }
-      if (unsubUsers) { unsubUsers(); unsubUsers = null; }
-      if (unsubSubs) { unsubSubs(); unsubSubs = null; }
-      if (unsubTaskSubs) { unsubTaskSubs(); unsubTaskSubs = null; }
-      if (unsubUserDoc) { unsubUserDoc(); unsubUserDoc = null; }
-    }
-
-    // --- User doc listener ---
-    function startUserDocListener() {
-      if (!currentUser) return;
-      if (unsubUserDoc) { unsubUserDoc(); unsubUserDoc = null; }
-
-      const uref = doc(db, 'users', currentUser.uid);
-      unsubUserDoc = onSnapshot(uref, (snap) => {
-        currentUserDoc = snap.exists() ? snap.data() : null;
-
-        isAdmin = Boolean(
-          ADMIN_UIDS.includes(currentUser.uid) ||
-          (currentUser.email && ADMIN_EMAILS.includes(currentUser.email)) ||
-          currentUserDoc?.isAdmin === true
-        );
-
-        btnPanelAdmin.classList.toggle('hidden', !isAdmin);
-        // Hide the panel switch completely for non-admin users
-        if (panelSwitch) panelSwitch.classList.toggle('hidden', !isAdmin);
-
-        // Wallet UI
-        const bal = Number(currentUserDoc?.walletBalance ?? 0);
-        const approvedTotal = Number(currentUserDoc?.walletApprovedTotal ?? 0);
-        if (walletBalance) walletBalance.textContent = `$${bal.toFixed(2)}`;
-        if (walletApproved) walletApproved.textContent = `$${approvedTotal.toFixed(2)}`;
-
-        // Payout form
-        populatePayoutFormFromUserDoc(currentUserDoc);
-
-        // Withdraw button (min balance + payout details)
-        if (btnWithdraw) {
-          const okBal = bal >= MIN_WITHDRAW_USD;
-          const okPayout = payoutIsComplete(currentUserDoc);
-          const ok = okBal && okPayout;
-
-          btnWithdraw.disabled = !ok;
-          btnWithdraw.textContent = !okBal
-            ? `Withdraw (min $${MIN_WITHDRAW_USD.toFixed(0)})`
-            : (!okPayout ? 'Withdraw (add payout details)' : 'Withdraw (coming soon)');
-
-          btnWithdraw.classList.toggle('opacity-60', !ok);
-          btnWithdraw.classList.toggle('cursor-not-allowed', !ok);
-        }
-
-        // Profile status UI
-        const karma = Number(currentUserDoc?.redditKarma ?? 0);
-        const hasUsername = !!safe(currentUserDoc?.redditUsername).trim();
-        const eligible = hasUsername && karma >= 200;
-
-        profileText.textContent = eligible
-          ? `Profile: OK (u/${safe(currentUserDoc.redditUsername)} • karma ${karma})`
-          : 'Profile: pending (fill Reddit + karma 200+)';
-
-        profileDot.className = `inline-block h-2 w-2 rounded-full ${eligible ? 'bg-emerald-400' : 'bg-amber-300'}`;
-
-        userEligibilityBanner.classList.toggle('hidden', eligible);
-
-        // Active claim UI
-        const activeId = safe(currentUserDoc?.activeClaimTaskId).trim() || null;
-        const untilMs = toMs(currentUserDoc?.activeClaimUntil);
-        const active = activeId && untilMs > nowMs();
-
-        activeClaimPill.classList.toggle('hidden', !active);
-        activeClaimCard.classList.toggle('hidden', !active);
-
-        if (active) {
-          activeClaimTime.textContent = msToClock(untilMs - nowMs());
-        } else {
-          activeClaimTime.textContent = '—';
-        }
-
-        // cleanup expired claim fields if needed
-        maybeCleanupExpiredClaim();
-
-        renderAll();
-      }, (err) => {
-        console.error(err);
-        showToast({ title: 'Profile load failed', message: err?.message || 'Check Firestore rules', type: 'error' });
-      });
-    }
-
-    // --- Tasks listener ---
-    function startTasksListener() {
-      if (!currentUser) return;
-      if (unsubTasks) { unsubTasks(); unsubTasks = null; }
-
-      tasksLoading.classList.remove('hidden');
-      adminTasksLoading.classList.remove('hidden');
-
-      const q = query(collection(db, 'tasks'), orderBy('createdAt', 'desc'), limit(300));
-      unsubTasks = onSnapshot(q, (snap) => {
-        tasksCache = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-        tasksLoading.classList.add('hidden');
-        adminTasksLoading.classList.add('hidden');
-
-        // Keep modal in sync without extra reads
-        if (!modalOverlay.classList.contains('hidden') && openTask) {
-          const updated = tasksCache.find(x => x.id === openTask.id);
-          if (updated) {
-            openTask = updated;
-            updateModalDynamic(openTask);
-          }
-        }
-
-        renderAll();
-      }, (err) => {
-        console.error(err);
-        tasksLoading.classList.add('hidden');
-        adminTasksLoading.classList.add('hidden');
-        showToast({ title: 'Tasks load failed', message: err?.message || 'Check Firestore rules/indexes', type: 'error' });
-      });
-    }
-
-    // --- My submissions ---
-    function startMineListener() {
-      if (!currentUser) return;
-      if (unsubMine) { unsubMine(); unsubMine = null; }
-
-      mineLoading.classList.remove('hidden');
-      mineEmpty.classList.add('hidden');
-
-      const q = query(collection(db, 'submissions'), where('uid', '==', currentUser.uid), orderBy('createdAt', 'desc'), limit(200));
-      unsubMine = onSnapshot(q, (snap) => {
-        const list = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-
-        // Wallet pending = sum of pending submissions
-        const pendingSum = list
-          .filter(x => (x.status || 'pending') === 'pending')
-          .reduce((acc, x) => acc + Number(x.reward ?? 0), 0);
-        if (walletPending) walletPending.textContent = `$${pendingSum.toFixed(2)}`;
-
-        renderMine(list);
-        mineLoading.classList.add('hidden');
-      }, (err) => {
-        console.error(err);
-        mineLoading.classList.add('hidden');
-        showToast({ title: 'My submissions load failed', message: err?.message || 'Check Firestore rules/index', type: 'error' });
-      });
-    }
-
-    function badgeForSubmissionStatus(status) {
-      const s = (status || 'pending').toLowerCase();
-      if (s === 'approved') return '<span class="text-xs rounded-full border border-emerald-400/20 bg-emerald-500/10 px-2 py-0.5 text-emerald-200">approved</span>';
-      if (s === 'rejected') return '<span class="text-xs rounded-full border border-rose-400/20 bg-rose-500/10 px-2 py-0.5 text-rose-200">rejected</span>';
-      return '<span class="text-xs rounded-full border border-amber-400/20 bg-amber-500/10 px-2 py-0.5 text-amber-200">pending</span>';
-    }
-
-    function renderMine(list) {
-      mineList.innerHTML = '';
-      if (!list.length) {
-        mineEmpty.classList.remove('hidden');
-        // if no items, pending should be 0
-        if (walletPending) walletPending.textContent = '$0.00';
-        return;
-      }
-      mineEmpty.classList.add('hidden');
-
-      for (const s of list) {
-        const node = document.createElement('div');
-        node.className = 'rounded-2xl border border-white/10 bg-slate-950/40 p-4';
-        node.innerHTML = `
-          <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-3">
-            <div class="min-w-0">
-              <div class="flex flex-wrap items-center gap-2">
-                ${badgeForType(s.taskType)}
-                ${badgeForSubmissionStatus(s.status)}
-                <span class="text-xs text-white/50">${fmtTime(s.createdAt)}</span>
-                ${s.taskId ? `<span class="text-xs rounded-full border border-white/10 px-2 py-0.5 text-white/60">Task #${escapeHtml(s.taskId)}</span>` : ''}
-              </div>
-              <div class="mt-2 font-semibold break-words">${escapeHtml(s.taskTitle || 'Task')}</div>
-              <a class="mt-2 block text-sm text-indigo-300 hover:underline break-all" href="${escapeAttr(s.proofLink || '#')}" target="_blank" rel="noreferrer">${escapeHtml(s.proofLink || '')}</a>
-              ${s.note ? `<div class="mt-2 text-xs text-white/70 whitespace-pre-wrap">${escapeHtml(s.note)}</div>` : ''}
-            </div>
-            <div class="shrink-0 rounded-xl border border-white/10 px-3 py-2 text-sm">
-              <span class="text-white/60">Price</span>
-              <span class="ml-2 font-semibold">$${Number(s.reward ?? 0).toFixed(2)}</span>
-            </div>
-          </div>
-        `;
-        mineList.appendChild(node);
-      }
-    }
-
-    // --- Admin: users list ---
-    function startUsersListener() {
-      if (!currentUser || !isAdmin) return;
-      if (unsubUsers) return;
-
-      usersLoading.classList.remove('hidden');
-      const q = query(collection(db, 'users'), orderBy('createdAt', 'desc'), limit(300));
-      unsubUsers = onSnapshot(q, (snap) => {
-        const list = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-        renderUsers(list);
-        usersLoading.classList.add('hidden');
-      }, (err) => {
-        console.error(err);
-        usersLoading.classList.add('hidden');
-        showToast({ title: 'Users load failed', message: err?.message || 'Check rules/index', type: 'error' });
-      });
-    }
-
-    function renderUsers(list) {
-      usersList.innerHTML = '';
-      if (!list.length) {
-        usersList.innerHTML = `<div class="text-sm text-white/60">No users.</div>`;
-        return;
-      }
-
-      for (const u of list) {
-        const karma = Number(u.redditKarma ?? 0);
-        const ok = safe(u.redditUsername).trim() && karma >= 200;
-        const activeUntil = toMs(u.activeClaimUntil);
-        const hasActive = u.activeClaimTaskId && activeUntil > nowMs();
-
-        const bal = Number(u.walletBalance ?? 0);
-        const approvedTotal = Number(u.walletApprovedTotal ?? 0);
-
-        const node = document.createElement('div');
-        node.className = 'rounded-2xl border border-white/10 bg-slate-950/40 p-4';
-        node.innerHTML = `
-          <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-3">
-            <div class="min-w-0">
-              <div class="flex items-center gap-2">
-                <img class="h-9 w-9 rounded-full border border-white/10" src="${escapeAttr(u.photoURL || 'https://www.gravatar.com/avatar/?d=mp')}" alt="" />
-                <div class="min-w-0">
-                  <div class="font-semibold break-words">${escapeHtml(u.name || 'User')}</div>
-                  <div class="text-xs text-white/60 break-words">${escapeHtml(u.email || '')}</div>
-                </div>
-              </div>
-              <div class="mt-3 grid sm:grid-cols-2 gap-2 text-xs text-white/70">
-                <div class="rounded-xl border border-white/10 p-2">
-                  <div class="text-white/50">Created</div>
-                  <div>${fmtTime(u.createdAt)}</div>
-                </div>
-                <div class="rounded-xl border border-white/10 p-2">
-                  <div class="text-white/50">Last login</div>
-                  <div>${fmtTime(u.lastLoginAt)}</div>
-                </div>
-                <div class="rounded-xl border border-white/10 p-2">
-                  <div class="text-white/50">Reddit</div>
-                  <div>${ok ? `u/${escapeHtml(u.redditUsername)} • karma ${karma}` : 'Not eligible / not filled'}</div>
-                  ${u.redditProfileLink ? `<a class="mt-1 block text-indigo-300 hover:underline break-all" target="_blank" rel="noreferrer" href="${escapeAttr(u.redditProfileLink)}">${escapeHtml(u.redditProfileLink)}</a>` : ''}
-                </div>
-                <div class="rounded-xl border border-white/10 p-2">
-                  <div class="text-white/50">Active claim</div>
-                  <div>${hasActive ? `Task #${escapeHtml(u.activeClaimTaskId)} • left ${msToClock(activeUntil - nowMs())}` : '—'}</div>
-                </div>
-                <div class="rounded-xl border border-white/10 p-2 sm:col-span-2">
-                  <div class="text-white/50">Wallet</div>
-                  <div>Balance: <b>$${bal.toFixed(2)}</b> • Approved total: <b>$${approvedTotal.toFixed(2)}</b></div>
-                </div>
-              </div>
-            </div>
-
-            <div class="shrink-0 flex items-center gap-2">
-              <span class="text-[11px] rounded-full border ${ok ? 'border-emerald-400/20 bg-emerald-500/10 text-emerald-200' : 'border-amber-400/20 bg-amber-500/10 text-amber-200'} px-2 py-1">${ok ? 'ELIGIBLE' : 'PENDING'}</span>
-              <span class="text-[11px] rounded-full border border-white/10 px-2 py-1 text-white/60">${u.isAdmin ? 'ADMIN' : 'USER'}</span>
-            </div>
-          </div>
-        `;
-        usersList.appendChild(node);
-      }
-    }
-
-    // --- Admin: submissions list ---
-    function startAdminSubsListener() {
-      if (!currentUser || !isAdmin) return;
-      if (unsubSubs) return;
-
-      subsLoading.classList.remove('hidden');
-      const q = query(collection(db, 'submissions'), orderBy('createdAt', 'desc'), limit(300));
-      unsubSubs = onSnapshot(q, (snap) => {
-        const list = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-        renderAdminSubs(list);
-        subsLoading.classList.add('hidden');
-      }, (err) => {
-        console.error(err);
-        subsLoading.classList.add('hidden');
-        showToast({ title: 'Submissions load failed', message: err?.message || 'Check rules/index', type: 'error' });
-      });
-    }
-
-    async function approveSubmission(subId) {
-      if (!currentUser || !isAdmin) return;
-      if (!confirm('Approve this submission and credit the user wallet?')) return;
-
-      try {
-        await runTransaction(db, async (tx) => {
-          const subRef = doc(db, 'submissions', subId);
-          const subSnap = await tx.get(subRef);
-          if (!subSnap.exists()) throw new Error('Submission not found');
-          const s = subSnap.data();
-
-          const status = (s.status || 'pending').toLowerCase();
-          if (status !== 'pending') throw new Error('Submission is already processed');
-
-          const uid = s.uid;
-          if (!uid) throw new Error('Submission has no user uid');
-
-          const userRef = doc(db, 'users', uid);
-          const uSnap = await tx.get(userRef);
-          if (!uSnap.exists()) throw new Error('User document missing');
-
-          const reward = Number(s.reward ?? 0);
-          if (!Number.isFinite(reward) || reward < 0) throw new Error('Invalid reward amount');
-
-          const u = uSnap.data();
-          const prevBal = Number(u.walletBalance ?? 0);
-          const prevApproved = Number(u.walletApprovedTotal ?? 0);
-
-          tx.update(subRef, {
-            status: 'approved',
-            approvedAt: serverTimestamp(),
-            approvedByUid: currentUser.uid,
-            approvedByEmail: currentUser.email || null
-          });
-
-          tx.update(userRef, {
-            walletBalance: prevBal + reward,
-            walletApprovedTotal: prevApproved + reward
-          });
         });
-
-        showToast({ title: 'Approved', message: 'Submission approved and wallet credited.' });
-      } catch (err) {
-        console.error(err);
-        showToast({ title: 'Approve failed', message: err?.message || 'Unknown error', type: 'error' });
-      }
+      }catch(e){}
     }
 
-    async function rejectSubmission(subId) {
-      if (!currentUser || !isAdmin) return;
-      if (!confirm('Reject this submission?')) return;
-
-      try {
-        await runTransaction(db, async (tx) => {
-          const subRef = doc(db, 'submissions', subId);
-          const subSnap = await tx.get(subRef);
-          if (!subSnap.exists()) throw new Error('Submission not found');
-          const s = subSnap.data();
-
-          const status = (s.status || 'pending').toLowerCase();
-          if (status !== 'pending') throw new Error('Submission is already processed');
-
-          tx.update(subRef, {
-            status: 'rejected',
-            rejectedAt: serverTimestamp(),
-            rejectedByUid: currentUser.uid,
-            rejectedByEmail: currentUser.email || null
-          });
-        });
-
-        showToast({ title: 'Rejected', message: 'Submission rejected.' });
-      } catch (err) {
-        console.error(err);
-        showToast({ title: 'Reject failed', message: err?.message || 'Unknown error', type: 'error' });
-      }
-    }
-
-    function renderAdminSubs(list) {
-      subsList.innerHTML = '';
-      if (!list.length) {
-        subsList.innerHTML = `<div class="text-sm text-white/60">No submissions.</div>`;
-        return;
-      }
-
-      for (const s of list) {
-        const status = (s.status || 'pending').toLowerCase();
-        const canAct = status === 'pending';
-
-        const node = document.createElement('div');
-        node.className = 'rounded-2xl border border-white/10 bg-slate-950/40 p-4';
-        node.innerHTML = `
-          <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-3">
-            <div class="min-w-0">
-              <div class="flex flex-wrap items-center gap-2">
-                ${badgeForType(s.taskType)}
-                ${badgeForSubmissionStatus(s.status)}
-                <span class="text-xs text-white/50">${fmtTime(s.createdAt)}</span>
-                ${s.taskId ? `<span class="text-xs rounded-full border border-white/10 px-2 py-0.5 text-white/60">Task #${escapeHtml(s.taskId)}</span>` : ''}
-              </div>
-              <div class="mt-2 font-semibold break-words">${escapeHtml(s.taskTitle || 'Task')}</div>
-              <div class="mt-1 text-xs text-white/60">By: ${escapeHtml(s.userName || 'User')} • ${escapeHtml(s.userEmail || '')}</div>
-              <a class="mt-2 block text-sm text-indigo-300 hover:underline break-all" href="${escapeAttr(s.proofLink || '#')}" target="_blank" rel="noreferrer">${escapeHtml(s.proofLink || '')}</a>
-              ${s.note ? `<div class="mt-2 text-xs text-white/70 whitespace-pre-wrap">${escapeHtml(s.note)}</div>` : ''}
-            </div>
-
-            <div class="shrink-0 flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-              <div class="rounded-xl border border-white/10 px-3 py-2 text-sm">
-                <span class="text-white/60">Price</span>
-                <span class="ml-2 font-semibold">$${Number(s.reward ?? 0).toFixed(2)}</span>
-              </div>
-              <button class="btnSubApprove rounded-xl bg-emerald-500 px-3 py-2 text-sm font-semibold text-slate-950 hover:bg-emerald-400 ${canAct ? '' : 'opacity-50 cursor-not-allowed'}" data-sub-id="${escapeAttr(s.id)}" ${canAct ? '' : 'disabled'}>Approve</button>
-              <button class="btnSubReject rounded-xl border border-white/10 px-3 py-2 text-sm hover:bg-white/5 ${canAct ? '' : 'opacity-50 cursor-not-allowed'}" data-sub-id="${escapeAttr(s.id)}" ${canAct ? '' : 'disabled'}>Reject</button>
-            </div>
-          </div>
-        `;
-        subsList.appendChild(node);
-      }
-
-      subsList.querySelectorAll('.btnSubApprove').forEach(b => b.addEventListener('click', () => approveSubmission(b.dataset.subId)));
-      subsList.querySelectorAll('.btnSubReject').forEach(b => b.addEventListener('click', () => rejectSubmission(b.dataset.subId)));
-    }
-
-    // --- Create task (admin only) ---
-    function syncCreateFields() {
-      const type = ctType.value;
-      const post = type === 'post';
-
-      postFields.classList.toggle('hidden', !post);
-      postFields.style.display = post ? 'grid' : 'none';
-      commentFields.classList.toggle('hidden', post);
-      commentFields.style.display = post ? 'none' : 'grid';
-
-      // Subreddit is only needed for post tasks
-      const subredditWrap = el('ctSubredditWrap');
-      subredditWrap?.classList.toggle('hidden', !post);
-      const ctSubredditEl = el('ctSubreddit');
-      if (ctSubredditEl) {
-        ctSubredditEl.required = post;
-        if (!post) ctSubredditEl.value = '';
-      }
-
-      // Title is only needed for post tasks
-      const titleWrap = el('ctTitleWrap');
-      titleWrap?.classList.toggle('hidden', !post);
-      const ctTitleEl = el('ctTitle');
-      if (ctTitleEl) {
-        ctTitleEl.required = post;
-        if (!post) ctTitleEl.value = '';
-      }
-
-      // Required toggles for post fields
-      const ctBodyEl = el('ctBody');
-      if (ctBodyEl) ctBodyEl.required = post;
-
-      // Required toggles for comment fields
-      const ctTargetLinkEl = el('ctTargetLink');
-      const ctInstructionsEl = el('ctInstructions');
-      if (ctTargetLinkEl) ctTargetLinkEl.required = !post;
-      if (ctInstructionsEl) ctInstructionsEl.required = !post;
-
-      if (ctCommentMode) {
-        ctCommentMode.required = !post;
-        if (post) ctCommentMode.value = 'comment';
-      }
-    }
-    ctType.addEventListener('change', syncCreateFields);
-    syncCreateFields();
-
-    function extractSubredditFromUrl(url) {
-      // Try to extract subreddit from Reddit URL like https://www.reddit.com/r/AskReddit/...
-      const match = safe(url).match(/reddit\.com\/r\/([^\/\?#]+)/i);
-      return match ? match[1] : null;
-    }
-
-    function autoTitleForComment({ subreddit, instructions }) {
-      const s = safe(instructions).trim().replace(/\s+/g, ' ');
-      const short = s.length > 50 ? s.slice(0, 50).trim() + '…' : s;
-      const sub = subreddit ? `r/${subreddit}` : 'Reddit';
-      return `Comment on ${sub}${short ? ` — ${short}` : ''}`;
-    }
-
-    async function allocateNextTaskId(tx, counterRef) {
-      // Only READ here - no writes (writes happen after all reads)
-      const snap = await tx.get(counterRef);
-
-      let next = TASK_ID_START;
-      if (snap.exists()) {
-        const raw = snap.data()?.[COUNTER_DOC.field];
-        const n = Number(raw);
-        next = Number.isFinite(n) && n >= TASK_ID_START ? n : TASK_ID_START;
-      }
-
-      return next;
-    }
-
-    createForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      if (!currentUser || !isAdmin) {
-        showToast({ title: 'Not allowed', message: 'Admin only', type: 'warn' });
-        return;
-      }
-
-      const type = el('ctType').value;
-      const rawSubreddit = el('ctSubreddit').value.trim();
-      const rawTitle = el('ctTitle').value.trim();
-      const reward = Number(el('ctReward').value);
-      const status = el('ctStatus').value;
-      const claimMins = Number(el('ctClaimMins').value || 30);
-      const expireDays = Number(el('ctExpireDays').value || 0);
-
-      const body = el('ctBody').value.trim();
-      const imageUrl = el('ctImage').value.trim();
-      const targetLink = el('ctTargetLink').value.trim();
-      const commentMode = (el('ctCommentMode')?.value || 'comment').trim();
-      const instructions = el('ctInstructions').value.trim();
-
-      // For post tasks, subreddit is required; for comment tasks, extract from target link
-      let subreddit = rawSubreddit;
-      if (type === 'post' && !subreddit) {
-        showToast({ title: 'Missing fields', message: 'Subreddit is required for post tasks.', type: 'warn' });
-        return;
-      }
-      if (type === 'comment') {
-        subreddit = extractSubredditFromUrl(targetLink) || null;
-      }
-
-      const title = type === 'post' ? rawTitle : autoTitleForComment({ subreddit, instructions });
-      if (type === 'post' && !title) {
-        showToast({ title: 'Missing fields', message: 'Post tasks require a title.', type: 'warn' });
-        return;
-      }
-      if (!Number.isFinite(reward) || reward < 0) {
-        showToast({ title: 'Invalid price', message: 'Please enter a valid USD price.', type: 'warn' });
-        return;
-      }
-      if (!Number.isFinite(claimMins) || claimMins < 1) {
-        showToast({ title: 'Invalid claim window', message: 'Minutes must be at least 1.', type: 'warn' });
-        return;
-      }
-      if (type === 'post' && !body) {
-        showToast({ title: 'Missing body', message: 'Post tasks require a body.', type: 'warn' });
-        return;
-      }
-      if (type === 'comment') {
-        const cm = (commentMode || 'comment').toLowerCase();
-        if (!['comment', 'reply'].includes(cm)) {
-          showToast({ title: 'Invalid action', message: 'Please select Comment or Reply.', type: 'warn' });
-          return;
-        }
-        if (!targetLink || !instructions) {
-          showToast({ title: 'Missing fields', message: 'Comment tasks require target link + comment text.', type: 'warn' });
-          return;
-        }
-      }
-
-      setBusy(btnCreateTask, true, createSpinner, createBtnText, 'Creating...');
-      try {
-        const expiresAt = expireDays > 0 ? new Date(Date.now() + expireDays * 24 * 60 * 60 * 1000) : null;
-
-        let createdTaskId = null;
-        await runTransaction(db, async (tx) => {
-          // Step 1: ALL READS FIRST
-          const counterRef = doc(db, COUNTER_DOC.col, COUNTER_DOC.doc);
-          const taskNo = await allocateNextTaskId(tx, counterRef);
-          const taskId = String(taskNo);
-
-          const taskRef = doc(db, 'tasks', taskId);
-          const existing = await tx.get(taskRef);
-          if (existing.exists()) throw new Error(`Task ID collision (#${taskId}). Try again.`);
-
-          // Step 2: ALL WRITES AFTER READS
-          tx.set(counterRef, { [COUNTER_DOC.field]: taskNo + 1 }, { merge: true });
-
-          tx.set(taskRef, {
-            taskNo,
-            type,
-            subreddit,
-            title,
-            reward,
-            status,
-            claimMins,
-
-            // post-specific
-            body: type === 'post' ? body : null,
-            imageUrl: type === 'post' ? (imageUrl || null) : null,
-
-            // comment-specific
-            targetLink: type === 'comment' ? targetLink : null,
-            commentMode: type === 'comment' ? (commentMode || 'comment') : null,
-            instructions: type === 'comment' ? instructions : null,
-
-            // locking
-            lockedByUid: null,
-            lockedByName: null,
-            lockedUntil: null,
-            lockedAt: null,
-
-            // stats
-            submittedCount: 0,
-
-            createdByUid: currentUser.uid,
-            createdByName: currentUser.displayName || null,
-            createdByEmail: currentUser.email || null,
-            createdAt: serverTimestamp(),
-            expiresAt: expiresAt ? expiresAt : null
-          });
-
-          createdTaskId = taskId;
-        });
-
-        createForm.reset();
-        el('ctReward').value = 1;
-        el('ctClaimMins').value = 30;
-        el('ctExpireDays').value = 0;
-        syncCreateFields();
-
-        showToast({ title: 'Task created', message: `Task #${createdTaskId} saved successfully.` });
-        setAdminTab('tasks');
-        setPanel('admin');
-      } catch (err) {
-        console.error(err);
-        showToast({ title: 'Create failed', message: err?.message || 'Check Firestore rules', type: 'error' });
-      } finally {
-        setBusy(btnCreateTask, false, createSpinner, createBtnText, 'Create Task');
-      }
-    });
-
-    // --- Rendering ---
-    function badgeForType(type) {
-      if (type === 'post') return '<span class="inline-flex items-center rounded-full bg-indigo-500/15 text-indigo-200 border border-indigo-400/20 px-2 py-0.5 text-xs">POST</span>';
-      return '<span class="inline-flex items-center rounded-full bg-emerald-500/15 text-emerald-200 border border-emerald-400/20 px-2 py-0.5 text-xs">COMMENT</span>';
-    }
-
-    function isTaskExpired(t) {
-      const exp = toMs(t.expiresAt);
-      return exp ? exp <= nowMs() : false;
-    }
-
-    function lockInfo(t) {
-      const until = toMs(t.lockedUntil);
-      const locked = until && until > nowMs();
-      return { locked, until };
-    }
-
-    function userEligible() {
-      const karma = Number(currentUserDoc?.redditKarma ?? 0);
-      const hasUsername = !!safe(currentUserDoc?.redditUsername).trim();
-      return hasUsername && karma >= 200;
-    }
-
-    function getActiveClaim() {
-      const id = safe(currentUserDoc?.activeClaimTaskId).trim() || null;
-      const until = toMs(currentUserDoc?.activeClaimUntil);
-      if (!id || !until) return null;
-      if (until <= nowMs()) return null;
-      return { id, until };
-    }
-
-    function renderAll() {
-      if (!currentUser) return;
-
-      if (uiPanel === 'user') {
-        renderUserTasks();
-        renderActiveClaimCard();
-      } else {
-        renderAdminTasks();
-      }
-    }
-
-    function renderActiveClaimCard() {
-      const ac = getActiveClaim();
-      if (!ac) {
-        activeClaimCard.classList.add('hidden');
-        activeClaimPill.classList.add('hidden');
-        return;
-      }
-      activeClaimCard.classList.remove('hidden');
-      activeClaimPill.classList.remove('hidden');
-
-      const t = tasksCache.find(x => x.id === ac.id);
-      activeClaimTitle.textContent = t?.title || `Task #${ac.id}`;
-      const sub = t?.subreddit ? `r/${t.subreddit}` : '';
-      const metaParts = [`Task #${ac.id}`, (t?.type || 'task').toUpperCase()];
-      if (sub) metaParts.push(sub);
-      metaParts.push(`Price $${Number(t?.reward ?? 0).toFixed(2)}`);
-      activeClaimMeta.textContent = metaParts.join(' • ');
-      activeClaimCountdown.textContent = msToClock(ac.until - nowMs());
-    }
-
-    function applyCommonFilters(list) {
-      const t = typeFilter.value;
-      const s = searchInput.value.trim().toLowerCase();
-
-      let out = [...list];
-      if (t !== 'all') out = out.filter(x => x.type === t);
-      if (s) out = out.filter(x => safe(x.title).toLowerCase().includes(s) || safe(x.subreddit).toLowerCase().includes(s) || safe(x.id).toLowerCase().includes(s));
-      return out;
-    }
-
-    function renderUserTasks() {
-      tasksList.innerHTML = '';
-
-      const eligible = userEligible();
-      userEligibilityBanner.classList.toggle('hidden', eligible);
-
-      const activeClaim = getActiveClaim();
-      if (activeClaim) {
-        tasksEmpty.classList.add('hidden');
-        tasksList.innerHTML = `<div class="rounded-2xl border border-white/10 bg-slate-950/40 p-6 text-white/70 text-center sm:col-span-2 xl:col-span-3">You have an active claim. Complete it and submit proof first.</div>`;
-        return;
-      }
-
-      const base = tasksCache
-        .filter(t => !isTaskExpired(t))
-        .filter(t => (t.status || 'open') === 'open');
-
-      // Hide tasks locked by other users
-      const visible = base.filter(t => {
-        const { locked } = lockInfo(t);
-        if (!locked) return true;
-        return t.lockedByUid === currentUser.uid;
-      });
-
-      const list = applyCommonFilters(visible);
-
-      if (!list.length) {
-        tasksEmpty.classList.remove('hidden');
-        return;
-      }
-      tasksEmpty.classList.add('hidden');
-
-      for (const t of list) {
-        const { locked, until } = lockInfo(t);
-        const lockedByMe = locked && t.lockedByUid === currentUser.uid;
-
-        const canClaim = eligible && !locked;
-
-        const node = document.createElement('div');
-        node.className = 'rounded-2xl border border-white/10 bg-slate-950/40 p-4 hover:bg-white/[0.04] transition';
-
-        const extra = t.type === 'post'
-          ? `<div class="mt-2 text-xs text-white/60 line-clamp-2">${escapeHtml(safe(t.body))}</div>`
-          : `<div class="mt-2 text-xs text-white/60 line-clamp-2">${escapeHtml(safe(t.instructions))}</div>`;
-
-        node.innerHTML = `
-          <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-3">
-            <div class="min-w-0">
-              <div class="flex flex-wrap items-center gap-2">
-                ${badgeForType(t.type)}
-                <span class="text-xs rounded-full border border-white/10 px-2 py-0.5 text-white/60">Task #${escapeHtml(t.id)}</span>
-                ${t.subreddit ? `<span class="text-xs text-white/60">r/${escapeHtml(safe(t.subreddit))}</span>` : ''}
-                ${t.expiresAt ? `<span class="text-xs text-white/50">Exp: ${fmtTime(t.expiresAt)}</span>` : ''}
-              </div>
-              <div class="mt-2 font-semibold leading-snug break-words">${escapeHtml(safe(t.title))}</div>
-              ${extra}
-              <div class="mt-2 text-xs text-white/60">Created: ${fmtTime(t.createdAt)} • By: ${escapeHtml(safe(t.createdByName || '—'))}</div>
-              ${locked ? `<div class="mt-2 text-xs text-amber-200">Locked ${lockedByMe ? '(you)' : ''} • unlocks at ${new Date(until).toLocaleTimeString()}</div>` : ''}
-            </div>
-
-            <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 shrink-0">
-              <div class="rounded-xl border border-white/10 px-3 py-2 text-sm">
-                <span class="text-white/60">Price</span>
-                <span class="ml-2 font-semibold">$${Number(t.reward ?? 0).toFixed(2)}</span>
-              </div>
-              <button class="btnDetails rounded-xl border border-white/10 px-3 py-2 text-sm hover:bg-white/5" data-task-id="${t.id}">Details</button>
-              <button class="btnClaim rounded-xl bg-emerald-500 px-3 py-2 text-sm font-semibold text-slate-950 hover:bg-emerald-400 ${canClaim ? '' : 'opacity-50 cursor-not-allowed'}" data-task-id="${t.id}" ${canClaim ? '' : 'disabled'}>Claim</button>
-            </div>
-          </div>
-        `;
-        tasksList.appendChild(node);
-      }
-
-      tasksList.querySelectorAll('.btnDetails').forEach(b => b.addEventListener('click', () => openTaskModal(b.dataset.taskId)));
-      tasksList.querySelectorAll('.btnClaim').forEach(b => b.addEventListener('click', () => claimTask(b.dataset.taskId)));
-    }
-
-    function renderAdminTasks() {
-      if (!isAdmin) return;
-      adminTasksList.innerHTML = '';
-
-      let list = [...tasksCache].filter(t => !isTaskExpired(t));
-      const st = adminStatusFilter.value;
-      if (st !== 'all') list = list.filter(t => (t.status || 'open') === st);
-      list = applyCommonFilters(list);
-
-      if (!list.length) {
-        adminTasksList.innerHTML = `<div class="rounded-2xl border border-white/10 bg-slate-950/40 p-6 text-white/70 text-center">No tasks.</div>`;
-        return;
-      }
-
-      for (const t of list) {
-        const { locked, until } = lockInfo(t);
-        const lockedText = locked
-          ? `Locked by: ${escapeHtml(safe(t.lockedByName || t.lockedByUid || '—'))} • left ${msToClock(until - nowMs())}`
-          : 'Not locked';
-
-        const node = document.createElement('div');
-        node.className = 'rounded-2xl border border-white/10 bg-slate-950/40 p-4';
-        node.innerHTML = `
-          <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-3">
-            <div class="min-w-0">
-              <div class="flex flex-wrap items-center gap-2">
-                ${badgeForType(t.type)}
-                <span class="text-xs rounded-full border border-white/10 px-2 py-0.5 text-white/60">Task #${escapeHtml(t.id)}</span>
-                ${t.subreddit ? `<span class="text-xs text-white/60">r/${escapeHtml(safe(t.subreddit))}</span>` : ''}
-                <span class="text-xs rounded-full border border-white/10 px-2 py-0.5 text-white/60">${escapeHtml(safe(t.status || 'open'))}</span>
-                <span class="text-xs rounded-full border border-white/10 px-2 py-0.5 text-white/60">Price: $${Number(t.reward ?? 0).toFixed(2)}</span>
-                ${t.expiresAt ? `<span class="text-xs text-white/50">Exp: ${fmtTime(t.expiresAt)}</span>` : ''}
-              </div>
-              <div class="mt-2 font-semibold leading-snug break-words">${escapeHtml(safe(t.title))}</div>
-              <div class="mt-2 text-xs text-white/60">Created: ${fmtTime(t.createdAt)} • By: ${escapeHtml(safe(t.createdByName || '—'))}</div>
-              <div class="mt-2 text-xs ${locked ? 'text-amber-200' : 'text-white/60'}">${lockedText}</div>
-            </div>
-
-            <div class="shrink-0 flex flex-wrap items-center gap-2">
-              <button class="btnAdminOpen rounded-xl border border-white/10 px-3 py-2 text-sm hover:bg-white/5" data-task-id="${t.id}">Open</button>
-              <button class="btnAdminToggle rounded-xl border border-white/10 px-3 py-2 text-sm hover:bg-white/5" data-task-id="${t.id}" data-next="${(t.status || 'open') === 'open' ? 'closed' : 'open'}">${(t.status || 'open') === 'open' ? 'Close' : 'Re-open'}</button>
-              <button class="btnAdminUnlock rounded-xl border border-white/10 px-3 py-2 text-sm hover:bg-white/5 ${locked ? '' : 'opacity-50 cursor-not-allowed'}" data-task-id="${t.id}" ${locked ? '' : 'disabled'}>Force Unlock</button>
-            </div>
-          </div>
-        `;
-        adminTasksList.appendChild(node);
-      }
-
-      adminTasksList.querySelectorAll('.btnAdminOpen').forEach(b => b.addEventListener('click', () => openTaskModal(b.dataset.taskId)));
-      adminTasksList.querySelectorAll('.btnAdminToggle').forEach(b => b.addEventListener('click', () => toggleTaskStatus(b.dataset.taskId, b.dataset.next)));
-      adminTasksList.querySelectorAll('.btnAdminUnlock').forEach(b => b.addEventListener('click', () => forceUnlockTask(b.dataset.taskId)));
-    }
-
-    // --- Claim logic ---
-    async function claimTask(taskId) {
-      if (!currentUser) return;
-      if (!userEligible()) {
-        showToast({ title: 'Not eligible', message: 'Reddit profile + karma 200+ required.', type: 'warn' });
-        openProfile();
-        return;
-      }
-
-      const existing = getActiveClaim();
-      if (existing) {
-        showToast({ title: 'Already claimed', message: 'You already have an active claim.', type: 'warn' });
-        return;
-      }
-
-      let claimMinsUsed = 30;
-      try {
-        await runTransaction(db, async (tx) => {
-          const taskRef = doc(db, 'tasks', taskId);
-          const userRef = doc(db, 'users', currentUser.uid);
-
-          const [tSnap, uSnap] = await Promise.all([tx.get(taskRef), tx.get(userRef)]);
-          if (!tSnap.exists()) throw new Error('Task not found');
-          if (!uSnap.exists()) throw new Error('User document missing');
-
-          const t = tSnap.data();
-          const u = uSnap.data();
-
-          if ((t.status || 'open') !== 'open') throw new Error('Task is not open');
-          if (t.expiresAt && toMs(t.expiresAt) <= nowMs()) throw new Error('Task expired');
-
-          const karma = Number(u.redditKarma ?? 0);
-          const hasUsername = !!safe(u.redditUsername).trim();
-          if (!hasUsername || karma < 200) throw new Error('Reddit profile/karma not eligible');
-
-          const uUntil = toMs(u.activeClaimUntil);
-          if (u.activeClaimTaskId && uUntil > nowMs()) throw new Error('User already has an active claim');
-
-          const tUntil = toMs(t.lockedUntil);
-          const tLocked = tUntil && tUntil > nowMs();
-          if (tLocked) throw new Error('Task already locked');
-
-          claimMinsUsed = Number(t.claimMins ?? 30);
-          const lockUntil = new Date(Date.now() + claimMinsUsed * 60 * 1000);
-
-          tx.update(taskRef, {
-            lockedByUid: currentUser.uid,
-            lockedByName: currentUser.displayName || null,
-            lockedAt: serverTimestamp(),
-            lockedUntil: lockUntil
-          });
-
-          tx.update(userRef, {
-            activeClaimTaskId: taskId,
-            activeClaimUntil: lockUntil
-          });
-        });
-
-        showToast({ title: 'Claimed', message: `Task locked for ${claimMinsUsed} minutes. Submit proof before time runs out.` });
-        await openTaskModal(taskId, true);
-      } catch (err) {
-        console.error(err);
-        showToast({ title: 'Claim failed', message: err?.message || 'Unknown error', type: 'error' });
-      }
-    }
-
-    async function toggleTaskStatus(taskId, next) {
-      if (!currentUser || !isAdmin) return;
-      try {
-        await updateDoc(doc(db, 'tasks', taskId), { status: next });
-        showToast({ title: 'Updated', message: `Task status: ${next}` });
-      } catch (err) {
-        console.error(err);
-        showToast({ title: 'Update failed', message: err?.message || 'Unknown error', type: 'error' });
-      }
-    }
-
-    async function forceUnlockTask(taskId) {
-      if (!currentUser || !isAdmin) return;
-      try {
-        await updateDoc(doc(db, 'tasks', taskId), {
-          lockedByUid: null,
-          lockedByName: null,
-          lockedAt: null,
-          lockedUntil: null
-        });
-        showToast({ title: 'Unlocked', message: `Task #${taskId} has been force unlocked.` });
-      } catch (err) {
-        console.error(err);
-        showToast({ title: 'Unlock failed', message: err?.message || 'Unknown error', type: 'error' });
-      }
-    }
-
-    // --- Modal open/close ---
-    function openModal() {
-      modalOverlay.classList.remove('hidden');
-      document.body.style.overflow = 'hidden';
-    }
-    function closeModal() {
-      modalOverlay.classList.add('hidden');
-      document.body.style.overflow = '';
-      openTask = null;
-      submitForm.reset();
-      submitHint.textContent = '';
-      taskSubs.innerHTML = '';
-      if (unsubTaskSubs) { unsubTaskSubs(); unsubTaskSubs = null; }
-    }
-
-    btnCloseModal.addEventListener('click', closeModal);
-    modalOverlay.addEventListener('click', (e) => {
-      if (e.target === modalOverlay) closeModal();
-    });
-
-    window.addEventListener('keydown', (e) => {
-      if (e.key !== 'Escape') return;
-      if (!modalOverlay.classList.contains('hidden')) closeModal();
-      if (!walletOverlay.classList.contains('hidden')) closeWallet();
-      if (!profileOverlay.classList.contains('hidden')) closeProfile();
-    });
-
-    function updateModalDynamic(t) {
-      if (!currentUser || !t) return;
-
-      const { locked, until } = lockInfo(t);
-      const lockedByMe = locked && t.lockedByUid === currentUser.uid;
-      const canClaim = (t.status !== 'closed') && (t.status !== 'submitted') && !locked && userEligible() && !getActiveClaim();
-
-      // Admin actions
-      btnForceUnlock.classList.toggle('hidden', !(isAdmin && locked));
-      btnForceUnlock.onclick = () => forceUnlockTask(t.id);
-
-      // Claim action
-      btnClaim.classList.toggle('hidden', !canClaim);
-      btnClaim.onclick = () => claimTask(t.id);
-
-      if (locked) {
-        modalLockInfo.textContent = lockedByMe
-          ? `Locked by you • time left ${msToClock(until - nowMs())}`
-          : `Locked by ${t.lockedByName || t.lockedByUid || 'someone'} • available in ${msToClock(until - nowMs())}`;
-      } else {
-        modalLockInfo.textContent = (t.status === 'closed')
-          ? 'Task is closed.'
-          : (t.status === 'submitted')
-            ? 'Task has been submitted and is awaiting review.'
-            : 'Not locked. You can claim if eligible.';
-      }
-
-      // Submit form enable
-      const canSubmit = lockedByMe && (until > nowMs());
-      submitHint.textContent = canSubmit
-        ? `Submit within ${msToClock(until - nowMs())}`
-        : (lockedByMe ? 'Lock expired. You may need to claim again if available.' : 'Claim required to submit.');
-
-      submitForm.classList.toggle('opacity-60', !canSubmit);
-      proofLink.disabled = !canSubmit;
-      proofNote.disabled = !canSubmit;
-      btnSubmitProof.disabled = !canSubmit;
-      btnSubmitProof.classList.toggle('opacity-50', !canSubmit);
-      btnSubmitProof.classList.toggle('cursor-not-allowed', !canSubmit);
-    }
-
-    async function openTaskModal(taskId, forceFetch = false) {
-      if (!currentUser) return;
-      try {
-        let t = null;
-        if (!forceFetch) {
-          t = tasksCache.find(x => x.id === taskId) || null;
-        }
-
-        if (!t) {
-          const ref = doc(db, 'tasks', taskId);
-          const snap = await getDoc(ref);
-          if (!snap.exists()) {
-            showToast({ title: 'Not found', message: 'This task was deleted.', type: 'warn' });
-            return;
-          }
-          t = { id: taskId, ...snap.data() };
-        }
-
-        openTask = t;
-
-        modalType.textContent = `${(t.type || 'task').toUpperCase()} • ${t.status || 'open'} • Task #${t.id}`;
-        modalTitle.textContent = t.title || '—';
-        const modalMetaParts = [`Created: ${fmtTime(t.createdAt)}`];
-        if (t.subreddit) modalMetaParts.push(`r/${t.subreddit}`);
-        modalMetaParts.push(`By: ${t.createdByName || '—'}`);
-        modalMeta.textContent = modalMetaParts.join(' • ');
-
-        if (t.imageUrl) {
-          modalImageWrap.classList.remove('hidden');
-          modalImage.src = t.imageUrl;
-        } else {
-          modalImageWrap.classList.add('hidden');
-          modalImage.src = '';
-        }
-
-        if (t.type === 'post') {
-          modalDetails.textContent = `POST BODY:\n${t.body || ''}`;
-          const postUrl = t.subreddit ? `https://www.reddit.com/r/${t.subreddit}/submit` : 'https://www.reddit.com/submit';
-          modalLink.textContent = postUrl;
-          modalLink.href = postUrl;
-        } else {
-          const mode = (t.commentMode || 'comment').toString().toUpperCase();
-          modalDetails.textContent = `${mode} TEXT:\n${t.instructions || ''}`;
-          modalLink.textContent = t.targetLink || '—';
-          modalLink.href = t.targetLink || '#';
-        }
-
-        modalReward.textContent = `$${Number(t.reward ?? 0).toFixed(2)}`;
-
-        updateModalDynamic(t);
-
-        listenTaskSubmissions(taskId);
-        openModal();
-      } catch (err) {
-        console.error(err);
-        showToast({ title: 'Open failed', message: err?.message || 'Unknown error', type: 'error' });
-      }
-    }
-
-    // Recent submissions for modal
-    function listenTaskSubmissions(taskId) {
-      if (unsubTaskSubs) { unsubTaskSubs(); unsubTaskSubs = null; }
-      const q = query(collection(db, 'submissions'), where('taskId', '==', taskId), orderBy('createdAt', 'desc'), limit(10));
-      unsubTaskSubs = onSnapshot(q, (snap) => {
-        const items = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-        renderTaskSubmissions(items);
-      }, (err) => {
-        console.error(err);
-        taskSubs.innerHTML = `<div class="text-xs text-rose-200">Submissions load failed: ${escapeHtml(err?.message || 'error')}</div>`;
-      });
-    }
-
-    function renderTaskSubmissions(items) {
-      taskSubs.innerHTML = '';
-      if (!items.length) {
-        taskSubs.innerHTML = `<div class="text-xs text-white/60">No submissions yet.</div>`;
-        return;
-      }
-      for (const s of items) {
-        const mine = currentUser && s.uid === currentUser.uid;
-        const node = document.createElement('div');
-        node.className = 'rounded-xl border border-white/10 bg-slate-950/40 p-3';
-        node.innerHTML = `
-          <div class="flex items-center justify-between gap-3">
-            <div class="min-w-0">
-              <div class="text-xs text-white/60">${escapeHtml(s.userName || 'User')} ${mine ? '<span class="ml-1 text-[11px] text-indigo-200">(you)</span>' : ''} • ${fmtTime(s.createdAt)}</div>
-              <a class="mt-1 block text-sm text-indigo-300 hover:underline break-all" href="${escapeAttr(s.proofLink || '#')}" target="_blank" rel="noreferrer">${escapeHtml(s.proofLink || '')}</a>
-              ${s.note ? `<div class="mt-1 text-xs text-white/70 whitespace-pre-wrap">${escapeHtml(s.note)}</div>` : ''}
-            </div>
-            <div class="text-[11px] rounded-full border border-white/10 px-2 py-1 text-white/60">${escapeHtml(s.status || 'pending')}</div>
-          </div>
-        `;
-        taskSubs.appendChild(node);
-      }
-    }
-
-    // Submit proof
-    submitForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      if (!currentUser || !openTask) return;
-
-      const link = proofLink.value.trim();
-      const note = proofNote.value.trim();
-      if (!link) return;
-
-      setBusy(btnSubmitProof, true, submitSpinner, submitBtnText, 'Submitting...');
-      try {
-        await runTransaction(db, async (tx) => {
-          const taskRef = doc(db, 'tasks', openTask.id);
-          const userRef = doc(db, 'users', currentUser.uid);
-
-          const [tSnap, uSnap] = await Promise.all([tx.get(taskRef), tx.get(userRef)]);
-          if (!tSnap.exists()) throw new Error('Task not found');
-          if (!uSnap.exists()) throw new Error('User document missing');
-
-          const t = tSnap.data();
-          const u = uSnap.data();
-
-          const until = toMs(t.lockedUntil);
-          if (!t.lockedByUid || t.lockedByUid !== currentUser.uid) throw new Error('You did not claim this task');
-          if (!until || until <= nowMs()) throw new Error('Claim time expired');
-
-          const uUntil = toMs(u.activeClaimUntil);
-          if (u.activeClaimTaskId !== openTask.id || !uUntil || uUntil <= nowMs()) throw new Error('Your active claim is not valid');
-
-          const subId = `${openTask.id}_${currentUser.uid}`;
-          const subRef = doc(db, 'submissions', subId);
-          const subSnap = await tx.get(subRef);
-          if (subSnap.exists()) throw new Error('Already submitted for this task');
-
-          tx.set(subRef, {
-            taskId: openTask.id,
-            taskTitle: t.title || null,
-            taskType: t.type || null,
-            reward: Number(t.reward ?? 0),
-            uid: currentUser.uid,
-            userName: currentUser.displayName || null,
-            userEmail: currentUser.email || null,
-            proofLink: link,
-            note: note || null,
-            status: 'pending',
-            createdAt: serverTimestamp()
-          });
-
-          // Mark task as submitted (single-use) and clear lock
-          tx.update(taskRef, {
-            status: 'submitted',
-            lockedByUid: null,
-            lockedByName: null,
-            lockedAt: null,
-            lockedUntil: null,
-            submittedCount: increment(1)
-          });
-
-          // Clear user active claim
-          tx.update(userRef, {
-            activeClaimTaskId: null,
-            activeClaimUntil: null
-          });
-        });
-
-        submitForm.reset();
-        showToast({ title: 'Submitted', message: 'Proof submitted (pending review).' });
-        closeModal();
-      } catch (err) {
-        console.error(err);
-        showToast({ title: 'Submit failed', message: err?.message || 'Unknown error', type: 'error' });
-      } finally {
-        setBusy(btnSubmitProof, false, submitSpinner, submitBtnText, 'Submit');
-      }
-    });
-
-    // --- Profile modal ---
-    function openProfile() {
-      if (!currentUser) return;
-      const u = currentUserDoc || {};
-      rpUsername.value = u.redditUsername || '';
-      rpLink.value = u.redditProfileLink || '';
-      rpKarma.value = (u.redditKarma ?? '') === null ? '' : (u.redditKarma ?? '');
-
-      profileOverlay.classList.remove('hidden');
-      document.body.style.overflow = 'hidden';
-    }
-
-    function closeProfile() {
-      profileOverlay.classList.add('hidden');
-      document.body.style.overflow = '';
-      profileForm.reset();
-      profileHint.textContent = 'Karma must be 200+ to claim tasks.';
-    }
-
-    btnEditProfile.addEventListener('click', openProfile);
-    btnOpenProfileFromBanner.addEventListener('click', openProfile);
-    btnCloseProfile.addEventListener('click', closeProfile);
-    profileOverlay.addEventListener('click', (e) => {
-      if (e.target === profileOverlay) closeProfile();
-    });
-
-    profileForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      if (!currentUser) return;
-
-      const username = rpUsername.value.trim();
-      const link = rpLink.value.trim();
-      const karma = Number(rpKarma.value);
-
-      if (!username) {
-        profileHint.textContent = 'Reddit username is required.';
-        showToast({ title: 'Invalid', message: 'Reddit username is required.', type: 'warn' });
-        return;
-      }
-      if (!Number.isFinite(karma) || karma < 0) {
-        profileHint.textContent = 'Please enter a valid karma number.';
-        showToast({ title: 'Invalid', message: 'Please enter a valid karma number.', type: 'warn' });
-        return;
-      }
-      if (karma < 200) {
-        profileHint.textContent = 'Minimum karma 200+ required.';
-        showToast({ title: 'Not eligible', message: 'Minimum karma 200+ required.', type: 'warn' });
-        return;
-      }
-
-      setBusy(btnSaveProfile, true, profileSpinner, profileBtnText, 'Saving...');
-      try {
-        await updateDoc(doc(db, 'users', currentUser.uid), {
-          redditUsername: username,
-          redditProfileLink: link || null,
-          redditKarma: karma
-        });
-        showToast({ title: 'Saved', message: 'Profile updated successfully.' });
-        closeProfile();
-      } catch (err) {
-        console.error(err);
-        showToast({ title: 'Save failed', message: err?.message || 'Unknown error', type: 'error' });
-      } finally {
-        setBusy(btnSaveProfile, false, profileSpinner, profileBtnText, 'Save');
-      }
-    });
-
-    // Active claim open
-    btnOpenActiveClaim.addEventListener('click', async () => {
-      const ac = getActiveClaim();
-      if (!ac) return;
-      await openTaskModal(ac.id);
-    });
-
-    btnOpenClaimModal.addEventListener('click', async () => {
-      const ac = getActiveClaim();
-      if (!ac) return;
-      await openTaskModal(ac.id);
-    });
-
-    // Cleanup expired claims
-    async function maybeCleanupExpiredClaim() {
-      if (!currentUser || !currentUserDoc) return;
-      const id = safe(currentUserDoc.activeClaimTaskId).trim();
-      const until = toMs(currentUserDoc.activeClaimUntil);
-      if (!id || !until) return;
-      if (until > nowMs()) return;
-
-      try {
-        await runTransaction(db, async (tx) => {
-          const userRef = doc(db, 'users', currentUser.uid);
-          const taskRef = doc(db, 'tasks', id);
-
-          const [uSnap, tSnap] = await Promise.all([tx.get(userRef), tx.get(taskRef)]);
-          if (uSnap.exists()) {
-            tx.update(userRef, { activeClaimTaskId: null, activeClaimUntil: null });
-          }
-
-          if (tSnap.exists()) {
-            const t = tSnap.data();
-            const tUntil = toMs(t.lockedUntil);
-            const stillLockedByMe = t.lockedByUid === currentUser.uid;
-            if (stillLockedByMe && tUntil && tUntil <= nowMs()) {
-              tx.update(taskRef, { lockedByUid: null, lockedByName: null, lockedAt: null, lockedUntil: null });
+    const keywords=Object.entries(kwData)
+      .filter(([,d])=>d.count>=2)
+      .map(([word,d])=>{
+        const avgS=d.scoreSum/d.count;
+        const score=Math.min(100,Math.round(d.count*Math.log(avgS+2)*d.subs.size/subs.length*5));
+        return{keyword:word,count:d.count,avg_score:+avgS.toFixed(1),trend_score:score,
+          subreddits:[...d.subs].slice(0,4),growth_pct:Math.min(score*2,500)};
+      })
+      .sort((a,b)=>b.trend_score-a.trend_score)
+      .slice(0,50);
+
+    S.trends={keywords,subreddits:subs};
+    S.stats.trends=keywords.length;
+    updateStats();
+
+    const aiSummary=await callClaude(
+      'You are a Reddit trend analyst. Given keyword trend data, write a concise trend briefing in Markdown. Include: ## 🔥 Top Emerging Trends, ## 💡 Content Opportunities, ## ⚡ Quick Wins. Be specific and actionable. Max 400 words.',
+      `Subreddits scanned: ${subs.join(', ')}\n\nTop trending keywords:\n${keywords.slice(0,15).map(k=>`- ${k.keyword}: score ${k.trend_score}/100, mentions ${k.count}, avg score ${k.avg_score}`).join('\n')}\n\nWrite trend briefing.`,
+      900
+    );
+
+    document.getElementById('tr-ai').innerHTML=md(aiSummary);
+    document.getElementById('tr-kw').innerHTML=keywords.slice(0,30).map((kw,i)=>`
+      <tr>
+        <td class="mono">#${i+1}</td>
+        <td class="pr"><strong>${kw.keyword}</strong></td>
+        <td><span class="ts ${tc(kw.trend_score)}">${kw.trend_score}</span></td>
+        <td class="mono">${kw.count}</td>
+        <td class="mono" style="color:var(--green)">+${kw.growth_pct}%</td>
+        <td style="font-size:.75rem;color:var(--t3)">${kw.subreddits.map(s=>'r/'+s).join(', ')}</td>
+      </tr>`).join('');
+
+    document.getElementById('tr-load').style.display='none';
+    document.getElementById('tr-res').style.display='block';
+    document.getElementById('tr-btn').disabled=false;
+    toast('Scan complete! Found '+keywords.length+' trending keywords','ok');
+  }catch(e){
+    document.getElementById('tr-load').style.display='none';
+    document.getElementById('tr-btn').disabled=false;
+    toast('Error: '+e.message,'er');
+  }
+}
+
+// Watchlists (in-memory)
+function renderWatchlists(){
+  document.getElementById('wl-list').innerHTML=S.watchlists.length?
+    S.watchlists.map((w,i)=>`
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--blite)">
+        <div><span style="font-weight:600;font-size:.82rem">${w.name}</span><span class="tm tsm2"> · ${w.subs.length} subs</span></div>
+        <div style="display:flex;gap:5px">
+          <button class="btn bs bxs" onclick="loadWL(${i})">Load</button>
+          <button class="btn bd bxs" onclick="delWL(${i})">✕</button>
+        </div>
+      </div>`).join(''):
+    '<p class="tsm2 tm">No watchlists yet</p>';
+}
+function addWL(){
+  const n=document.getElementById('wl-n').value.trim();
+  const s=document.getElementById('wl-s').value.split(',').map(x=>x.trim()).filter(Boolean);
+  if(!n||!s.length) return toast('Name and subreddits required','er');
+  S.watchlists.push({name:n,subs:s});
+  document.getElementById('wl-n').value='';
+  document.getElementById('wl-s').value='';
+  renderWatchlists();
+  toast('Watchlist created','ok');
+}
+function delWL(i){S.watchlists.splice(i,1);renderWatchlists();}
+function loadWL(i){document.getElementById('tr-subs').value=S.watchlists[i].subs.join(',');toast('Watchlist loaded','ok');}
+
+// ═══════════════════════════════════════════════════════════
+// MODULE 3: COMPETITOR TRACKER
+// ═══════════════════════════════════════════════════════════
+async function addComp(){
+  const sub=document.getElementById('cp-sub').value.trim().replace(/^r\//,'');
+  const lbl=document.getElementById('cp-lbl').value.trim()||sub;
+  if(!sub) return toast('Enter subreddit','er');
+  toast('Fetching competitor data...');
+  try{
+    const info=await getSubInfo(sub);
+    const posts=await getSubPosts(sub,'hot',25);
+    const scores=posts.map(p=>p.score);
+    const avg=scores.length?+(scores.reduce((a,b)=>a+b,0)/scores.length).toFixed(1):0;
+    const top3=posts.sort((a,b)=>b.score-a.score).slice(0,3);
+    S.competitors[sub]={subreddit:sub,label:lbl,subscribers:info.subscribers||0,active_users:info.accounts_active||0,avg_score:avg,top_posts:top3,snapshot_at:new Date().toISOString()};
+    S.stats.comps=Object.keys(S.competitors).length;
+    updateStats();
+    renderComps();
+    document.getElementById('cp-sub').value='';
+    document.getElementById('cp-lbl').value='';
+    toast('Competitor added!','ok');
+  }catch(e){toast('Error: '+e.message,'er');}
+}
+async function refreshComps(){
+  const subs=Object.keys(S.competitors);
+  if(!subs.length) return toast('No competitors tracked','er');
+  toast('Refreshing '+subs.length+' competitors...');
+  for(const sub of subs){
+    try{
+      const info=await getSubInfo(sub);
+      const posts=await getSubPosts(sub,'hot',20);
+      const scores=posts.map(p=>p.score);
+      const avg=scores.length?+(scores.reduce((a,b)=>a+b,0)/scores.length).toFixed(1):0;
+      S.competitors[sub]={...S.competitors[sub],subscribers:info.subscribers||0,active_users:info.accounts_active||0,avg_score:avg,snapshot_at:new Date().toISOString()};
+    }catch(e){}
+  }
+  renderComps();
+  toast('Refreshed!','ok');
+}
+function renderComps(){
+  const comps=Object.values(S.competitors);
+  document.getElementById('cp-grid').innerHTML=comps.length?`
+    <table class="dt"><thead><tr><th>Subreddit</th><th>Label</th><th>Subscribers</th><th>Active</th><th>Avg Score</th><th>Updated</th><th></th></tr></thead>
+    <tbody>${comps.map(c=>`
+      <tr>
+        <td class="pr"><a href="https://reddit.com/r/${c.subreddit}" target="_blank" style="color:var(--acc2);text-decoration:none">r/${c.subreddit}</a></td>
+        <td><span class="badge bgray">${c.label}</span></td>
+        <td class="mono">${fmtN(c.subscribers)}</td>
+        <td class="mono">${fmtN(c.active_users)}</td>
+        <td class="mono">${c.avg_score}</td>
+        <td class="mono tm tsm2">${fmtD(c.snapshot_at)}</td>
+        <td><button class="btn bd bxs" onclick="delComp('${c.subreddit}')">✕</button></td>
+      </tr>`).join('')}
+    </tbody></table>`:
+    '<div class="es"><div class="eic">🎯</div><p>No competitors tracked yet</p></div>';
+}
+function delComp(sub){delete S.competitors[sub];S.stats.comps=Object.keys(S.competitors).length;updateStats();renderComps();}
+async function analyzeComps(){
+  const comps=Object.values(S.competitors);
+  if(!comps.length) return toast('Add competitors first','er');
+  toast('Running AI analysis...');
+  try{
+    const analysis=await callClaude(
+      'You are a competitive intelligence analyst for Reddit communities. Compare the competitor subreddits and identify: strengths, weaknesses, content gaps to exploit, engagement patterns, strategic opportunities. Use Markdown with clear sections.',
+      `Competitor data:\n${comps.map(c=>`r/${c.subreddit}: ${fmtN(c.subscribers)} subscribers, ${c.active_users} active, avg score ${c.avg_score}`).join('\n')}\n\nTop posts:\n${comps.flatMap(c=>(c.top_posts||[]).slice(0,2).map(p=>`r/${c.subreddit}: "${p.title}" (score: ${p.score})`)).join('\n')}\n\nProvide competitive intelligence report.`,
+      1500
+    );
+    document.getElementById('cp-ai').innerHTML=md(analysis);
+    document.getElementById('cp-ai-wrap').style.display='block';
+    toast('Analysis complete!','ok');
+  }catch(e){toast('Error: '+e.message,'er');}
+}
+
+// ═══════════════════════════════════════════════════════════
+// MODULE 4: AI HUMANIZER
+// ═══════════════════════════════════════════════════════════
+const MODES={
+  human:'Rewrite the following AI-generated text to sound like a real person wrote it. Vary sentence length dramatically, use contractions, add natural transitions, minor imperfections. Keep the meaning. Output ONLY the rewritten text, no preamble.',
+  casual_human:'Rewrite this to sound like a thoughtful friend texting you. Super casual, short punchy sentences mixed with longer ones, contractions everywhere, maybe a rhetorical question. Output ONLY the rewritten text.',
+  reddit_human:'Rewrite this to sound like an authentic Reddit comment from a knowledgeable person. Start with the point, add nuance, maybe a personal anecdote, mild humor occasionally. Sound like you\'ve been on Reddit for years. Output ONLY the rewritten text.',
+  professional_human:'Rewrite this as a seasoned professional — clear, confident, authoritative but approachable. Active voice, varied sentence length, no filler. Output ONLY the rewritten text.',
+  community_discussion:'Rewrite as if opening a genuine Reddit community discussion. Share a perspective, invite others in, be curious. Sound like you genuinely want input. Output ONLY the rewritten text.',
+};
+
+function selMode(el){
+  document.querySelectorAll('.mpill').forEach(p=>p.classList.remove('sel'));
+  el.classList.add('sel');
+  S.mode=el.dataset.m;
+}
+
+async function humanize(){
+  const text=document.getElementById('hum-in').value.trim();
+  if(!text) return toast('Enter text to humanize','er');
+  if(text.length>5000) return toast('Max 5000 characters','er');
+  document.getElementById('hbtn').disabled=true;
+  document.getElementById('hbtn').textContent='⏳ Humanizing...';
+  try{
+    const result=await callClaude(MODES[S.mode],text,1200);
+    document.getElementById('h-orig').textContent=text;
+    document.getElementById('h-hum').textContent=result;
+    document.getElementById('h-res').style.display='block';
+    document.getElementById('hbtn').disabled=false;
+    document.getElementById('hbtn').innerHTML='✨ Humanize Text';
+    toast('Done!','ok');
+  }catch(e){
+    document.getElementById('hbtn').disabled=false;
+    document.getElementById('hbtn').innerHTML='✨ Humanize Text';
+    toast('Error: '+e.message,'er');
+  }
+}
+function copyHum(){navigator.clipboard.writeText(document.getElementById('h-hum').textContent).then(()=>toast('Copied!','ok'));}
+
+// ═══════════════════════════════════════════════════════════
+// MODULE 5: POST GENERATOR
+// ═══════════════════════════════════════════════════════════
+const PT_INST={
+  discussion:'Create a thought-provoking discussion post that invites community debate.',
+  question:'Write a genuine question post that the community will want to answer.',
+  megathread:'Create a megathread post header with clear structure and participation guidelines.',
+  authority:'Write an authoritative, value-packed informational post that establishes expertise.',
+  engagement:'Create a post that naturally drives high engagement through a relatable scenario.',
+  community:'Write a warm, community-focused post that strengthens subreddit culture.',
+};
+
+async function genPost(){
+  const sub=document.getElementById('pg-sub').value.trim().replace(/^r\//,'');
+  const type=document.getElementById('pg-type').value;
+  const tone=document.getElementById('pg-tone').value;
+  const goal=document.getElementById('pg-goal').value;
+  if(!sub) return toast('Enter subreddit','er');
+
+  document.getElementById('pg-res').style.display='none';
+  document.getElementById('pg-load').style.display='block';
+  document.getElementById('pgbtn').disabled=true;
+
+  try{
+    const ctx=S.analyses[sub]?`Top keywords: ${S.analyses[sub].top_keywords.slice(0,8).map(k=>k.word).join(', ')}. Avg score: ${S.analyses[sub].avg_score}.`:'';
+    const raw=await callClaude(
+      `You are a Reddit post writer creating authentic, community-driven content. NEVER promotional or spammy.\n${PT_INST[type]}\n\nRespond ONLY with valid JSON (no markdown fences, no extra text):\n{"title":"...","body":"...","tags":["tag1","tag2","tag3"],"best_time_to_post":"...","expected_engagement":"High/Medium/Low","tips":["tip1","tip2"]}`,
+      `Subreddit: r/${sub}\nPost type: ${type}\nTone: ${tone}\nGoal: ${goal}\nContext: ${ctx||'General community'}\n\nGenerate post as pure JSON.`,
+      900
+    );
+    let post;
+    try{post=JSON.parse(raw.replace(/```json|```/g,'').trim());}
+    catch(e){post={title:'Generated Post',body:raw,tags:[],best_time_to_post:'Mon-Wed 9am-12pm',expected_engagement:'Medium',tips:[]};}
+
+    S.postHistory.unshift({...post,subreddit:sub,type,created:new Date().toISOString()});
+    S.stats.posts=S.postHistory.length;
+    updateStats();
+
+    document.getElementById('pg-title').textContent=post.title||'';
+    document.getElementById('pg-body').textContent=post.body||'';
+    document.getElementById('pg-meta').innerHTML=[
+      post.expected_engagement?`<span class="badge ${post.expected_engagement==='High'?'bg':post.expected_engagement==='Medium'?'bgold':'bgray'}">${post.expected_engagement}</span>`:'',
+      post.best_time_to_post?`<span class="badge bb2">⏰ ${post.best_time_to_post}</span>`:'',
+      ...(post.tags||[]).map(t=>`<span class="badge bgray">${t}</span>`),
+    ].join(' ');
+    document.getElementById('pg-tips').innerHTML=(post.tips||[]).map(t=>`<div style="display:flex;gap:7px;margin-bottom:5px"><span>💡</span><span style="font-size:.8rem;color:var(--t2)">${t}</span></div>`).join('');
+
+    document.getElementById('pg-load').style.display='none';
+    document.getElementById('pg-res').style.display='block';
+    document.getElementById('pgbtn').disabled=false;
+    renderPostHistory();
+    toast('Post generated!','ok');
+  }catch(e){
+    document.getElementById('pg-load').style.display='none';
+    document.getElementById('pgbtn').disabled=false;
+    toast('Error: '+e.message,'er');
+  }
+}
+function copyPost(){
+  const t=document.getElementById('pg-title').textContent;
+  const b=document.getElementById('pg-body').textContent;
+  navigator.clipboard.writeText(t+'\n\n'+b).then(()=>toast('Copied!','ok'));
+}
+function renderPostHistory(){
+  document.getElementById('pg-hist').innerHTML=S.postHistory.slice(0,5).length?
+    S.postHistory.slice(0,5).map(p=>`
+      <div style="padding:7px 0;border-bottom:1px solid var(--blite)">
+        <div style="font-size:.8rem;font-weight:600;color:var(--t1);margin-bottom:3px">${p.title.substring(0,60)}${p.title.length>60?'…':''}</div>
+        <div style="display:flex;gap:5px"><span class="badge bo">${p.type}</span><span class="badge bgray">r/${p.subreddit}</span></div>
+      </div>`).join(''):
+    '<p class="tsm2 tm">No posts generated yet</p>';
+}
+
+// ═══════════════════════════════════════════════════════════
+// MODULE 6: KEYWORD DISCOVERY
+// ═══════════════════════════════════════════════════════════
+async function discoverKW(){
+  const subsStr=document.getElementById('kw-subs').value;
+  const subs=subsStr.split(',').map(s=>s.trim().replace(/^r\//,'')).filter(Boolean);
+  if(!subs.length) return toast('Add subreddits','er');
+
+  document.getElementById('kw-res').style.display='none';
+  document.getElementById('kw-load').style.display='block';
+  document.getElementById('kwbtn').disabled=true;
+  toast('Mining keywords from '+subs.length+' subreddits...');
+
+  try{
+    // Re-use trend scan logic
+    const stop=new Set(['the','a','an','is','in','on','at','to','for','of','and','or','but','it','its','this','that','with','are','was','be','has','have','not','by','from','as','do','if','so','we','i','my','your','you','r','x','just','like','get','use','new','one','can','will','need','want','what','how','why','when','who','where','also','been','very','more','some','than','them','they','their','about','would','could','should']);
+    const kwData={};
+    for(const sub of subs){
+      try{
+        const posts=await getSubPosts(sub,'hot',40);
+        posts.forEach(p=>{
+          (p.title.toLowerCase().match(/\b[a-z]{4,}\b/g)||[]).forEach(w=>{
+            if(!stop.has(w)){
+              if(!kwData[w]) kwData[w]={count:0,scoreSum:0,subs:new Set()};
+              kwData[w].count++;
+              kwData[w].scoreSum+=p.score;
+              kwData[w].subs.add(sub);
             }
-          }
+          });
         });
-      } catch (err) {
-        console.warn('Cleanup failed', err);
-      }
+      }catch(e){}
     }
+    const keywords=Object.entries(kwData)
+      .filter(([,d])=>d.count>=2)
+      .map(([word,d])=>{
+        const avgS=d.scoreSum/d.count;
+        const score=Math.min(100,Math.round(d.count*Math.log(avgS+2)*d.subs.size/subs.length*5));
+        return{keyword:word,count:d.count,avg_score:+avgS.toFixed(1),trend_score:score,subreddits:[...d.subs],growth_pct:Math.min(score*2,500)};
+      })
+      .sort((a,b)=>b.trend_score-a.trend_score)
+      .slice(0,60);
 
-    // Lightweight tick: update countdown-only UI
-    setInterval(() => {
-      if (!currentUser) return;
+    const aiKW=await callClaude(
+      'You are a Reddit keyword strategist. Analyze keyword data and identify: underserved niches, content gaps, high-opportunity keywords, emerging trends. Use Markdown with sections: ## 🎯 High-Opportunity Keywords, ## 📈 Emerging Trends, ## 💡 Content Strategy, ## ⚡ Quick Wins.',
+      `Subreddits: ${subs.join(', ')}\n\nTop keywords:\n${keywords.slice(0,20).map(k=>`- ${k.keyword}: score ${k.trend_score}/100, mentions ${k.count}, avg post score ${k.avg_score}`).join('\n')}\n\nProvide keyword strategy.`,
+      1200
+    );
 
-      const ac = getActiveClaim();
-      if (ac) {
-        const left = ac.until - nowMs();
-        activeClaimTime.textContent = msToClock(left);
-        activeClaimCountdown.textContent = msToClock(left);
-      }
+    document.getElementById('kw-ai').innerHTML=md(aiKW);
+    const top10=keywords.slice(0,10);
+    document.getElementById('kw-chart').innerHTML=barChart(top10,k=>k.keyword,k=>k.trend_score,100,'');
+    document.getElementById('kw-cloud').innerHTML=keywords.slice(0,45).map(k=>`<span class="tag ${k.trend_score>=70?'lg':k.trend_score>=40?'md':''}">${k.keyword}</span>`).join('');
+    document.getElementById('kw-tbl').innerHTML=keywords.map(k=>`
+      <tr>
+        <td class="pr">${k.keyword}</td>
+        <td><span class="ts ${tc(k.trend_score)}">${k.trend_score}</span></td>
+        <td class="mono">${k.count}</td>
+        <td class="mono">${k.avg_score}</td>
+        <td class="mono" style="color:var(--green)">+${k.growth_pct}%</td>
+        <td style="font-size:.72rem;color:var(--t3)">${k.subreddits.slice(0,3).map(s=>'r/'+s).join(', ')}</td>
+      </tr>`).join('');
 
-      if (!modalOverlay.classList.contains('hidden') && openTask) {
-        updateModalDynamic(openTask);
-      }
+    document.getElementById('kw-load').style.display='none';
+    document.getElementById('kw-res').style.display='block';
+    document.getElementById('kwbtn').disabled=false;
+    toast('Found '+keywords.length+' keywords!','ok');
+  }catch(e){
+    document.getElementById('kw-load').style.display='none';
+    document.getElementById('kwbtn').disabled=false;
+    toast('Error: '+e.message,'er');
+  }
+}
 
-      maybeCleanupExpiredClaim();
-    }, 1000);
+// ═══════════════════════════════════════════════════════════
+// MODULE 8: AUTOMATION (in-memory jobs)
+// ═══════════════════════════════════════════════════════════
+function createJob(){
+  const n=document.getElementById('jb-n').value.trim();
+  const t=document.getElementById('jb-t').value;
+  const tg=document.getElementById('jb-tg').value.trim();
+  const s=document.getElementById('jb-s').value;
+  if(!n||!tg) return toast('Name and target required','er');
+  S.jobs.push({id:Date.now(),name:n,type:t,target:tg,schedule:s,active:true,created:new Date().toISOString(),last_run:null});
+  document.getElementById('jb-n').value='';
+  document.getElementById('jb-tg').value='';
+  renderJobs();
+  toast('Job created','ok');
+}
+function renderJobs(){
+  document.getElementById('jb-list').innerHTML=S.jobs.length?
+    S.jobs.map(j=>`
+      <div style="padding:9px 0;border-bottom:1px solid var(--blite)">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div><span style="font-weight:600;font-size:.83rem">${j.name}</span><span class="badge ${j.active?'bg':'bgray'}" style="margin-left:6px">${j.active?'Active':'Paused'}</span></div>
+          <div style="display:flex;gap:5px">
+            <button class="btn bs bxs" onclick="toggleJob(${j.id})">${j.active?'⏸':'▶'}</button>
+            <button class="btn bd bxs" onclick="delJob(${j.id})">✕</button>
+          </div>
+        </div>
+        <div style="font-size:.7rem;color:var(--t3);margin-top:3px">${j.type} · <strong style="color:var(--t2)">${j.target}</strong> · ${j.schedule}</div>
+      </div>`).join(''):
+    '<div class="es"><div class="eic">⚙️</div><p>No jobs created yet</p></div>';
+}
+function toggleJob(id){const j=S.jobs.find(x=>x.id===id);if(j){j.active=!j.active;renderJobs();}}
+function delJob(id){S.jobs=S.jobs.filter(x=>x.id!==id);renderJobs();}
 
-    // --- Initial UI state ---
-    hero.classList.remove('hidden');
-    appSection.classList.add('hidden');
+// ═══════════════════════════════════════════════════════════
+// SETTINGS
+// ═══════════════════════════════════════════════════════════
+function saveKey(){
+  const k=document.getElementById('s-key').value.trim();
+  if(!k) return toast('Enter API key','er');
+  S.apiKey=k;
+  localStorage.setItem('ria_key',k);
+  document.getElementById('s-key').value='';
+  document.getElementById('s-key').placeholder='••••••••••••'+k.slice(-4);
+  document.getElementById('key-saved').style.display='flex';
+  updateApiBadge();
+  toast('API key saved!','ok');
+}
 
-  </script>
+// ═══════════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════════
+function init(){
+  updateApiBadge();
+  updateStats();
+  if(S.apiKey){
+    document.getElementById('s-key').placeholder='••••••••••••'+S.apiKey.slice(-4);
+  }
+  // Seed a sample job for demo
+  S.jobs=[
+    {id:1,name:'Daily Entrepreneur Scan',type:'subreddit',target:'entrepreneur',schedule:'daily',active:true,created:new Date().toISOString(),last_run:null},
+    {id:2,name:'Marketing Trend Watch',type:'subreddit',target:'marketing',schedule:'daily',active:true,created:new Date().toISOString(),last_run:null},
+  ];
+  S.watchlists=[
+    {name:'Marketing Stack',subs:['marketing','socialmedia','content_marketing','SEO']},
+    {name:'AI & Tech',subs:['artificial','MachineLearning','ChatGPT','singularity']},
+    {name:'Startup World',subs:['startups','entrepreneur','SaaS']},
+  ];
+}
+
+init();
+</script>
 </body>
 </html>
